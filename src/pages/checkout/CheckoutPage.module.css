@@ -412,6 +412,16 @@
   display: block;
   margin-bottom: 24px;
 }
+.successDialog {
+  text-align: center;
+  line-height: 1.8;
+}
+.successDialog > svg {
+  margin: 10px 0;
+}
+.successDialog .orderId {
+  margin: 18px 0;
+}
 .eyebrow {
   font-size: 9px;
   letter-spacing: 2px;

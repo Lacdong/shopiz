@@ -59,6 +59,7 @@ export default function CheckoutPage() {
   const [notes, setNotes] = useState({});
   const [error, setError] = useState("");
   const [receipt, setReceipt] = useState(null);
+  const [receiptPopup, setReceiptPopup] = useState(false);
   const placing = useRef(false);
   const selected = lines.filter((line) => line.selected);
   const address =
@@ -148,6 +149,7 @@ export default function CheckoutPage() {
     const saved = saveMockOrder(order);
     applyVoucher("");
     setReceipt({ ...order, saved });
+    setReceiptPopup(true);
     window.scrollTo(0, 0);
   }
   if (receipt)
@@ -192,7 +194,11 @@ export default function CheckoutPage() {
             </p>
           )}
           <div className={s.successActions}>
-            <Link className={s.primary} to="/">
+            <Link className={s.primary} to="/account/purchases">
+              View My Purchases
+              <ArrowRight size={15} />
+            </Link>
+            <Link className={s.secondary} to="/">
               Continue shopping
               <ArrowRight size={15} />
             </Link>
@@ -201,6 +207,31 @@ export default function CheckoutPage() {
             </Link>
           </div>
         </section>
+        {receiptPopup && (
+          <CheckoutDialog
+            title="Order placed successfully"
+            onClose={() => setReceiptPopup(false)}
+          >
+            <div className={`${s.dialogBody} ${s.successDialog}`}>
+              <CheckCircle2 size={44} strokeWidth={1.4} />
+              <p>Your demo order is ready to view in My Purchases.</p>
+              <strong className={s.orderId}>{receipt.id}</strong>
+              <p className={s.muted}>
+                Order total: {money(receipt.total)}. No real payment or
+                shipment.
+              </p>
+            </div>
+            <footer className={s.dialogFooter}>
+              <Link className={s.secondary} to="/">
+                Continue Shopping
+              </Link>
+              <Link className={s.primary} to="/account/purchases">
+                View My Purchases
+                <ArrowRight size={15} />
+              </Link>
+            </footer>
+          </CheckoutDialog>
+        )}
       </div>
     );
   if (!selected.length)

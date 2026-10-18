@@ -66,25 +66,4 @@ export const formatAddress = (address) =>
   [address.street, address.ward, address.district, address.city]
     .filter(Boolean)
     .join(", ");
-export function saveMockOrder(order) {
-  try {
-    const stored = JSON.parse(
-      localStorage.getItem("shopiz-demo-orders-v1") || "[]",
-    );
-    const orders = Array.isArray(stored)
-      ? stored.filter(
-          (item) =>
-            item && typeof item === "object" && typeof item.id === "string",
-        )
-      : [];
-    localStorage.setItem(
-      "shopiz-demo-orders-v1",
-      JSON.stringify(
-        [order, ...orders.filter((item) => item.id !== order.id)].slice(0, 20),
-      ),
-    );
-    return true;
-  } catch {
-    return false;
-  }
-}
+export { saveMockOrder } from "../../data/orders";

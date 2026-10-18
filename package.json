@@ -14,7 +14,8 @@
     "check:vouchers": "node scripts/verify-vouchers.mjs",
     "check:search": "node scripts/verify-search.mjs",
     "check:shop": "node scripts/verify-shop.mjs",
-    "check:checkout": "node scripts/verify-checkout.mjs"
+    "check:checkout": "node scripts/verify-checkout.mjs",
+    "check:purchases": "node scripts/verify-purchases.mjs"
   },
   "dependencies": {
     "axios": "^1.7.9",

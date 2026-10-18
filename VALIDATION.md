@@ -75,3 +75,10 @@ The product catalog, inventory and sold counts are mock data. Product photos loa
 - Build, cart, voucher and checkout checks pass. Layout and address-dialog bounds were checked at 1440, 1280, 1024, 768 and 375 pixels without screenshots.
 - Verified selected products only, address editing and required-name validation, per-shop express/standard shipping, shipping voucher recalculation, payment confirmation/cancel, duplicate submission protection, receipt totals and persistence of unselected cart products.
 - Mock order summaries exclude recipient address/phone and seller notes. Refreshing checkout after completion shows the empty-selection state and creates no duplicate order. No real payment or backend order is sent.
+
+## My Purchases and checkout success popup
+
+- Read both supplied user-purchase references and implemented their sidebar, status tabs, search, shop/product cards, totals and actions with English copy and Shopiz branding.
+- Checkout success opens an accessible dialog linking to `/account/purchases`; the header account menu opens the same route. Checkout records appear before labelled sample history and persist across reloads.
+- Purchases and order-details layout checks pass at 1440, 1280, 1024, 768 and 375 pixels. Verified phone popup bounds, status/search URL state, empty results, checkout totals across multiple shops, Buy Again quantities/options, seller navigation and malformed storage recovery.
+- Checkout and authentication regression checks pass. No screenshots or browser runtime errors; payments, shipping and seller messages remain simulated.

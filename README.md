@@ -98,6 +98,14 @@ Responsive layouts target 1440, 1280, 1024, 768 and 375 pixels. Recommendations 
 - Cash on delivery and Demo wallet are simulated choices. Place demo order displays a receipt, clears the applied voucher and removes only the ordered lines from the cart. It prevents duplicate submissions and stores up to 20 mock order summaries under `shopiz-demo-orders-v1`, excluding delivery addresses, phone numbers and seller notes. No payment, shipment, seller notification or backend order is created.
 - Empty selection routes back to the cart. `npm run check:checkout` verifies layout at five sizes, address validation, shipping/voucher totals, payment choices, duplicate submission protection and preservation of unselected products without screenshots.
 
+## My Purchases
+
+- `/account/purchases` follows the supplied `user-purchase_.png` and `shopee-user-purchase_.png` references: account sidebar, status tabs, order search, seller/product rows, order totals and action buttons. The interface uses English and Shopiz’s monochrome styling.
+- Checkout now opens a success popup with **View My Purchases**. The header account menu opens the same page. Newly placed orders appear first, map to **To Ship**, survive reloads and show their original product variations, quantities and checkout totals. Three labelled sample orders illustrate Completed and Cancelled states.
+- Status and search use URL parameters. Search matches shop, product and order ID. Order Details shows the merchandise/shipping/voucher breakdown; Buy Again uses current cart stock rules. Seller links open storefronts; messaging shows an availability notice.
+- Shared order storage lives in `src/data/orders.js`. Like the existing demo cart, order history is browser-local and shared across guest/demo account sessions; it is not a backend account history. Storage failures retain orders for the current visit only. Sample history is separate from stored checkout orders.
+- `npm run check:purchases` checks the popup-to-history flow, header links, five responsive layouts, status/search/reload behavior, detail totals, Buy Again, seller links and malformed-storage recovery without screenshots.
+
 ## Shop storefronts
 
 - `src/pages/shop/ShopPage.jsx` and its CSS Module follow `references/marketplace/view-shop.png`: seller profile and statistics, navigation tabs, recommended products, original editorial banners, collection tiles, marketplace offers, shopping benefits and category product groups.

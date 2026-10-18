@@ -163,7 +163,7 @@ try {
       el.click();
     });
   await page
-    .getByRole("heading", { name: "Demo order placed", exact: true })
+    .getByRole("dialog", { name: "Order placed successfully", exact: true })
     .waitFor();
   const state = await page.evaluate(() => ({
     orders: JSON.parse(localStorage.getItem("shopiz-demo-orders-v1")),
