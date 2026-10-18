@@ -1,5 +1,10 @@
-import React, { useEffect, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import React, { useEffect, useId, useRef, useState } from "react";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import {
   ShoppingBag,
   ShoppingCart,
@@ -16,8 +21,77 @@ import {
 import s from "./Header.module.css";
 import { useAuth } from "./auth/AuthProvider";
 import { useCart } from "./cart/CartProvider";
-export function UtilityNav() {
+function AccountMenu({ onNavigate }) {
   const { user, logout } = useAuth();
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const trigger = useRef(null);
+  const id = useId();
+  const location = useLocation();
+  useEffect(() => setOpen(false), [location]);
+  useEffect(() => {
+    if (!open) return;
+    function outside(event) {
+      if (!ref.current?.contains(event.target)) setOpen(false);
+    }
+    function escape(event) {
+      if (event.key === "Escape") {
+        setOpen(false);
+        trigger.current?.focus();
+      }
+    }
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [open]);
+  function close() {
+    setOpen(false);
+    onNavigate?.();
+  }
+  return (
+    <div
+      className={s.accountMenu}
+      ref={ref}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
+      }}
+    >
+      <button
+        ref={trigger}
+        className={s.accountTrigger}
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen((value) => !value)}
+      >
+        {user.name}
+        <ChevronDown size={12} aria-hidden="true" />
+      </button>
+      {open && (
+        <nav id={id} className={s.accountPopup} aria-label="Account menu">
+          <Link to="/account/profile" onClick={close}>
+            My Account
+          </Link>
+          <Link to="/account/purchases" onClick={close}>
+            My Purchases
+          </Link>
+          <button
+            onClick={() => {
+              logout();
+              close();
+            }}
+          >
+            Log Out
+          </button>
+        </nav>
+      )}
+    </div>
+  );
+}
+export function UtilityNav() {
+  const { user } = useAuth();
   return (
     <div className={s.utility}>
       <div>
@@ -44,13 +118,7 @@ export function UtilityNav() {
           <Globe size={13} /> English <ChevronDown size={11} />
         </Link>
         {user ? (
-          <>
-            <span>{user.name}</span>
-            <i />
-            <button className={s.logout} onClick={logout}>
-              Log out
-            </button>
-          </>
+          <AccountMenu />
         ) : (
           <>
             <Link to="/login">Login</Link>
@@ -118,7 +186,7 @@ export default function Header({ variant = "marketplace" }) {
   const isCheckout = variant === "checkout";
   const isCompact = isCart || isCheckout;
   const { itemCount } = useCart();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   return (
     <header
@@ -195,20 +263,7 @@ export default function Header({ variant = "marketplace" }) {
                   {label}
                 </Link>
               ))}
-            {user && (
-              <>
-                <span>{user.name}</span>
-                <button
-                  className={s.logout}
-                  onClick={() => {
-                    logout();
-                    setOpen(false);
-                  }}
-                >
-                  Log out
-                </button>
-              </>
-            )}
+            {user && <AccountMenu onNavigate={() => setOpen(false)} />}
           </nav>
         )}
       </div>

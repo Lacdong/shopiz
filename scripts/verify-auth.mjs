@@ -87,10 +87,27 @@ try {
     .locator("header nav")
     .getByText("Demo Shopper", { exact: true })
     .waitFor();
+  check(
+    (await page
+      .getByRole("button", { name: "Log Out", exact: true })
+      .count()) === 0,
+    "Logout must be hidden until the account popup opens",
+  );
+  await page.getByRole("button", { name: "Demo Shopper", exact: true }).click();
+  await page.getByRole("navigation", { name: "Account menu" }).waitFor();
   await page
-    .locator("header nav")
-    .getByRole("button", { name: "Log out" })
-    .click();
+    .getByRole("link", { name: "My Account", exact: true })
+    .waitFor();
+  await page.getByRole("link", { name: "My Purchases", exact: true }).waitFor();
+  await page.keyboard.press("Escape");
+  check(
+    (await page
+      .getByRole("button", { name: "Demo Shopper", exact: true })
+      .getAttribute("aria-expanded")) === "false",
+    "Escape should close account popup",
+  );
+  await page.getByRole("button", { name: "Demo Shopper", exact: true }).click();
+  await page.getByRole("button", { name: "Log Out", exact: true }).click();
   check(
     await page.evaluate(
       () => localStorage.getItem("shopiz-demo-user") === null,
@@ -120,9 +137,9 @@ try {
     await page.getByRole("link", { name: "Continue shopping" }).click();
     await page.getByRole("button", { name: "Open navigation" }).click();
     await page
-      .locator("header nav")
-      .getByRole("button", { name: "Log out" })
+      .getByRole("button", { name: "Demo Shopper", exact: true })
       .click();
+    await page.getByRole("button", { name: "Log Out", exact: true }).click();
   }
   await page.goto(base + "/register");
   await page.getByRole("button", { name: "NEXT", exact: true }).click();

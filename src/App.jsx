@@ -52,6 +52,14 @@ export default function App() {
           <Route path="product/:id" element={<ProductPage />} />
           <Route path="cart" element={<CartPage />} />
           <Route path="checkout" element={<CheckoutPage />} />
+          <Route
+            path="account/profile"
+            element={<PlaceholderPage title="My Account" />}
+          />
+          <Route
+            path="account/purchases"
+            element={<PlaceholderPage title="My Purchases" />}
+          />
           <Route path="shop/:shopId" element={<ShopPage />} />
           {[
             "seller",
