@@ -235,7 +235,9 @@ export default function CartPage() {
                     <Store size={17} />
                   )}
                   <h2>{group.seller}</h2>
-                  <Link to="/collection/mall">
+                  <Link
+                    to={`/shop/${getProductDetails(group.lines[0].product).seller.id}`}
+                  >
                     Visit Shop
                     <ChevronRight size={12} />
                   </Link>
@@ -244,7 +246,9 @@ export default function CartPage() {
                   <div className={s.offerStrip}>
                     <span>SHOP OFFERS</span>
                     <p>Discover more everyday favorites from this shop.</p>
-                    <Link to="/collection/mall">
+                    <Link
+                      to={`/shop/${getProductDetails(group.lines[0].product).seller.id}`}
+                    >
                       Shop more
                       <ChevronRight size={12} />
                     </Link>

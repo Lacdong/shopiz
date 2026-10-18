@@ -54,3 +54,17 @@ The product catalog, inventory and sold counts are mock data. Product photos loa
 - Browser tests pass at 1440, 1280, 1024, 768 and 375 pixels: popup stays inside the viewport, input receives focus, Escape closes it and body scrolling is restored.
 - Verified invalid and insufficient-spend codes, normalized code input, draft/confirm/cancel, persistence after reload, quantity-driven recalculation and cap, deselection invalidation, checkout total, clearing/removing vouchers and shipping vouchers.
 - No runtime errors or screenshots during voucher validation.
+
+## Search-result layout
+
+- Read the added `search-result.png` and implemented its filter/sidebar, related-shop, sorting and dense five-column desktop layout with Shopiz branding. Existing generic category/collection layouts are preserved.
+- Search layouts with and without related-shop content pass overflow checks at 1440, 1280, 1024, 768 and 375 pixels.
+- Browser checks pass for keyword/brand matching, 15-product pagination, price/latest/sales sorting, combined category/origin/brand filters, invalid price ranges, empty/reset states, Mall filtering and reload persistence, filter chips, ratings, query synchronization on Back, mobile filters and product navigation.
+- No screenshots or browser runtime errors during search validation.
+
+## View-shop storefronts
+
+- Read `view-shop.png`; implemented seller profile/statistics, tabs, product groups, original promotional content, collection tiles, offers and shopping benefits with monochrome Shopiz branding.
+- All three storefronts and their catalog tabs pass overflow checks at 1440, 1280, 1024, 768 and 375 pixels.
+- Verified following/unfollowing, persistence after reload and separation across shops; chat availability/Escape; tab navigation; scoped search and browser Back synchronization; category reload persistence; price/latest/sales sorting; six-item pagination; and the missing-shop fallback.
+- Search, product-detail and cart seller links were checked end to end. Store product links reach product detail pages. No screenshots or runtime errors during shop validation.

@@ -4,6 +4,7 @@ import MarketplaceLayout from "./layouts/MarketplaceLayout";
 import AuthLayout from "./layouts/AuthLayout";
 import HomePage from "./pages/home/HomePage";
 import SearchResultsPage from "./pages/search/SearchResultsPage";
+import BrowseResultsPage from "./pages/search/BrowseResultsPage";
 import ProductPage from "./pages/product/ProductPage";
 import PlaceholderPage from "./pages/placeholder/PlaceholderPage";
 import FlashSalePage from "./pages/flash-sale/FlashSalePage";
@@ -13,6 +14,7 @@ import LoginPage from "./pages/login/LoginPage";
 import RegisterPage from "./pages/register/RegisterPage";
 import ForgotPasswordPage from "./pages/login/ForgotPasswordPage";
 import CartPage from "./pages/cart/CartPage";
+import ShopPage from "./pages/shop/ShopPage";
 function ScrollManager() {
   const { pathname, search, hash } = useLocation();
   useEffect(() => {
@@ -38,16 +40,17 @@ export default function App() {
         <Route element={<MarketplaceLayout />}>
           <Route index element={<HomePage />} />
           <Route path="search" element={<SearchResultsPage />} />
-          <Route path="category/:name" element={<SearchResultsPage />} />
+          <Route path="category/:name" element={<BrowseResultsPage />} />
           <Route path="collection/flash-deals" element={<FlashSalePage />} />
           <Route path="flash-sale" element={<FlashSalePage />} />
           <Route path="collection/top-products" element={<TopProductsPage />} />
           <Route path="top-product" element={<TopProductsPage />} />
           <Route path="collection/mall" element={<MallPage />} />
           <Route path="shopiz-mall" element={<MallPage />} />
-          <Route path="collection/:name" element={<SearchResultsPage />} />
+          <Route path="collection/:name" element={<BrowseResultsPage />} />
           <Route path="product/:id" element={<ProductPage />} />
           <Route path="cart" element={<CartPage />} />
+          <Route path="shop/:shopId" element={<ShopPage />} />
           {[
             "seller",
             "download",

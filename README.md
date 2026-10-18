@@ -31,7 +31,7 @@ npm run preview
 
 The local `references/marketplace/home.png` guides section order, proportions, two-row categories and six-column desktop density. The original orange design system is overridden by the requested monochrome tokens. Category line icons and original promotional compositions replace proprietary artwork. Product photos are remotely loaded Unsplash images, styled in grayscale; they require internet access. Prices are illustrative USD values. Seller Center, vouchers, informational and social destinations remain simulator placeholder pages. No transactions occur.
 
-Responsive layouts target 1440, 1280, 1024, 768 and 375 pixels. Recommendations use six desktop columns, four at 1024, three at tablet and two on phones. Flash deals scroll horizontally on mobile. Search matches all entered words against product names and categories. Categories without mock inventory display an empty state.
+Responsive layouts target 1440, 1280, 1024, 768 and 375 pixels. Recommendations use six desktop columns, four at 1024, three at tablet and two on phones. Flash deals scroll horizontally on mobile. Search matches all entered words against product names, categories and mock brands. Categories without mock inventory display an empty state.
 
 ## Collection pages
 
@@ -79,3 +79,22 @@ Responsive layouts target 1440, 1280, 1024, 768 and 375 pixels. Recommendations 
 - One voucher can be applied at a time, using only selected-item spend. Discounts round to cents, respect caps and re-evaluate after selection/quantity changes. The selected code persists as `shopiz-cart-voucher-v1`, while its discount is always calculated from the current cart. Cart and checkout preview totals include the eligible discount.
 - Standard shipping is already free, so shipping vouchers explicitly report that condition and do not fabricate additional savings. No voucher redemption or usage tracking is sent to a backend.
 - `npm run check:vouchers` verifies coupon rules and the modal flow at all five target sizes without screenshots; supports `SHOPIZ_URL` (default port 5173).
+
+## Search results
+
+- `/search?q=...` follows `references/marketplace/search-result.png`: a left filter sidebar, related-shop panel, search heading, sorting bar, five-column desktop grid and pagination. Tablet and phone grids adapt to four/three/two columns, with a collapsible filter panel at 768px and below.
+- `src/pages/search/SearchResultsPage.jsx`, `SearchFilters.jsx`, `searchUtils.js` and the page CSS Module implement the search experience. `BrowseResultsPage.jsx` retains the existing category and generic collection layouts.
+- Filters include multiple categories, shipping origins and brands, min/max price, Mall products, minimum rating and free shipping. Price ranges are validated before applying. All catalog items currently have free standard shipping.
+- Relevance retains catalog order among keyword matches; Latest uses mock catalog ID order. Top Sales sorts by sold count; price supports both directions. Pages contain at most 15 products.
+- Query, filters, sort and pagination are URL parameters. Changing a filter or sort resets pagination. Active filters can be removed individually or cleared. The header input follows query changes during browser navigation.
+- Related-shop links open the matching `/shop/:shopId` storefront based on the same seller metadata as product detail and cart pages.
+- `npm run check:search` verifies layout, combined filtering, sorting, pagination, invalid ranges, empty states, URL persistence, navigation and mobile filters without screenshots; accepts `SHOPIZ_URL` (default port 5173).
+
+## Shop storefronts
+
+- `src/pages/shop/ShopPage.jsx` and its CSS Module follow `references/marketplace/view-shop.png`: seller profile and statistics, navigation tabs, recommended products, original editorial banners, collection tiles, marketplace offers, shopping benefits and category product groups.
+- `/shop/sonora`, `/shop/atelier` and `/shop/north-form` use the shared fictional shop catalog in `src/data/shops.js`. Mall collections, product seller metadata and storefronts share seller IDs and inventories.
+- Home, All Products, New Arrivals, Top Sales and About Shop tabs are available. Product tabs support shop-scoped keyword search, categories, sorting and six-item pagination through URL parameters. Back/reload preserves the selected query/filter state.
+- Following is a browser-local preference under `shopiz-followed-shops-v1`, independent for each shop. No subscription or notification is sent. Seller messaging opens an availability notice.
+- Product detail View Shop, search-related-shop links and cart Visit Shop/Shop more links open the corresponding storefront. Product cards link back to existing product detail pages. Unknown shop IDs show an explicit not-found page.
+- `npm run check:shop` checks three storefronts at all five target sizes, follow persistence, tabs/search/filters/sorting/pagination and seller links without screenshots. Accepts `SHOPIZ_URL` (default port 5173).

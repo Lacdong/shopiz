@@ -1,3 +1,4 @@
+import { findShopByBrand } from "./shops";
 const profiles = {
   Electronics: {
     brand: "SONORA",
@@ -89,6 +90,7 @@ export function getProductDetails(product) {
       "Follow the included care instructions.",
     ],
   };
+  const shop = findShopByBrand(profile.brand);
   const sizes = product.id === "7" ? ["S", "M", "L", "XL"] : profile.sizes;
   const reviews = Array.from({ length: 8 }, (_, index) => ({
     id: index + 1,
@@ -123,13 +125,17 @@ export function getProductDetails(product) {
     stock: product.stock,
     sku: `SZ-${product.id.padStart(4, "0")}`,
     seller: {
+      id: shop.id,
       name: `${profile.brand} Official Store`,
-      rating: "4.9",
-      responseRate: "98%",
+      rating: shop.rating,
+      responseRate: shop.responseRate,
       responseTime: "Within a few hours",
-      joined: "2 years ago",
-      followers: "12.8k",
-      products: 128,
+      joined: shop.joined,
+      followers: new Intl.NumberFormat("en-US", {
+        notation: "compact",
+        maximumFractionDigits: 1,
+      }).format(shop.followers),
+      products: shop.products.length,
     },
     reviews,
     gallery: [

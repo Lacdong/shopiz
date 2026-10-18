@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ShoppingBag,
@@ -68,6 +68,8 @@ export function SearchBar({ compact = false }) {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [query, setQuery] = useState(params.get("q") || "");
+  const routeQuery = params.get("q") || "";
+  useEffect(() => setQuery(routeQuery), [routeQuery]);
   return (
     <div className={s.searchWrap}>
       <form

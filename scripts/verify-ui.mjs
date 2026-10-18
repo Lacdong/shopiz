@@ -50,9 +50,15 @@ try {
     .fill("headphones");
   await page.getByRole("button", { name: "Search", exact: true }).click();
   await page.waitForURL("**/search?q=headphones");
-  await page.getByText("1 curated finds").waitFor();
-  check(await page.getByText("1 curated finds").isVisible(), "Search failed");
-  await page.getByRole("link", { name: /Studio Wireless Headphones/ }).click();
+  await page.getByText("1 result", { exact: true }).waitFor();
+  check(
+    await page.getByText("1 result", { exact: true }).isVisible(),
+    "Search failed",
+  );
+  await page
+    .locator('[aria-label="Search result products"]')
+    .getByRole("link", { name: /Studio Wireless Headphones/ })
+    .click();
   await page.waitForURL("**/product/1");
   await page
     .getByRole("heading", { name: /Studio Wireless Headphones/ })

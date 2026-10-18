@@ -298,7 +298,7 @@ function ProductDetail({ product: p }) {
                 <MessageCircle size={13} />
                 Chat Now
               </button>
-              <Link to="/collection/mall">
+              <Link to={`/shop/${details.seller.id}`}>
                 <Store size={13} />
                 View Shop
               </Link>

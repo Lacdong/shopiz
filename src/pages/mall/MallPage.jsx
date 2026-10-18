@@ -12,6 +12,7 @@ import {
   Zap,
 } from "lucide-react";
 import { products } from "../../data/catalog";
+import { mockShops as brands } from "../../data/shops";
 import { BannerCarousel, CategoryGrid } from "../../components/Discovery";
 import { ProductGrid, TrustBar } from "../../components/Commerce";
 import {
@@ -21,29 +22,6 @@ import {
 import shared from "../../components/collection/Collection.module.css";
 import page from "./MallPage.module.css";
 const s = { ...shared, ...page };
-const brands = [
-  {
-    id: "sonora",
-    name: "SONORA",
-    tagline: "Sound made personal.",
-    offer: "Up to 40% off",
-    products: ["1", "5", "13", "15"],
-  },
-  {
-    id: "atelier",
-    name: "atelier.",
-    tagline: "Considered essentials.",
-    offer: "Your everyday, elevated",
-    products: ["6", "8", "9", "14", "16", "18"],
-  },
-  {
-    id: "north-form",
-    name: "NORTH / FORM",
-    tagline: "Made for the everyday.",
-    offer: "New season essentials",
-    products: ["2", "3", "4", "7", "10", "11", "12", "17"],
-  },
-];
 export default function MallPage() {
   const [params, setParams] = useSearchParams();
   const brand = brands.find((b) => b.id === params.get("brand"));
@@ -121,7 +99,7 @@ export default function MallPage() {
               onClick={() => selectBrand(b.id)}
             >
               <strong className={b.id === "atelier" ? s.serif : ""}>
-                {b.name}
+                {b.brand}
               </strong>
               <span>{b.tagline}</span>
               <small>
@@ -134,8 +112,8 @@ export default function MallPage() {
       <section id="mall-products">
         <div className={s.toolbar}>
           <span>
-            <ShieldCheck size={14} /> {brand ? brand.name : "All Mall brands"} ·{" "}
-            {items.length} finds
+            <ShieldCheck size={14} /> {brand ? brand.brand : "All Mall brands"}{" "}
+            · {items.length} finds
           </span>
           <label>
             Sort by{" "}
@@ -149,7 +127,7 @@ export default function MallPage() {
         <CategoryTabs selected={category} onSelect={setCategory} />
         <ProductGrid
           items={items}
-          title={brand ? `${brand.name} · THE COLLECTION` : "MALL EXCLUSIVES"}
+          title={brand ? `${brand.brand} · THE COLLECTION` : "MALL EXCLUSIVES"}
           subtitle="Discover your next everyday favorite"
           loadMore={false}
         />
