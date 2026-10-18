@@ -17,6 +17,8 @@ import CartPage from "./pages/cart/CartPage";
 import ShopPage from "./pages/shop/ShopPage";
 import CheckoutPage from "./pages/checkout/CheckoutPage";
 import PurchasesPage from "./pages/purchases/PurchasesPage";
+import ProfilePage from "./pages/account/ProfilePage";
+import AddressesPage from "./pages/account/AddressesPage";
 function ScrollManager() {
   const { pathname, search, hash } = useLocation();
   useEffect(() => {
@@ -53,10 +55,8 @@ export default function App() {
           <Route path="product/:id" element={<ProductPage />} />
           <Route path="cart" element={<CartPage />} />
           <Route path="checkout" element={<CheckoutPage />} />
-          <Route
-            path="account/profile"
-            element={<PlaceholderPage title="My Account" />}
-          />
+          <Route path="account/profile" element={<ProfilePage />} />
+          <Route path="account/addresses" element={<AddressesPage />} />
           <Route path="account/purchases" element={<PurchasesPage />} />
           <Route path="shop/:shopId" element={<ShopPage />} />
           {[

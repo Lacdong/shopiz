@@ -1,0 +1,105 @@
+.sidebar {
+  padding-top: 5px;
+  min-width: 0;
+  font-size: 12px;
+}
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 5px 0 24px;
+  border-bottom: 1px solid #e6e6e6;
+}
+.profile > div {
+  min-width: 0;
+}
+.avatar {
+  display: grid;
+  place-items: center;
+  background: #e6e6e6;
+  border: 1px solid #ddd;
+  border-radius: 50%;
+  width: 43px;
+  height: 43px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.profile strong {
+  display: block;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.profile a {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+  color: #999;
+  font-size: 10px;
+}
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 23px;
+  padding-top: 28px;
+}
+.sidebar nav a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #666;
+}
+.sidebar nav a[aria-current],
+.sidebar nav .selected {
+  font-weight: 600;
+  color: #111;
+}
+.subnav {
+  display: flex;
+  flex-direction: column;
+  gap: 19px;
+  padding: 21px 0 0 29px;
+  font-size: 11px;
+}
+.sidebar a:hover {
+  color: #111;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+@media (max-width: 800px) {
+  .sidebar {
+    margin-bottom: 22px;
+  }
+  .profile {
+    border: 0;
+    padding: 0;
+  }
+  .sidebar nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 20px 22px;
+    padding: 20px 0 2px;
+  }
+  .sidebar nav a {
+    white-space: nowrap;
+    font-size: 11px;
+    gap: 7px;
+  }
+  .accountGroup {
+    display: contents;
+  }
+  .subnav {
+    order: 2;
+    flex-basis: 100%;
+    flex-direction: row;
+    border-top: 1px solid #ddd;
+    padding: 17px 0 0;
+    gap: 25px;
+  }
+}

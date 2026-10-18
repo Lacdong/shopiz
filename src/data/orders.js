@@ -70,6 +70,55 @@ export function saveMockOrder(order) {
     return false;
   }
 }
+export function updateOrderAction(id, action, value) {
+  if (
+    action === "review" &&
+    (!value ||
+      !Number.isInteger(value.rating) ||
+      value.rating < 1 ||
+      value.rating > 5 ||
+      typeof value.comment !== "string" ||
+      value.comment.length > 1000)
+  )
+    return { success: false, error: "Choose a valid rating and review." };
+  if (
+    action === "cancel" &&
+    ![
+      "Changed my mind",
+      "Ordered the wrong item",
+      "Need to change delivery address",
+      "Delivery is taking too long",
+      "Other",
+    ].includes(value)
+  )
+    return { success: false, error: "Select a cancellation reason." };
+  const order =
+    readOrders().find((order) => order.id === id) ||
+    sampleOrders.find((order) => order.id === id);
+  if (!order)
+    return {
+      success: false,
+      error: "This order could not be found. Refresh your purchase history.",
+    };
+  const status = orderStatus(order);
+  if (action === "cancel" && ["completed", "cancelled"].includes(status))
+    return { success: false, error: "This order can no longer be cancelled." };
+  if (action === "review" && status !== "completed")
+    return { success: false, error: "Only completed orders can be reviewed." };
+  if (!["cancel", "review"].includes(action))
+    return { success: false, error: "Invalid order action." };
+  const next =
+    action === "cancel"
+      ? {
+          ...order,
+          status: "cancelled",
+          cancelledAt: new Date().toISOString(),
+          cancellationReason: value,
+        }
+      : { ...order, review: { ...value, createdAt: new Date().toISOString() } };
+  const saved = saveMockOrder(next);
+  return { success: true, saved, order: next };
+}
 function sample(id, productId, status, quantity = 1) {
   const product = products.find((product) => product.id === productId);
   const subtotal = Math.round(product.price * quantity * 100) / 100;

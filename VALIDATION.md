@@ -82,3 +82,9 @@ The product catalog, inventory and sold counts are mock data. Product photos loa
 - Checkout success opens an accessible dialog linking to `/account/purchases`; the header account menu opens the same route. Checkout records appear before labelled sample history and persist across reloads.
 - Purchases and order-details layout checks pass at 1440, 1280, 1024, 768 and 375 pixels. Verified phone popup bounds, status/search URL state, empty results, checkout totals across multiple shops, Buy Again quantities/options, seller navigation and malformed storage recovery.
 - Checkout and authentication regression checks pass. No screenshots or browser runtime errors; payments, shipping and seller messages remain simulated.
+
+## Account profile, addresses and purchase status actions
+
+- Profile/address layouts and address editor fit 1440, 1280, 1024, 768 and 375 pixels. Verified name/contact/date validation, leap dates, avatar format and preview/save, reload persistence, sidebar/header identity, address create/edit/cancel/default/delete, account separation and malformed storage.
+- Shared account sidebar is used across Profile, Addresses and My Purchases. Authentication, checkout and purchase regression suites passed after the refactor.
+- Purchase actions now follow Completed, Cancelled and pending status groups. Verified review rating validation and persistence, cancellation reason/confirmation and keep-order flow, persisted Cancelled state and details, and existing Buy Again/Contact Seller behavior. No screenshots were captured.

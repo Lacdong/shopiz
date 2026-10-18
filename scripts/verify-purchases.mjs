@@ -161,14 +161,53 @@ try {
     name: `Order ${id}`,
     exact: true,
   });
-  await actual.getByRole("button", { name: "Buy Again", exact: true }).click();
-  await page.getByRole("status").filter({ hasText: "Added 3 items" }).waitFor();
+  const completed = page.getByRole("article", {
+    name: "Order SAMPLE-1004",
+    exact: true,
+  });
+  assert.equal(
+    await actual
+      .getByRole("button", { name: "Pending", exact: true })
+      .isDisabled(),
+    true,
+  );
+  assert.equal(
+    await actual
+      .getByRole("button", { name: "Buy Again", exact: true })
+      .count(),
+    0,
+  );
+  await completed
+    .getByRole("button", { name: "Buy Again", exact: true })
+    .click();
+  await page.getByRole("status").filter({ hasText: "Added 1 item" }).waitFor();
   const cart = await page.evaluate(() =>
     JSON.parse(localStorage.getItem("shopiz-cart-v1")),
   );
-  assert.equal(cart.length, 3);
+  assert.equal(cart.length, 2);
   assert.equal(cart.find((item) => item.productId === "4").size, "EU 42");
-  assert.equal(cart.find((item) => item.productId === "1").quantity, 2);
+  assert.equal(cart.find((item) => item.productId === "4").quantity, 1);
+  await completed.getByRole("button", { name: "Review", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Submit Review", exact: true })
+    .click();
+  await page.getByRole("dialog").getByRole("alert").waitFor();
+  await page.getByRole("radio", { name: "5 stars", exact: true }).check();
+  await page
+    .getByRole("textbox", { name: "Your review (optional)", exact: true })
+    .fill("Great purchase.");
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Submit Review", exact: true })
+    .click();
+  await completed
+    .getByRole("button", { name: "Edit Review", exact: true })
+    .waitFor();
+  await page.reload();
+  await completed
+    .getByRole("button", { name: "Edit Review", exact: true })
+    .waitFor();
   await actual
     .getByRole("button", { name: "Contact Seller", exact: true })
     .click();
@@ -187,14 +226,103 @@ try {
   await page
     .getByRole("article", { name: `Order ${id}`, exact: true })
     .waitFor();
+  const cancelled = page.getByRole("article", {
+    name: "Order SAMPLE-1003",
+    exact: true,
+  });
+  await cancelled
+    .getByRole("button", { name: "View Cancellation Details", exact: true })
+    .click();
+  await page
+    .getByRole("dialog", { name: "Cancellation Details", exact: true })
+    .waitFor();
+  await page.keyboard.press("Escape");
+  await actual
+    .getByRole("button", { name: "Cancel Order", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Keep Order", exact: true }).click();
+  await actual.getByRole("button", { name: "Pending", exact: true }).waitFor();
+  await actual
+    .getByRole("button", { name: "Cancel Order", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Confirm Cancellation", exact: true })
+    .click();
+  await page.getByRole("dialog").getByRole("alert").waitFor();
+  await page
+    .getByRole("combobox", { name: "Reason for cancellation", exact: true })
+    .selectOption({ label: "Changed my mind" });
+  await page
+    .getByRole("button", { name: "Confirm Cancellation", exact: true })
+    .click();
+  await actual
+    .getByRole("button", { name: "View Cancellation Details", exact: true })
+    .waitFor();
+  assert.equal(
+    await actual
+      .getByRole("button", { name: "Cancel Order", exact: true })
+      .count(),
+    0,
+  );
+  await page.reload();
+  await actual
+    .getByRole("button", { name: "View Cancellation Details", exact: true })
+    .click();
+  await page
+    .getByRole("dialog")
+    .getByText("Changed my mind", { exact: true })
+    .waitFor();
+  await page.keyboard.press("Escape");
   await page.evaluate(() =>
     localStorage.setItem("shopiz-demo-orders-v1", "corrupted"),
   );
   await page.reload();
   await countOrders(3);
+  await page.evaluate(
+    (order) =>
+      localStorage.setItem(
+        "shopiz-demo-orders-v1",
+        JSON.stringify(
+          ["to-pay", "to-receive", "returns"].map((status) => ({
+            ...order,
+            id: `PENDING-${status}`,
+            status,
+          })),
+        ),
+      ),
+    orders[0],
+  );
+  await page.reload();
+  for (const state of ["to-pay", "to-receive", "returns"]) {
+    const pending = page.getByRole("article", {
+      name: `Order PENDING-${state}`,
+      exact: true,
+    });
+    assert.equal(
+      await pending
+        .getByRole("button", { name: "Pending", exact: true })
+        .isDisabled(),
+      true,
+    );
+    await pending
+      .getByRole("button", { name: "Cancel Order", exact: true })
+      .waitFor();
+    assert.equal(
+      await pending
+        .getByRole("button", { name: "Review", exact: true })
+        .count(),
+      0,
+    );
+    assert.equal(
+      await pending
+        .getByRole("button", { name: "Buy Again", exact: true })
+        .count(),
+      0,
+    );
+  }
   assert.deepEqual(errors, []);
   console.log(
-    "PASS checkout success popup, order persistence, header navigation, status/search filters, reload state, multi-shop totals, buy-again variations/quantities, seller links and corrupt-storage fallback; no runtime errors",
+    "PASS checkout popup, status actions, review validation/persistence, cancellation confirmation/reason/details/persistence, pending statuses, search, buy again, seller links and storage recovery; no runtime errors",
   );
 } finally {
   await browser.close();

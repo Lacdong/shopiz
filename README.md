@@ -100,11 +100,21 @@ Responsive layouts target 1440, 1280, 1024, 768 and 375 pixels. Recommendations 
 
 ## My Purchases
 
+- Completed orders show Review, Contact Seller and Buy Again; cancelled orders show Buy Again, View Cancellation Details and Contact Seller. All remaining statuses show disabled Pending, Contact Seller and Cancel Order. The order ID opens the existing Order Details popup.
+- Reviews save a star rating and optional comment locally. Cancellation requires a reason and updates the order status and cancellation details across reloads; it does not issue a real refund or notify a seller.
+
 - `/account/purchases` follows the supplied `user-purchase_.png` and `shopee-user-purchase_.png` references: account sidebar, status tabs, order search, seller/product rows, order totals and action buttons. The interface uses English and Shopiz’s monochrome styling.
 - Checkout now opens a success popup with **View My Purchases**. The header account menu opens the same page. Newly placed orders appear first, map to **To Ship**, survive reloads and show their original product variations, quantities and checkout totals. Three labelled sample orders illustrate Completed and Cancelled states.
 - Status and search use URL parameters. Search matches shop, product and order ID. Order Details shows the merchandise/shipping/voucher breakdown; Buy Again uses current cart stock rules. Seller links open storefronts; messaging shows an availability notice.
 - Shared order storage lives in `src/data/orders.js`. Like the existing demo cart, order history is browser-local and shared across guest/demo account sessions; it is not a backend account history. Storage failures retain orders for the current visit only. Sample history is separate from stored checkout orders.
 - `npm run check:purchases` checks the popup-to-history flow, header links, five responsive layouts, status/search/reload behavior, detail totals, Buy Again, seller links and malformed-storage recovery without screenshots.
+
+## My Account — Profile and Addresses
+
+- `/account/profile` and `/account/addresses` follow the supplied account references with English copy and monochrome styling. Shared navigation lives in `src/components/account/AccountSidebar.jsx`; profile/address pages live in `src/pages/account/`.
+- Profile supports name, masked email/phone with edit dialogs, gender, valid date of birth and JPEG/PNG avatar upload up to 1 MB. Save updates the header name/avatar and account sidebar. Profile contact changes do not alter bundled demo login credentials.
+- Address book supports add/edit, type, one default address, deletion of non-default entries and at most 20 entries. Data is saved per demo user (or guest) under `shopiz-account-v1:<user-id>`; storage failures retain changes for the visit. Checkout continues to use its visit-only address selection/editor.
+- `npm run check:account` covers five responsive sizes, validation, uploads, persistence, header updates, address actions, account isolation and malformed storage without screenshots.
 
 ## Shop storefronts
 

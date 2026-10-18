@@ -1,0 +1,494 @@
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 30px;
+  padding: 28px 24px 65px;
+  color: #222;
+  font-size: 13px;
+}
+.panel {
+  background: #fff;
+  min-width: 0;
+  min-height: 535px;
+  border: 1px solid #eee;
+}
+.heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 25px 30px;
+  border-bottom: 1px solid #eee;
+}
+.heading h1 {
+  font-size: 20px;
+  font-weight: 500;
+  margin: 0;
+}
+.heading p {
+  font-size: 12px;
+  color: #777;
+  line-height: 1.8;
+  margin: 7px 0 0;
+}
+.primary,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border: 1px solid #111;
+  background: #111;
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  min-height: 41px;
+}
+.primary:hover {
+  background: #333;
+}
+.primary:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.secondary {
+  border-color: #ddd;
+  background: #fff;
+  color: #555;
+}
+.secondary:hover {
+  border-color: #999;
+}
+.secondary:disabled {
+  color: #bbb;
+  cursor: default;
+  border-color: #eee;
+}
+.profileBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 205px;
+  padding: 30px 30px 40px;
+  gap: 28px;
+}
+.fields {
+  min-width: 0;
+}
+.row {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  margin: 0 0 27px;
+  min-height: 28px;
+}
+.fieldLabel {
+  text-align: right;
+  color: #888;
+  font-size: 12px;
+}
+.row input:not([type="radio"]) {
+  width: 100%;
+  border: 1px solid #ddd;
+  padding: 12px;
+  font: inherit;
+  font-size: 12px;
+  min-width: 0;
+  background: white;
+}
+.row input:focus,
+.birthday select:focus,
+.modalInput:focus {
+  outline: 1px solid #777;
+}
+.row input[aria-invalid="true"],
+.modalInput[aria-invalid="true"] {
+  border-color: #ab4141;
+}
+.contact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+.contact button,
+.textButton {
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 11px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  color: #555;
+  cursor: pointer;
+  padding: 0;
+}
+.radios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+.radios label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+}
+.radios input,
+.addressType input,
+.defaultCheck input {
+  accent-color: #111;
+}
+.birthday {
+  display: flex;
+  gap: 8px;
+}
+.birthday select {
+  width: 33.333%;
+  min-width: 0;
+  padding: 11px 6px;
+  background: #fff;
+  border: 1px solid #ddd;
+  font: inherit;
+  font-size: 11px;
+  color: #555;
+}
+.photo {
+  text-align: center;
+  border-left: 1px solid #eee;
+  padding-left: 25px;
+  align-self: start;
+  margin-top: 14px;
+  min-width: 0;
+}
+.largeAvatar {
+  height: 100px;
+  width: 100px;
+  border-radius: 50%;
+  background: #f1f1f1;
+  color: #aaa;
+  margin: 5px auto 22px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.largeAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.photo .secondary {
+  padding: 10px 16px;
+}
+.photo > p {
+  font-size: 10px;
+  color: #aaa;
+  line-height: 1.9;
+  margin: 17px 0;
+}
+.photo .error {
+  color: #a43e3e;
+}
+.photo .textButton {
+  font-size: 10px;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+.error {
+  font-size: 11px;
+  color: #a43e3e;
+  line-height: 1.7;
+  margin: 8px 0 0;
+}
+.feedback {
+  font-size: 12px;
+  color: #333;
+  line-height: 1.8;
+  margin: 15px 0;
+}
+.hint {
+  font-size: 10px;
+  color: #999;
+  line-height: 1.8;
+  margin: 13px 0 0;
+}
+.modalLabel {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+.modalInput {
+  width: 100%;
+  border: 1px solid #ddd;
+  padding: 12px;
+  font: inherit;
+  min-width: 0;
+}
+.addressBody {
+  padding: 22px 30px 30px;
+}
+.addressBody > h2 {
+  font-size: 16px;
+  font-weight: 400;
+  margin: 0 0 12px;
+}
+.address {
+  display: flex;
+  justify-content: space-between;
+  gap: 25px;
+  padding: 24px 0;
+  border-bottom: 1px solid #e9e9e9;
+}
+.address:last-of-type {
+  border-bottom: 0;
+}
+.addressInfo {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.address h3 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 400;
+  margin: 0 0 10px;
+}
+.address h3 span {
+  font-size: 12px;
+  color: #888;
+  border-left: 1px solid #ddd;
+  padding-left: 10px;
+  line-height: 1.6;
+}
+.address p {
+  font-size: 12px;
+  color: #999;
+  line-height: 1.8;
+  margin: 0 0 9px;
+}
+.badges {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.badges span {
+  font-size: 10px;
+  border: 1px solid #777;
+  padding: 3px 7px;
+}
+.badges small {
+  font-size: 10px;
+  color: #999;
+}
+.addressActions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 16px;
+  flex-shrink: 0;
+}
+.addressActions > div {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.addressActions > div > button {
+  background: none;
+  border: 0;
+  color: #555;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 0;
+}
+.addressActions .secondary {
+  font-size: 10px;
+  padding: 7px 12px;
+  min-height: 29px;
+}
+.addressType {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  border: 0;
+  padding: 0;
+  margin: 24px 0 20px;
+  font-size: 12px;
+}
+.addressType legend {
+  margin-bottom: 12px;
+  color: #777;
+}
+.addressType label,
+.defaultCheck {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.empty {
+  text-align: center;
+  padding: 55px 16px;
+  color: #888;
+}
+.empty h3 {
+  font-weight: 500;
+  font-size: 17px;
+  color: #444;
+}
+.empty p {
+  font-size: 12px;
+}
+@media (max-width: 1100px) {
+  .page {
+    grid-template-columns: 155px minmax(0, 1fr);
+    gap: 22px;
+  }
+  .profileBody {
+    grid-template-columns: minmax(0, 1fr) 155px;
+    gap: 20px;
+    padding: 28px 22px;
+  }
+  .row {
+    grid-template-columns: 85px minmax(0, 1fr);
+    gap: 12px;
+  }
+  .photo {
+    padding-left: 20px;
+  }
+  .radios {
+    gap: 9px;
+  }
+  .radios label {
+    font-size: 11px;
+  }
+  .heading,
+  .addressBody {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+@media (max-width: 800px) {
+  .page {
+    display: block;
+    padding: 20px 18px 45px;
+  }
+  .profileBody {
+    grid-template-columns: minmax(0, 1fr) 180px;
+  }
+  .row {
+    grid-template-columns: 105px minmax(0, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .page {
+    padding: 20px 12px 40px;
+  }
+  .heading {
+    padding: 20px 18px;
+    gap: 12px;
+  }
+  .heading h1 {
+    font-size: 18px;
+  }
+  .heading p {
+    font-size: 11px;
+  }
+  .heading .primary {
+    font-size: 10px;
+    padding: 10px;
+    gap: 5px;
+    white-space: nowrap;
+  }
+  .profileBody {
+    display: flex;
+    flex-direction: column;
+    padding: 24px 18px;
+    gap: 28px;
+  }
+  .photo {
+    order: -1;
+    border: 0;
+    border-bottom: 1px solid #eee;
+    width: 100%;
+    padding: 0 0 22px;
+    margin: 0;
+  }
+  .largeAvatar {
+    width: 86px;
+    height: 86px;
+    margin-top: 0;
+    margin-bottom: 15px;
+  }
+  .photo > p {
+    margin: 10px 0;
+  }
+  .row {
+    grid-template-columns: 86px minmax(0, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .fieldLabel {
+    font-size: 11px;
+  }
+  .contact {
+    font-size: 11px;
+  }
+  .radios {
+    gap: 8px;
+  }
+  .radios label {
+    font-size: 10px;
+  }
+  .radios input {
+    margin: 0;
+  }
+  .birthday {
+    gap: 5px;
+  }
+  .birthday select {
+    padding: 10px 2px;
+    font-size: 10px;
+  }
+  .addressBody {
+    padding: 20px 18px;
+  }
+  .address {
+    flex-direction: column;
+    gap: 15px;
+    padding: 23px 0;
+  }
+  .addressActions {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .address h3 {
+    font-size: 13px;
+  }
+  .address h3 span {
+    font-size: 11px;
+  }
+  .address p {
+    font-size: 11px;
+  }
+  .panel {
+    min-height: 490px;
+  }
+}

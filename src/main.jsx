@@ -4,14 +4,17 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { AuthProvider } from "./components/auth/AuthProvider";
 import { CartProvider } from "./components/cart/CartProvider";
+import { AccountProvider } from "./components/account/AccountProvider";
 import "./global.css";
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <CartProvider>
-          <App />
-        </CartProvider>
+        <AccountProvider>
+          <CartProvider>
+            <App />
+          </CartProvider>
+        </AccountProvider>
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>,

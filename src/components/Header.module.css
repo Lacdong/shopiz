@@ -85,6 +85,19 @@
 .accountMenu {
   position: relative;
 }
+.accountTrigger > span {
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.accountAvatar {
+  width: 19px;
+  height: 19px;
+  object-fit: cover;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
 .accountTrigger {
   display: flex;
   align-items: center;

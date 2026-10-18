@@ -21,8 +21,10 @@ import {
 import s from "./Header.module.css";
 import { useAuth } from "./auth/AuthProvider";
 import { useCart } from "./cart/CartProvider";
+import { useAccount } from "./account/AccountProvider";
 function AccountMenu({ onNavigate }) {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
+  const { profile } = useAccount();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const trigger = useRef(null);
@@ -66,7 +68,10 @@ function AccountMenu({ onNavigate }) {
         aria-controls={id}
         onClick={() => setOpen((value) => !value)}
       >
-        {user.name}
+        {profile.avatar && (
+          <img className={s.accountAvatar} src={profile.avatar} alt="" />
+        )}
+        <span title={profile.name}>{profile.name}</span>
         <ChevronDown size={12} aria-hidden="true" />
       </button>
       {open && (

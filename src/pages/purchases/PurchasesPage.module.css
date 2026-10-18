@@ -311,6 +311,91 @@
   background: #333;
   color: white;
 }
+.actions .pending,
+.actions .pending:hover {
+  background: #f2f2f2;
+  border-color: #e7e7e7;
+  color: #999;
+  cursor: default;
+}
+.orderDetailsLink {
+  border: 0;
+  background: none;
+  color: #888;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font: inherit;
+  padding: 0;
+  cursor: pointer;
+}
+.actionFeedback {
+  background: #fff;
+  border-left: 2px solid #111;
+  padding: 14px 16px;
+  line-height: 1.8;
+  font-size: 12px;
+}
+.reviewStars {
+  border: 0;
+  padding: 0;
+  margin: 20px 0 25px;
+  display: flex;
+  gap: 12px;
+}
+.reviewStars legend {
+  margin-bottom: 14px;
+  font-size: 12px;
+  color: #666;
+}
+.reviewStars label {
+  display: flex;
+  cursor: pointer;
+  position: relative;
+}
+.reviewStars input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+}
+.reviewStars label:focus-within {
+  outline: 1px solid #555;
+  outline-offset: 4px;
+}
+.formLabel {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 10px;
+}
+.formLabel + textarea,
+.formLabel + select {
+  width: 100%;
+  border: 1px solid #ddd;
+  padding: 12px;
+  font: inherit;
+  font-size: 12px;
+  background: #fff;
+  resize: vertical;
+}
+.actionError {
+  font-size: 12px;
+  color: #a43e3e;
+  line-height: 1.8;
+}
+.cancellationBadge {
+  display: inline-block;
+  padding: 6px 12px;
+  background: #f1f1f1;
+  font-size: 12px;
+}
+.breakdown dd {
+  text-align: right;
+  max-width: 65%;
+  overflow-wrap: anywhere;
+}
 .notice {
   display: flex;
   align-items: center;

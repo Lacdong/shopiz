@@ -1,20 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
-  Bell,
-  UserRound,
-  ClipboardList,
-  Ticket,
-  Coins,
   Search,
   Store,
   MessageCircle,
   Truck,
   PackageOpen,
-  Pencil,
   CheckCircle2,
 } from "lucide-react";
-import { useAuth } from "../../components/auth/AuthProvider";
+import AccountSidebar from "../../components/account/AccountSidebar";
 import { useCart } from "../../components/cart/CartProvider";
 import { products, money } from "../../data/catalog";
 import { getProductDetails } from "../../data/productDetails";
@@ -25,18 +19,20 @@ import {
   orderStatus,
   statusLabel,
   orderStorageKey,
+  updateOrderAction,
 } from "../../data/orders";
 import CheckoutDialog from "../checkout/CheckoutDialog";
 import dialogStyles from "../checkout/CheckoutPage.module.css";
 import s from "./PurchasesPage.module.css";
+import OrderActionDialog from "./OrderActionDialog";
 
 export default function PurchasesPage() {
-  const { user } = useAuth();
   const { addItem } = useCart();
   const [params, setParams] = useSearchParams();
   const [orders, setOrders] = useState(readOrders);
   const [popup, setPopup] = useState(null);
   const [notice, setNotice] = useState("");
+  const [feedback, setFeedback] = useState("");
   const active = orderTabs.some(([id]) => id === params.get("status"))
     ? params.get("status")
     : "all";
@@ -54,7 +50,22 @@ export default function PurchasesPage() {
     else next.delete(key);
     setParams(next, { replace: key === "q" });
   }
-  const all = [...orders, ...sampleOrders];
+  const all = [
+    ...orders,
+    ...sampleOrders.filter(
+      (sample) => !orders.some((order) => order.id === sample.id),
+    ),
+  ];
+  function submitAction(value) {
+    const result = updateOrderAction(popup.order.id, popup.type, value);
+    setPopup(null);
+    setOrders(readOrders());
+    setFeedback(
+      result.success
+        ? `${popup.type === "review" ? "Your review has been saved." : "Your order has been cancelled."}${result.saved ? "" : " Browser storage is unavailable; this change is kept for this visit only."}`
+        : result.error,
+    );
+  }
   const shown = all
     .filter((order) => active === "all" || orderStatus(order) === active)
     .filter((order) => {
@@ -88,38 +99,7 @@ export default function PurchasesPage() {
   }
   return (
     <div className={s.page}>
-      <aside className={s.sidebar} aria-label="Account navigation">
-        <div className={s.profile}>
-          <span className={s.avatar}>
-            <UserRound size={23} />
-          </span>
-          <div>
-            <strong>{user?.name || "Guest Shopper"}</strong>
-            <Link to="/account/profile">
-              <Pencil size={11} />
-              Edit Profile
-            </Link>
-          </div>
-        </div>
-        <nav>
-          {[
-            [Bell, "Notifications", "/notifications"],
-            [UserRound, "My Account", "/account/profile"],
-            [ClipboardList, "My Purchases", "/account/purchases"],
-            [Ticket, "My Vouchers", "/vouchers"],
-            [Coins, "Shopiz Coins", "/info/coins"],
-          ].map(([Icon, label, path]) => (
-            <Link
-              key={path}
-              to={path}
-              aria-current={path === "/account/purchases" ? "page" : undefined}
-            >
-              <Icon size={17} />
-              {label}
-            </Link>
-          ))}
-        </nav>
-      </aside>
+      <AccountSidebar />
       <section className={s.content} aria-label="Purchase history">
         <h1 className={s.srOnly}>My Purchases</h1>
         <nav className={s.tabs} aria-label="Order status">
@@ -160,6 +140,11 @@ export default function PurchasesPage() {
         <p className={s.demoNote}>
           Browser-local demo orders · Sample orders are labelled below.
         </p>
+        {feedback && (
+          <p className={s.actionFeedback} role="status">
+            {feedback}
+          </p>
+        )}
         {shown.length ? (
           shown.map((order) => {
             const groups = order.items.reduce((list, item) => {
@@ -244,7 +229,13 @@ export default function PurchasesPage() {
                 ))}
                 <footer className={s.orderFooter}>
                   <div className={s.meta}>
-                    <span>{order.isSample ? "Sample order" : order.id}</span>
+                    <button
+                      className={s.orderDetailsLink}
+                      aria-label="Order Details"
+                      onClick={() => setPopup({ type: "details", order })}
+                    >
+                      {order.isSample ? `Sample order · ${order.id}` : order.id}
+                    </button>
                     <time dateTime={order.createdAt}>
                       {new Date(order.createdAt).toLocaleDateString("en-GB", {
                         day: "numeric",
@@ -259,29 +250,74 @@ export default function PurchasesPage() {
                   <div className={s.actions}>
                     <span>
                       {orderStatus(order) === "cancelled"
-                        ? "Cancelled in the sample history"
+                        ? order.isSample
+                          ? "Cancelled in the sample history"
+                          : "Cancelled by you"
                         : orderStatus(order) === "completed"
                           ? "Thank you for shopping with Shopiz"
-                          : "Your demo order is awaiting fulfilment"}
+                          : "Awaiting seller confirmation or shipping"}
                     </span>
-                    <button
-                      className={s.primary}
-                      onClick={() => buyAgain(order)}
-                    >
-                      Buy Again
-                    </button>
-                    <button
-                      onClick={() => setPopup({ type: "details", order })}
-                    >
-                      Order Details
-                    </button>
-                    <button
-                      onClick={() =>
-                        setPopup({ type: "chat", shop: groups[0].shop })
-                      }
-                    >
-                      Contact Seller
-                    </button>
+                    {orderStatus(order) === "completed" ? (
+                      <>
+                        <button
+                          className={s.primary}
+                          onClick={() => setPopup({ type: "review", order })}
+                        >
+                          {order.review ? "Edit Review" : "Review"}
+                        </button>
+                        <button
+                          onClick={() =>
+                            setPopup({ type: "chat", shop: groups[0].shop })
+                          }
+                        >
+                          Contact Seller
+                        </button>
+                        <button onClick={() => buyAgain(order)}>
+                          Buy Again
+                        </button>
+                      </>
+                    ) : orderStatus(order) === "cancelled" ? (
+                      <>
+                        <button
+                          className={s.primary}
+                          onClick={() => buyAgain(order)}
+                        >
+                          Buy Again
+                        </button>
+                        <button
+                          onClick={() =>
+                            setPopup({ type: "cancellation", order })
+                          }
+                        >
+                          View Cancellation Details
+                        </button>
+                        <button
+                          onClick={() =>
+                            setPopup({ type: "chat", shop: groups[0].shop })
+                          }
+                        >
+                          Contact Seller
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button className={s.pending} disabled>
+                          Pending
+                        </button>
+                        <button
+                          onClick={() =>
+                            setPopup({ type: "chat", shop: groups[0].shop })
+                          }
+                        >
+                          Contact Seller
+                        </button>
+                        <button
+                          onClick={() => setPopup({ type: "cancel", order })}
+                        >
+                          Cancel Order
+                        </button>
+                      </>
+                    )}
                   </div>
                 </footer>
               </article>
@@ -301,7 +337,16 @@ export default function PurchasesPage() {
           </section>
         )}
       </section>
-      {popup && (
+      {popup && ["review", "cancel", "cancellation"].includes(popup.type) && (
+        <OrderActionDialog
+          key={`${popup.type}-${popup.order.id}`}
+          type={popup.type}
+          order={popup.order}
+          onClose={() => setPopup(null)}
+          onSubmit={submitAction}
+        />
+      )}
+      {popup && ["details", "chat"].includes(popup.type) && (
         <CheckoutDialog
           title={
             popup.type === "details"
