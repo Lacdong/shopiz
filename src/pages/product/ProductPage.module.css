@@ -1,6 +1,29 @@
 .page {
   padding: 20px 0 35px;
 }
+.cartToast {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  padding: 17px 24px;
+  background: #111;
+  color: #fff;
+  border: 1px solid #555;
+  border-radius: 4px;
+  box-shadow: 0 4px 16px #0002;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.cartToast > svg {
+  flex-shrink: 0;
+}
 .breadcrumb {
   display: flex;
   align-items: center;

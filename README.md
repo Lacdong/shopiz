@@ -29,7 +29,7 @@ npm run preview
 
 ## Design and scope
 
-The local `references/marketplace/home.png` guides section order, proportions, two-row categories and six-column desktop density. The original orange design system is overridden by the requested monochrome tokens. Category line icons and original promotional compositions replace proprietary artwork. Product photos are remotely loaded Unsplash images, styled in grayscale; they require internet access. Prices are illustrative USD values. Seller Center, cart, vouchers, informational and social destinations remain simulator placeholder pages. No transactions occur.
+The local `references/marketplace/home.png` guides section order, proportions, two-row categories and six-column desktop density. The original orange design system is overridden by the requested monochrome tokens. Category line icons and original promotional compositions replace proprietary artwork. Product photos are remotely loaded Unsplash images, styled in grayscale; they require internet access. Prices are illustrative USD values. Seller Center, vouchers, informational and social destinations remain simulator placeholder pages. No transactions occur.
 
 Responsive layouts target 1440, 1280, 1024, 768 and 375 pixels. Recommendations use six desktop columns, four at 1024, three at tablet and two on phones. Flash deals scroll horizontally on mobile. Search matches all entered words against product names and categories. Categories without mock inventory display an empty state.
 
@@ -57,6 +57,25 @@ Responsive layouts target 1440, 1280, 1024, 768 and 375 pixels. Recommendations 
 - `src/pages/product/ProductPage.jsx` follows the `product-detail.png` reference: gallery and purchase controls, seller information, specifications, description, ratings, related collection and recommendations.
 - `ProductGallery.jsx` provides thumbnails, detail crops, an accessible native enlargement dialog, share-link copying and visit-only favorites. Crop labels describe the reused product photo rather than claiming separate product angles.
 - `ProductReviews.jsx` provides illustrative reviews, seller replies, photo/rating filters, pagination and helpful toggles.
-- `productData.js` supplies category-specific sample variants, sizes, stock, seller details and review data.
-- Quantity is bounded to the sample stock. Destination and delivery-method selectors update the order preview. Add to Cart and Buy Now open explicit selection previews; cart items are not persisted and no checkout occurs. Seller chat displays an availability notice.
+- `src/data/productDetails.js` supplies category-specific sample variants, sizes, seller details and review data, shared with the cart. The catalog supplies stock.
+- Quantity is bounded to the sample stock. Destination and delivery-method selectors update the Buy Now preview. Add to Cart saves the selected product/variation/size/quantity immediately and shows a non-blocking notification that disappears after three seconds. It opens no dialog and has no Continue browsing button. Use the header cart icon to view the cart. Stock-limit errors appear as notifications. Buy Now remains a preview; seller chat displays an availability notice.
 - `npm run check:product` checks responsive layouts and interactions without screenshots; its default server is `http://127.0.0.1:5173`, overridable with `SHOPIZ_URL`.
+
+## Shopping cart
+
+- `src/components/cart/CartProvider.jsx` shares cart state between product pages, the header badge and `/cart`. `cartUtils.js` validates persisted items against the catalog, merges matching product/variant/size combinations and enforces stock across all variations of a product.
+- `src/pages/cart/` contains the cart page and CSS Module, following the grouped-seller layout in `shopee-cart.png` with monochrome Shopiz styling.
+- The updated cart upper section follows the supplied reference: a white logo/title/search header under the black utility bar, aligned product/variation/price/quantity columns, shop-level selection, shop-offer and voucher rows, and a three-row summary. Coins are visibly unavailable in the simulator. The A LITTLE MORE TO LOVE section retains its existing product grid and load-more behavior.
+- Cart contents persist in this browser under `shopiz-cart-v1`. The cart is shared between guests and mock accounts on the same browser. Only product IDs, selected variations, sizes, quantities and selection flags are stored; prices and stock come from the catalog.
+- Supports selection, select all, quantity changes, individual deletion, deleting selected rows, total/savings calculations and an empty state. Header count includes all item quantities. Standard delivery is free in the cart preview.
+- Checkout shows an explicit summary preview. No payment, order submission or inventory reservation occurs.
+- `npm run check:cart` verifies additions, merging, variant separation, stock limits, persistence, selection, totals, deletion and responsive layouts without screenshots; accepts `SHOPIZ_URL` (default port 5173).
+
+## Voucher popup
+
+- The cart’s Select or enter a code and shop-voucher buttons open `src/pages/cart/VoucherDialog.jsx`, styled with its own CSS Module. The original recommendations section remains unchanged.
+- The modal includes code entry, grouped voucher cards, terms, eligibility notices, selection, Back, Clear selection and Confirm. Applying a typed code selects it inside the dialog; only Confirm updates the cart. Back, Escape and backdrop dismissal discard the draft.
+- `src/data/vouchers.js` defines sample offers and eligibility: `SHOPIZ10` (10% off, minimum $25, maximum $15), `SHOPIZ5` ($5 off, minimum $50), `WELCOME15` (15% off, minimum $100, maximum $25), plus `FREESHIP` and `SHIPPLUS` delivery offers. These demo offers expire December 31, 2026 in Vietnam time.
+- One voucher can be applied at a time, using only selected-item spend. Discounts round to cents, respect caps and re-evaluate after selection/quantity changes. The selected code persists as `shopiz-cart-voucher-v1`, while its discount is always calculated from the current cart. Cart and checkout preview totals include the eligible discount.
+- Standard shipping is already free, so shipping vouchers explicitly report that condition and do not fabricate additional savings. No voucher redemption or usage tracking is sent to a backend.
+- `npm run check:vouchers` verifies coupon rules and the modal flow at all five target sizes without screenshots; supports `SHOPIZ_URL` (default port 5173).

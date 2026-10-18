@@ -1,0 +1,362 @@
+.dialog {
+  width: 600px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100dvh - 48px);
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  color: #111;
+  overflow: hidden;
+  box-shadow: 0 12px 50px #0003;
+}
+.dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+.dialog::backdrop {
+  background: #0006;
+}
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 28px;
+  border-bottom: 1px solid #eee;
+  flex-shrink: 0;
+}
+.header h2 {
+  font-size: 21px;
+  font-weight: 500;
+  letter-spacing: -0.4px;
+  margin: 0;
+}
+.header > a {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #737373;
+}
+.header > button {
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+}
+.body {
+  padding: 24px 28px 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+}
+.codeForm {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  background: #fafafa;
+}
+.codeForm label {
+  font-size: 12px;
+  white-space: nowrap;
+}
+.codeForm input {
+  min-width: 0;
+  flex: 1;
+  width: 0;
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid #d4d4d4;
+  border-radius: 2px;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+.codeForm input[aria-invalid="true"] {
+  border-color: #b42318;
+}
+.codeForm button {
+  min-height: 40px;
+  padding: 10px 18px;
+  background: #111;
+  color: white;
+  border: 1px solid #111;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+.codeForm button:disabled {
+  background: #fff;
+  color: #aaa;
+  border-color: #e5e5e5;
+}
+.error,
+.notice,
+.eligibility {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 11px;
+  line-height: 1.6;
+  padding: 10px 12px;
+  margin: 9px 0 0;
+  background: #f5f5f5;
+}
+.error {
+  color: #b42318;
+}
+.error svg,
+.eligibility svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.notice {
+  color: #555;
+}
+.voucherList > section > h3 {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 20px 0 12px;
+}
+.offer {
+  margin-bottom: 18px;
+}
+.card {
+  display: flex;
+  align-items: stretch;
+  min-height: 126px;
+  border: 1px solid #e5e5e5;
+  box-shadow: 0 2px 5px #00000006;
+  cursor: pointer;
+  background: #fff;
+}
+.selected {
+  border-color: #111;
+}
+.ticketArt {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  flex: 0 0 120px;
+  background: #292929;
+  color: white;
+  padding: 15px 10px;
+  text-align: center;
+  border-right: 1px dashed #aaa;
+}
+.ticketArt:before,
+.ticketArt:after {
+  content: "";
+  position: absolute;
+  right: -6px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: white;
+}
+.ticketArt:before {
+  top: -6px;
+}
+.ticketArt:after {
+  bottom: -6px;
+}
+.ticketArt strong {
+  font-size: 16px;
+  font-style: italic;
+  font-weight: 700;
+  max-width: 85px;
+  line-height: 1.2;
+}
+.ticketArt small {
+  font-size: 8px;
+  letter-spacing: 1.8px;
+}
+.details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  padding: 16px 14px;
+}
+.details > strong {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.details > span {
+  font-size: 10px;
+  color: #737373;
+  line-height: 1.5;
+}
+.details > .code {
+  font-size: 9px;
+  letter-spacing: 0.4px;
+  color: #111;
+  border: 1px solid #ddd;
+  padding: 1px 5px;
+}
+.details > small {
+  font-size: 9px;
+  color: #737373;
+}
+.card > input {
+  align-self: center;
+  margin: 0 17px 0 0;
+  accent-color: #111;
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+}
+.unavailable .ticketArt {
+  background: #d4d4d4;
+  color: #555;
+}
+.unavailable .details {
+  color: #737373;
+}
+.unavailable .card {
+  cursor: default;
+}
+.eligibility {
+  margin-top: 0;
+  font-size: 10px;
+  color: #737373;
+}
+.conditions {
+  border: 1px solid #eee;
+  border-top: 0;
+  padding: 7px 12px;
+  font-size: 9px;
+  color: #737373;
+}
+.conditions summary {
+  cursor: pointer;
+  list-style-position: inside;
+}
+.conditions p {
+  font-size: 10px;
+  line-height: 1.7;
+  margin: 8px 0 2px;
+}
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 28px;
+  border-top: 1px solid #eee;
+  flex-shrink: 0;
+  background: #fff;
+}
+.footer button {
+  min-height: 40px;
+  min-width: 115px;
+  padding: 10px 17px;
+  font-size: 11px;
+  text-transform: uppercase;
+  border: 1px solid #d4d4d4;
+  background: white;
+}
+.footer .clear {
+  margin-right: auto;
+  border: 0;
+  min-width: 0;
+  padding: 6px 0;
+  font-size: 10px;
+  text-transform: none;
+  color: #737373;
+}
+.clear:disabled {
+  color: #bbb;
+}
+.footer .confirm {
+  background: #111;
+  border-color: #111;
+  color: #fff;
+}
+.footer .confirm:disabled {
+  background: #d4d4d4;
+  border-color: #d4d4d4;
+  color: #737373;
+}
+@media (max-width: 540px) {
+  .dialog {
+    max-width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+  }
+  .header {
+    padding: 19px 17px;
+    gap: 8px;
+  }
+  .header h2 {
+    font-size: 18px;
+  }
+  .header > a {
+    font-size: 10px;
+  }
+  .body {
+    padding: 17px 14px 0;
+  }
+  .codeForm {
+    padding: 12px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .codeForm label {
+    flex-basis: 100%;
+    font-size: 11px;
+  }
+  .codeForm button {
+    padding: 10px 15px;
+  }
+  .ticketArt {
+    flex-basis: 84px;
+    padding: 12px 6px;
+  }
+  .ticketArt strong {
+    font-size: 14px;
+    max-width: 66px;
+  }
+  .details {
+    padding: 13px 10px;
+    gap: 5px;
+  }
+  .details > strong {
+    font-size: 11px;
+  }
+  .details > span {
+    font-size: 9px;
+  }
+  .card > input {
+    margin-right: 11px;
+    width: 16px;
+    height: 16px;
+  }
+  .footer {
+    padding: 14px 17px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .footer .clear {
+    flex-basis: 100%;
+    margin-right: 0;
+    text-align: left;
+    min-height: 20px;
+  }
+  .footer .back,
+  .footer .confirm {
+    flex: 1;
+    min-width: 0;
+  }
+  .voucherList > section > h3 {
+    font-size: 13px;
+  }
+}

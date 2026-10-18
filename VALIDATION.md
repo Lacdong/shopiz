@@ -31,4 +31,26 @@ The product catalog, inventory and sold counts are mock data. Product photos loa
 - Read `references/marketplace/product-detail.png`; retained its dense marketplace structure with monochrome Shopiz branding and sample catalog content.
 - Product layouts pass overflow checks at 1440, 1280, 1024, 768 and 375 pixels, including a product with size options.
 - Browser checks pass for thumbnail changes, enlarged-image dialog and Escape handling, favorites, variant/size selections, minimum/maximum stock bounds, delivery destination and method, preview totals, cart/chat notices, review filters and pagination, helpful toggles, product-state reset and the missing-product fallback.
-- No browser runtime errors or screenshots during product validation. Purchase actions remain simulator previews.
+- No browser runtime errors or screenshots during product validation. Add to Cart now persists locally; Buy Now remains a simulator preview.
+
+## Add to Cart and cart page
+
+- Production build succeeds with shared cart state, product feedback, live header count and the dedicated `/cart` page.
+- End-to-end cart checks pass at 1440, 1280, 1024, 768 and 375 pixels without horizontal page overflow or screenshots.
+- Verified initial addition, persistence after reload, merging identical options, separate variants/sizes, header badge, selection and totals, quantity edits, stock limits across all variants, full-stock feedback, checkout preview, individual/bulk deletion, persistent empty state and malformed-storage recovery.
+- Product-page regression checks also pass after the Add to Cart integration. No browser runtime errors were observed.
+
+## Cart upper-section redesign
+
+- Preserved the A LITTLE MORE TO LOVE component, catalog and load-more behavior.
+- Added a cart-specific white header with compact search and retained the black utility navigation; other marketplace routes keep their original header.
+- Restructured seller groups with group selection, a separate variation column, shop-offer/voucher rows and a voucher/coins/checkout summary. Coin redemption remains disabled.
+- Populated-cart checks pass at all five requested widths without page overflow. Group selection, recommendation loading, compact search sizing and existing cart interactions pass without screenshots.
+
+## Voucher popup
+
+- Added a monochrome voucher selector based on the supplied popup image, without changing A LITTLE MORE TO LOVE.
+- Eligibility checks cover selected products, minimum spend, expiry, cent rounding, discount caps and already-free shipping.
+- Browser tests pass at 1440, 1280, 1024, 768 and 375 pixels: popup stays inside the viewport, input receives focus, Escape closes it and body scrolling is restored.
+- Verified invalid and insufficient-spend codes, normalized code input, draft/confirm/cancel, persistence after reload, quantity-driven recalculation and cap, deselection invalidation, checkout total, clearing/removing vouchers and shipping vouchers.
+- No runtime errors or screenshots during voucher validation.

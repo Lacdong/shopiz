@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   ShoppingCart,
@@ -20,10 +20,21 @@ import { ProductGrid } from "../../components/Commerce";
 import Placeholder from "../placeholder/PlaceholderPage";
 import ProductGallery from "./ProductGallery";
 import ProductReviews, { Stars } from "./ProductReviews";
-import { getProductDetails } from "./productData";
+import { getProductDetails } from "../../data/productDetails";
+import { useCart } from "../../components/cart/CartProvider";
 import s from "./ProductPage.module.css";
 
 function ProductDetail({ product: p }) {
+  const { addItem } = useCart();
+  const [cartNotice, setCartNotice] = useState(null);
+  useEffect(() => {
+    if (!cartNotice) return;
+    const timer = setTimeout(
+      () => setCartNotice(null),
+      cartNotice.error ? 5000 : 3000,
+    );
+    return () => clearTimeout(timer);
+  }, [cartNotice]);
   const details = getProductDetails(p);
   const [variant, setVariant] = useState(details.variants[0]);
   const [size, setSize] = useState(details.sizes[0] || "");
@@ -31,7 +42,7 @@ function ProductDetail({ product: p }) {
   const [destination, setDestination] = useState("Ho Chi Minh City");
   const [delivery, setDelivery] = useState("standard");
   const [message, setMessage] = useState("");
-  const [mode, setMode] = useState("cart");
+  const [mode, setMode] = useState("buy");
   const preview = useRef(null);
   const count = Math.max(
     1,
@@ -50,8 +61,30 @@ function ProductDetail({ product: p }) {
     setMode(next);
     preview.current.showModal();
   }
+  function addToCart() {
+    setQuantity(String(count));
+    const result = addItem({ productId: p.id, variant, size, quantity: count });
+    setCartNotice({
+      id: Date.now(),
+      error: !result.added,
+      text: result.added
+        ? `Product added to cart.${result.limited ? " Quantity adjusted to available stock." : ""}`
+        : result.error,
+    });
+  }
   return (
     <div className={s.page}>
+      {cartNotice && (
+        <div
+          key={cartNotice.id}
+          className={s.cartToast}
+          role={cartNotice.error ? "alert" : "status"}
+          aria-atomic="true"
+        >
+          {cartNotice.error ? <ShoppingCart size={21} /> : <Check size={23} />}
+          <span>{cartNotice.text}</span>
+        </div>
+      )}
       <nav className={s.breadcrumb} aria-label="Breadcrumb">
         <Link to="/">Home</Link>
         <ChevronRight size={12} />
@@ -223,7 +256,7 @@ function ProductDetail({ product: p }) {
             </div>
           </dl>
           <div className={s.buyActions}>
-            <button className={s.addToCart} onClick={() => showPreview("cart")}>
+            <button className={s.addToCart} onClick={addToCart}>
               <ShoppingCart size={19} />
               Add to Cart
             </button>
@@ -371,11 +404,7 @@ function ProductDetail({ product: p }) {
           <X size={20} />
         </button>
         <h2 id="preview-heading">
-          {mode === "chat"
-            ? "Chat with the shop"
-            : mode === "cart"
-              ? "Add to Cart · Preview"
-              : "Review your selection"}
+          {mode === "chat" ? "Chat with the shop" : "Review your selection"}
         </h2>
         {mode === "chat" ? (
           <>
@@ -413,14 +442,10 @@ function ProductDetail({ product: p }) {
             </dl>
             <p className={s.demoNote}>
               <PackageCheck size={16} />
-              This is a selection preview. Cart items are not saved and checkout
-              is not available.
+              This is a selection preview. Checkout is not available.
             </p>
           </>
         )}
-        <button className={s.buyNow} onClick={() => preview.current.close()}>
-          Continue browsing
-        </button>
       </dialog>
     </div>
   );

@@ -90,12 +90,20 @@ try {
   await preview.getByText("Cloud · Quantity: 2", { exact: true }).waitFor();
   await preview.getByText("$102.70", { exact: true }).waitFor();
   await preview.getByText("Hanoi", { exact: true }).waitFor();
-  await preview.getByRole("button", { name: "Continue browsing" }).click();
+  await preview.getByRole("button", { name: "Close preview" }).click();
   await page.getByRole("button", { name: "Add to Cart", exact: true }).click();
   await page
-    .getByRole("dialog", { name: "Add to Cart · Preview", exact: true })
+    .getByRole("status")
+    .filter({ hasText: "Product added to cart." })
     .waitFor();
-  await page.keyboard.press("Escape");
+  check(
+    (await page.getByRole("dialog").count()) === 0,
+    "Add to Cart should not open a dialog",
+  );
+  await page
+    .getByRole("status")
+    .filter({ hasText: "Product added to cart." })
+    .waitFor({ state: "detached" });
   await page.getByRole("button", { name: "Chat Now", exact: true }).click();
   await page
     .getByRole("dialog", { name: "Chat with the shop", exact: true })
@@ -154,7 +162,7 @@ try {
     .waitFor();
   check(!errors.length, errors.join("; "));
   console.log(
-    "PASS gallery, zoom/Escape, favorites, variants/sizes, quantity bounds, shipping/total preview, cart/chat notices, reviews/filter/pagination/helpful, product state reset and missing-product fallback; no runtime errors",
+    "PASS gallery, zoom/Escape, favorites, variants/sizes, quantity bounds, shipping/total preview, Add to Cart and chat notice, reviews/filter/pagination/helpful, product state reset and missing-product fallback; no runtime errors",
   );
 } finally {
   await browser.close();

@@ -120,7 +120,7 @@ export function getProductDetails(product) {
   return {
     ...profile,
     sizes,
-    stock: 36,
+    stock: product.stock,
     sku: `SZ-${product.id.padStart(4, "0")}`,
     seller: {
       name: `${profile.brand} Official Store`,

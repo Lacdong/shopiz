@@ -158,6 +158,7 @@ export const products = entries.map(
     price,
     original,
     category,
+    stock: 36,
     discount: Math.round((1 - price / original) * 100),
     rating: index % 3 === 0 ? "4.9" : "4.8",
     sold: [1200, 856, 2300, 647, 1500, 980][index % 6],

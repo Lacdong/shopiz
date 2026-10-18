@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import s from "./Header.module.css";
 import { useAuth } from "./auth/AuthProvider";
+import { useCart } from "./cart/CartProvider";
 export function UtilityNav() {
   const { user, logout } = useAuth();
   return (
@@ -63,7 +64,7 @@ export function UtilityNav() {
     </div>
   );
 }
-export function SearchBar() {
+export function SearchBar({ compact = false }) {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [query, setQuery] = useState(params.get("q") || "");
@@ -88,33 +89,41 @@ export function SearchBar() {
           <Search size={21} />
         </button>
       </form>
-      <div className={s.suggestions}>
-        {[
-          "Wireless Headphones",
-          "Summer Essentials",
-          "Home & Living",
-          "Sneakers",
-          "Skincare",
-          "Under $20",
-        ].map((x) => (
-          <Link
-            key={x}
-            to={`/search?q=${encodeURIComponent(x === "Under $20" ? "" : x)}${x === "Under $20" ? "&max=20" : ""}`}
-          >
-            {x}
-          </Link>
-        ))}
-      </div>
+      {!compact && (
+        <div className={s.suggestions}>
+          {[
+            "Wireless Headphones",
+            "Summer Essentials",
+            "Home & Living",
+            "Sneakers",
+            "Skincare",
+            "Under $20",
+          ].map((x) => (
+            <Link
+              key={x}
+              to={`/search?q=${encodeURIComponent(x === "Under $20" ? "" : x)}${x === "Under $20" ? "&max=20" : ""}`}
+            >
+              {x}
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
-export default function Header() {
+export default function Header({ variant = "marketplace" }) {
+  const isCart = variant === "cart";
+  const { itemCount } = useCart();
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
   return (
-    <header className={s.header}>
+    <header className={`${s.header} ${isCart ? s.cartHeader : ""}`}>
+      <div className={s.utilityBar}>
+        <div className={s.container}>
+          <UtilityNav />
+        </div>
+      </div>
       <div className={s.container}>
-        <UtilityNav />
         <div className={s.main}>
           <Link className={s.logo} to="/" aria-label="Shopiz homepage">
             <ShoppingBag strokeWidth={1.5} />
@@ -122,11 +131,29 @@ export default function Header() {
               shopiz<span className={s.logoDot}>.</span>
             </span>
           </Link>
-          <SearchBar />
-          <Link className={s.cart} to="/cart" aria-label="Shopping cart">
-            <ShoppingCart size={27} />
-            <span>0</span>
-          </Link>
+          {isCart && (
+            <h1 className={s.cartTitle}>
+              Shopping Cart
+              <span
+                aria-live="polite"
+                aria-label={`${itemCount} items in cart`}
+              >
+                ({itemCount})
+              </span>
+            </h1>
+          )}
+          <SearchBar compact={isCart} />
+          {!isCart && (
+            <Link className={s.cart} to="/cart" aria-label="Shopping cart">
+              <ShoppingCart size={27} />
+              <span
+                aria-live="polite"
+                aria-label={`${itemCount} items in cart`}
+              >
+                {itemCount > 99 ? "99+" : itemCount}
+              </span>
+            </Link>
+          )}
           <button
             className={s.menuButton}
             aria-label={open ? "Close navigation" : "Open navigation"}

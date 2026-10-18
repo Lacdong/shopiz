@@ -12,6 +12,7 @@ import MallPage from "./pages/mall/MallPage";
 import LoginPage from "./pages/login/LoginPage";
 import RegisterPage from "./pages/register/RegisterPage";
 import ForgotPasswordPage from "./pages/login/ForgotPasswordPage";
+import CartPage from "./pages/cart/CartPage";
 function ScrollManager() {
   const { pathname, search, hash } = useLocation();
   useEffect(() => {
@@ -46,8 +47,8 @@ export default function App() {
           <Route path="shopiz-mall" element={<MallPage />} />
           <Route path="collection/:name" element={<SearchResultsPage />} />
           <Route path="product/:id" element={<ProductPage />} />
+          <Route path="cart" element={<CartPage />} />
           {[
-            "cart",
             "seller",
             "download",
             "notifications",
