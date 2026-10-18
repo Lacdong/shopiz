@@ -42,6 +42,17 @@
   font-size: 11px;
   color: #737373;
 }
+.checkoutHeader .main {
+  min-height: 88px;
+}
+.backToCart {
+  margin-left: auto;
+  font-size: 11px;
+  color: #737373;
+}
+.backToCart:hover {
+  text-decoration: underline;
+}
 .cartHeader .searchWrap {
   max-width: 620px;
   margin-left: auto;

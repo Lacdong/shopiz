@@ -1,0 +1,891 @@
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 30px 24px 70px;
+  color: #222;
+  font-size: 13px;
+}
+.page button,
+.dialog button {
+  cursor: pointer;
+}
+.page h2 {
+  font-size: 17px;
+  font-weight: 500;
+  margin: 0;
+}
+.primary,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 42px;
+  padding: 11px 25px;
+  border: 1px solid #111;
+  font: inherit;
+  text-decoration: none;
+}
+.primary {
+  background: #111;
+  color: #fff;
+}
+.secondary {
+  background: #fff;
+  color: #333;
+  border-color: #ddd;
+}
+.primary:hover {
+  background: #333;
+}
+.secondary:hover {
+  background: #f6f6f6;
+}
+.addressBlock,
+.shopBlock,
+.voucherBlock,
+.paymentBlock,
+.productHeader {
+  background: #fff;
+  margin-bottom: 16px;
+}
+.addressBlock {
+  padding: 26px 28px;
+  border-top: 3px solid transparent;
+  border-image: repeating-linear-gradient(
+      120deg,
+      #111 0 24px,
+      #fff 24px 34px,
+      #aaa 34px 58px,
+      #fff 58px 68px
+    )
+    3;
+}
+.addressBlock h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+.addressBlock > div {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.addressBlock strong {
+  min-width: 145px;
+}
+.addressBlock strong span {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+}
+.addressBlock p {
+  flex: 1;
+  line-height: 1.7;
+  margin: 0;
+}
+.addressBlock button,
+.shopHeading button,
+.shopVoucher button,
+.delivery button,
+.voucherActions button,
+.paymentHeading button {
+  border: 0;
+  background: none;
+  color: #444;
+  font: inherit;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+.addressBlock button,
+.delivery button,
+.paymentHeading button {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.defaultBadge {
+  border: 1px solid #999;
+  padding: 3px 8px;
+  font-size: 10px;
+  color: #666;
+}
+.productHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 125px 95px 135px;
+  align-items: center;
+  padding: 24px 28px;
+  color: #888;
+}
+.productHeader h2 {
+  color: #222;
+}
+.productHeader > span {
+  text-align: right;
+  font-size: 12px;
+}
+.shopHeading {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 22px 28px;
+  border-bottom: 1px solid #eee;
+}
+.shopHeading > a {
+  font-weight: 600;
+}
+.shopHeading button {
+  margin-left: 10px;
+  padding-left: 20px;
+  border-left: 1px solid #ddd;
+  font-size: 11px;
+}
+.mallBadge {
+  background: #111;
+  color: #fff;
+  padding: 3px 6px;
+  font-size: 9px;
+}
+.orderRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 125px 95px 135px;
+  align-items: center;
+  padding: 24px 28px;
+  gap: 0;
+}
+.orderRow > strong {
+  text-align: right;
+  font-weight: 500;
+}
+.product {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) minmax(95px, 0.7fr);
+  align-items: center;
+  gap: 14px;
+  padding-right: 20px;
+}
+.product img {
+  width: 64px;
+  height: 70px;
+  object-fit: cover;
+  background: #f5f5f5;
+}
+.product > a:nth-child(2) {
+  font-size: 12px;
+  line-height: 1.7;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.product > span {
+  color: #999;
+  font-size: 11px;
+  line-height: 1.7;
+}
+.unitPrice {
+  text-align: right;
+}
+.unitPrice del {
+  display: block;
+  color: #aaa;
+  font-size: 10px;
+  margin-top: 5px;
+}
+.quantity {
+  text-align: right;
+}
+.shopVoucher {
+  border-top: 1px solid #f1f1f1;
+  padding: 15px 28px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+.shopVoucher > span,
+.shopVoucher button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.fulfillment {
+  display: grid;
+  grid-template-columns: 0.9fr 1.3fr;
+  background: #f8f9f9;
+  border-top: 1px dashed #ddd;
+  border-bottom: 1px dashed #ddd;
+}
+.sellerNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 22px 28px;
+  border-right: 1px dashed #ddd;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.sellerNote input {
+  min-width: 0;
+  width: 100%;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid #ddd;
+  font: inherit;
+  margin-top: -8px;
+}
+.delivery {
+  padding: 18px 24px;
+  font-size: 11px;
+}
+.delivery > div {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.delivery > div > span:first-child {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.delivery > div > span:last-child {
+  margin-left: auto;
+}
+.delivery strong {
+  font-size: 11px;
+  font-weight: 500;
+}
+.delivery p {
+  margin: 14px 0 8px;
+  padding-left: 126px;
+  color: #777;
+}
+.delivery small {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: #888;
+  padding-left: 126px;
+}
+.shopTotal {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 24px;
+  padding: 22px 28px;
+  background: #fafbfb;
+  color: #777;
+  font-size: 12px;
+}
+.shopTotal strong {
+  font-size: 20px;
+  font-weight: 500;
+  color: #111;
+}
+.voucherBlock > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 28px;
+}
+.voucherBlock h2,
+.voucherActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.voucherActions button {
+  font-size: 12px;
+}
+.voucherNote {
+  margin: 0;
+  padding: 0 28px 18px;
+  color: #777;
+  font-size: 11px;
+}
+.coins {
+  padding: 22px 28px;
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px dashed #ddd;
+  color: #bbb;
+}
+.coins > span,
+.coins label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.coins small {
+  font-size: 11px;
+}
+.coins input {
+  accent-color: #111;
+}
+.paymentHeading {
+  display: flex;
+  align-items: center;
+  padding: 26px 28px;
+  gap: 30px;
+  border-bottom: 1px solid #eee;
+}
+.paymentHeading h2 {
+  margin-right: auto;
+}
+.paymentHeading > span,
+.paymentHeading button {
+  font-size: 12px;
+}
+.totals {
+  padding: 24px 28px;
+  margin: 0 0 0 auto;
+  width: 390px;
+}
+.totals > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 0 18px;
+  gap: 20px;
+}
+.totals dt {
+  color: #888;
+  font-size: 12px;
+}
+.totals dd {
+  margin: 0;
+}
+.totals .grandTotal {
+  margin: 25px 0 3px;
+}
+.grandTotal dd {
+  font-size: 28px;
+}
+.placeOrder {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 25px;
+  padding: 25px 28px;
+  border-top: 1px dashed #ddd;
+  background: #fafafa;
+}
+.placeOrder p {
+  font-size: 11px;
+  color: #888;
+  line-height: 1.7;
+  margin: 0 0 9px;
+}
+.placeOrder a {
+  text-decoration: underline;
+  color: #333;
+}
+.placeOrder small {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #999;
+  font-size: 10px;
+}
+.placeOrder > .primary {
+  min-width: 205px;
+}
+.warning,
+.fieldError {
+  color: #aa3434;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.page .fieldError {
+  color: #aa3434;
+}
+.success,
+.empty {
+  background: #fff;
+  text-align: center;
+  padding: 65px 28px;
+  max-width: 740px;
+  margin: 0 auto;
+}
+.successIcon {
+  display: block;
+  margin-bottom: 24px;
+}
+.eyebrow {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #888;
+}
+.success h2,
+.empty h2 {
+  font-size: 27px;
+  margin: 14px 0;
+}
+.success > p,
+.empty > p {
+  color: #888;
+  line-height: 1.8;
+  max-width: 480px;
+  margin: 15px auto 25px;
+}
+.orderId {
+  display: block;
+  letter-spacing: 1px;
+  font-size: 12px;
+}
+.success dl {
+  max-width: 400px;
+  margin: 30px auto;
+  text-align: left;
+  border-block: 1px solid #eee;
+  padding: 18px 0;
+}
+.success dl > div {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  gap: 20px;
+}
+.success dt {
+  color: #888;
+}
+.success dd {
+  margin: 0;
+}
+.successActions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+.empty > svg {
+  margin-bottom: 15px;
+}
+.dialog {
+  width: min(620px, calc(100% - 32px));
+  max-height: calc(100dvh - 48px);
+  padding: 0;
+  border: 0;
+  color: #222;
+  box-shadow: 0 20px 70px #0003;
+  font-family: inherit;
+  font-size: 13px;
+}
+.dialog::backdrop {
+  background: #0006;
+}
+.dialog > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 25px 28px;
+  border-bottom: 1px solid #eee;
+  gap: 15px;
+}
+.dialog > header h2 {
+  font-size: 19px;
+  font-weight: 500;
+  margin: 0;
+}
+.dialog > header button {
+  border: 0;
+  background: none;
+  padding: 4px;
+}
+.dialogBody {
+  padding: 24px 28px;
+}
+.muted {
+  color: #888;
+  line-height: 1.8;
+  margin: 0 0 20px;
+}
+.dialogFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 18px 28px;
+  border-top: 1px solid #eee;
+  background: #fff;
+  position: sticky;
+  bottom: 0;
+}
+.addressFields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px 16px;
+}
+.addressFields label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+}
+.addressFields input {
+  width: 100%;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #ddd;
+  font: inherit;
+  box-sizing: border-box;
+}
+.addressFields input:focus {
+  outline: 1px solid #111;
+}
+.addressFields .wideField {
+  grid-column: 1/-1;
+}
+.addressChoice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border: 1px solid #e5e5e5;
+  padding: 18px;
+  margin-bottom: 12px;
+}
+.selectedChoice {
+  border-color: #111 !important;
+}
+.addressChoice input,
+.methodChoice input {
+  accent-color: #111;
+  margin-top: 3px;
+}
+.addressChoice > div {
+  flex: 1;
+  min-width: 0;
+}
+.addressChoice p {
+  font-size: 12px;
+  line-height: 1.7;
+  color: #888;
+  margin: 8px 0;
+}
+.addressChoice small {
+  color: #888;
+}
+.addressChoice button,
+.newAddress {
+  border: 0;
+  background: none;
+  text-decoration: underline;
+  font: inherit;
+}
+.addressChoice > label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+.addressChoice > label > span {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  line-height: 1.7;
+}
+.addressChoice strong small {
+  margin-left: 10px;
+  font-weight: 400;
+}
+.addressChoice > label > span > span {
+  font-size: 12px;
+  color: #888;
+}
+.addressChoice em {
+  font-style: normal;
+  font-size: 10px;
+  color: #888;
+}
+.addressFields label {
+  margin-bottom: 8px;
+}
+.newAddress {
+  padding: 12px 0;
+}
+.methodChoice {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 20px 16px;
+  border: 1px solid #e5e5e5;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+.methodChoice > span {
+  flex: 1;
+}
+.methodChoice strong {
+  font-size: 12px;
+  font-weight: 500;
+}
+.methodChoice small {
+  display: block;
+  margin-top: 8px;
+  color: #888;
+  line-height: 1.6;
+  font-size: 11px;
+}
+.unavailable {
+  opacity: 0.45;
+  cursor: default;
+}
+@media (max-width: 1050px) {
+  .product {
+    grid-template-columns: 54px minmax(0, 1fr);
+    gap: 8px 12px;
+  }
+  .product img {
+    width: 54px;
+    height: 62px;
+  }
+  .product > a:first-child {
+    grid-row: 1/3;
+  }
+  .product > span {
+    grid-column: 2;
+  }
+  .productHeader,
+  .orderRow {
+    grid-template-columns: minmax(0, 1fr) 95px 70px 105px;
+  }
+  .fulfillment {
+    grid-template-columns: 1fr;
+  }
+  .sellerNote {
+    border-right: 0;
+    border-bottom: 1px dashed #ddd;
+  }
+  .delivery p,
+  .delivery small {
+    padding-left: 0;
+  }
+  .addressBlock > div {
+    flex-wrap: wrap;
+  }
+  .addressBlock p {
+    min-width: 50%;
+  }
+}
+@media (max-width: 600px) {
+  .page {
+    padding: 18px 12px 40px;
+    font-size: 12px;
+  }
+  .addressBlock {
+    padding: 20px 16px;
+  }
+  .addressBlock h2 {
+    font-size: 15px;
+    margin-bottom: 18px;
+  }
+  .addressBlock > div {
+    gap: 12px;
+  }
+  .addressBlock strong {
+    width: 100%;
+  }
+  .addressBlock strong span {
+    display: inline;
+    margin-left: 12px;
+  }
+  .addressBlock p {
+    flex-basis: 100%;
+    font-size: 12px;
+  }
+  .addressBlock button {
+    margin-left: auto;
+    font-size: 11px;
+  }
+  .productHeader {
+    padding: 18px 16px;
+    display: block;
+  }
+  .productHeader h2 {
+    font-size: 15px;
+  }
+  .productHeader > span {
+    display: none;
+  }
+  .shopHeading {
+    padding: 18px 16px;
+  }
+  .shopHeading button {
+    margin-left: auto;
+    padding-left: 12px;
+    font-size: 10px;
+  }
+  .orderRow {
+    padding: 18px 16px;
+    grid-template-columns: 1fr auto;
+    gap: 14px;
+  }
+  .product {
+    grid-column: 1/-1;
+    padding-right: 0;
+    grid-template-columns: 54px 1fr;
+  }
+  .unitPrice {
+    text-align: left;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .unitPrice del {
+    margin: 0;
+  }
+  .quantity {
+    text-align: left;
+    grid-column: 1;
+    font-size: 11px;
+    color: #888;
+  }
+  .quantity:before {
+    content: "Quantity: ";
+  }
+  .orderRow > strong {
+    grid-column: 2;
+    grid-row: 2/4;
+    align-self: center;
+  }
+  .shopVoucher {
+    padding: 15px 16px;
+    font-size: 11px;
+  }
+  .sellerNote {
+    padding: 20px 16px;
+    gap: 10px;
+    align-items: center;
+  }
+  .sellerNote input {
+    margin: 0;
+    font-size: 11px;
+  }
+  .delivery {
+    padding: 18px 16px;
+  }
+  .delivery > div {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .delivery > div > span:first-child {
+    flex-basis: 100%;
+  }
+  .delivery p {
+    line-height: 1.8;
+  }
+  .delivery small {
+    font-size: 9px;
+    line-height: 1.6;
+  }
+  .shopTotal {
+    padding: 20px 16px;
+    gap: 12px;
+    font-size: 10px;
+  }
+  .shopTotal strong {
+    font-size: 19px;
+    white-space: nowrap;
+  }
+  .voucherBlock > div:first-child {
+    padding: 20px 16px;
+    gap: 10px;
+  }
+  .voucherBlock h2 {
+    font-size: 14px;
+    gap: 7px;
+  }
+  .voucherActions {
+    gap: 5px;
+  }
+  .voucherActions button {
+    font-size: 11px;
+  }
+  .voucherNote {
+    padding: 0 16px 16px;
+  }
+  .coins {
+    padding: 20px 16px;
+    gap: 10px;
+  }
+  .coins small {
+    font-size: 9px;
+    max-width: 95px;
+  }
+  .coins > span {
+    gap: 7px;
+    font-size: 11px;
+  }
+  .paymentHeading {
+    padding: 20px 16px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .paymentHeading h2 {
+    font-size: 15px;
+    flex-basis: 100%;
+  }
+  .paymentHeading button {
+    margin-left: auto;
+    font-size: 11px;
+  }
+  .totals {
+    width: 100%;
+    padding: 24px 16px;
+    box-sizing: border-box;
+  }
+  .placeOrder {
+    padding: 20px 16px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 20px;
+  }
+  .placeOrder small {
+    line-height: 1.7;
+    align-items: flex-start;
+  }
+  .placeOrder small svg {
+    flex-shrink: 0;
+  }
+  .success,
+  .empty {
+    padding: 40px 18px;
+  }
+  .success h2,
+  .empty h2 {
+    font-size: 23px;
+  }
+  .successActions {
+    flex-direction: column;
+  }
+  .dialog > header,
+  .dialogBody {
+    padding: 20px;
+  }
+  .dialog > header h2 {
+    font-size: 17px;
+  }
+  .dialogFooter {
+    padding: 16px;
+    gap: 8px;
+  }
+  .dialogFooter button {
+    flex: 1;
+    padding: 11px;
+    font-size: 12px;
+  }
+  .addressFields {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .addressChoice {
+    padding: 14px;
+    gap: 9px;
+  }
+  .addressChoice button {
+    font-size: 11px;
+  }
+  .methodChoice {
+    padding: 16px 12px;
+  }
+}

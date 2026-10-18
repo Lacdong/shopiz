@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   ChevronRight,
@@ -147,7 +147,6 @@ export default function CartPage() {
   const {
     lines,
     selectedCount,
-    subtotal,
     savings,
     appliedVoucher,
     voucherEligibility,
@@ -159,9 +158,8 @@ export default function CartPage() {
     removeSelected,
     selectItems,
   } = useCart();
-  const [checkoutNotice, setCheckoutNotice] = useState(false);
+  const navigate = useNavigate();
   const [voucherOpen, setVoucherOpen] = useState(false);
-  const preview = useRef(null);
   const selected = lines.filter((line) => line.selected);
   const all = lines.length > 0 && selected.length === lines.length;
   const some = selected.length > 0;
@@ -373,10 +371,7 @@ export default function CartPage() {
                 <button
                   className={s.checkout}
                   disabled={!some}
-                  onClick={() => {
-                    setCheckoutNotice(true);
-                    preview.current.showModal();
-                  }}
+                  onClick={() => navigate("/checkout")}
                 >
                   Checkout ({selectedCount})
                 </button>
@@ -390,58 +385,6 @@ export default function CartPage() {
         subtitle="Everyday favorites for your cart"
       />
       {voucherOpen && <VoucherDialog onClose={() => setVoucherOpen(false)} />}
-      <dialog
-        ref={preview}
-        className={s.checkoutDialog}
-        aria-labelledby="checkout-heading"
-        onClick={(e) => {
-          if (e.target === e.currentTarget) preview.current.close();
-        }}
-      >
-        <button
-          className={s.close}
-          aria-label="Close checkout preview"
-          onClick={() => preview.current.close()}
-        >
-          <X size={20} />
-        </button>
-        <h2 id="checkout-heading">Checkout preview</h2>
-        {checkoutNotice && (
-          <p className={s.demoNotice}>
-            Your cart is ready. Checkout and payments are not available in this
-            simulator. Your items will stay in your cart.
-          </p>
-        )}
-        <div className={s.previewItems}>
-          {selected.map((line) => (
-            <div key={line.id}>
-              <span>
-                {line.product.title}
-                <small>
-                  {line.variant}
-                  {line.size ? ` · ${line.size}` : ""} · Qty: {line.quantity}
-                </small>
-              </span>
-              <strong>{money(line.product.price * line.quantity)}</strong>
-            </div>
-          ))}
-        </div>
-        {voucherDiscount > 0 && (
-          <div className={s.previewDiscount}>
-            <span>Subtotal: {money(subtotal)}</span>
-            <span>
-              {appliedVoucher.code}: −{money(voucherDiscount)}
-            </span>
-          </div>
-        )}
-        <div className={s.previewTotal}>
-          <span>Total · {selectedCount} items</span>
-          <strong>{money(total)}</strong>
-        </div>
-        <button className={s.checkout} onClick={() => preview.current.close()}>
-          Back to cart
-        </button>
-      </dialog>
     </div>
   );
 }

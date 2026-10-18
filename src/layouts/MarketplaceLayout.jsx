@@ -7,7 +7,15 @@ export default function MarketplaceLayout() {
   const { pathname } = useLocation();
   return (
     <>
-      <Header variant={pathname === "/cart" ? "cart" : "marketplace"} />
+      <Header
+        variant={
+          pathname === "/checkout"
+            ? "checkout"
+            : pathname === "/cart"
+              ? "cart"
+              : "marketplace"
+        }
+      />
       <main className={s.main}>
         <Outlet />
       </main>

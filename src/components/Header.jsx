@@ -115,11 +115,15 @@ export function SearchBar({ compact = false }) {
 }
 export default function Header({ variant = "marketplace" }) {
   const isCart = variant === "cart";
+  const isCheckout = variant === "checkout";
+  const isCompact = isCart || isCheckout;
   const { itemCount } = useCart();
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
   return (
-    <header className={`${s.header} ${isCart ? s.cartHeader : ""}`}>
+    <header
+      className={`${s.header} ${isCompact ? s.cartHeader : ""} ${isCheckout ? s.checkoutHeader : ""}`}
+    >
       <div className={s.utilityBar}>
         <div className={s.container}>
           <UtilityNav />
@@ -133,19 +137,26 @@ export default function Header({ variant = "marketplace" }) {
               shopiz<span className={s.logoDot}>.</span>
             </span>
           </Link>
-          {isCart && (
+          {isCompact && (
             <h1 className={s.cartTitle}>
-              Shopping Cart
-              <span
-                aria-live="polite"
-                aria-label={`${itemCount} items in cart`}
-              >
-                ({itemCount})
-              </span>
+              {isCheckout ? "Checkout" : "Shopping Cart"}
+              {isCart && (
+                <span
+                  aria-live="polite"
+                  aria-label={`${itemCount} items in cart`}
+                >
+                  ({itemCount})
+                </span>
+              )}
             </h1>
           )}
-          <SearchBar compact={isCart} />
-          {!isCart && (
+          {!isCheckout && <SearchBar compact={isCart} />}
+          {isCheckout && (
+            <Link className={s.backToCart} to="/cart">
+              Back to cart
+            </Link>
+          )}
+          {!isCompact && (
             <Link className={s.cart} to="/cart" aria-label="Shopping cart">
               <ShoppingCart size={27} />
               <span

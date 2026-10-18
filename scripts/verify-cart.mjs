@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import assert from "node:assert/strict";
 const browser = await chromium.launch({ channel: "chrome", headless: true });
 const page = await browser.newPage();
 const base = process.env.SHOPIZ_URL || "http://127.0.0.1:5173";
@@ -79,14 +80,12 @@ try {
     (await page.getByRole("article").count()) === 3,
     "Different product/size not separated",
   );
-  const recommendations = page
-    .locator("section")
-    .filter({
-      has: page.getByRole("heading", {
-        name: "A LITTLE MORE TO LOVE",
-        exact: true,
-      }),
-    });
+  const recommendations = page.locator("section").filter({
+    has: page.getByRole("heading", {
+      name: "A LITTLE MORE TO LOVE",
+      exact: true,
+    }),
+  });
   check(
     (await recommendations.locator('a[href^="/product/"]').count()) === 12,
     "Cart recommendations changed",
@@ -170,15 +169,12 @@ try {
   await cloudAgain.getByRole("spinbutton").blur();
   await total("$227.70");
   await page.getByRole("button", { name: "Checkout (5)", exact: true }).click();
-  await page
-    .getByRole("dialog", { name: "Checkout preview", exact: true })
-    .waitFor();
-  await page
-    .getByRole("dialog")
-    .getByText("$227.70", { exact: true })
-    .last()
-    .waitFor();
-  await page.getByRole("button", { name: "Back to cart", exact: true }).click();
+  await page.waitForURL("**/checkout");
+  assert.equal(
+    await page.getByTestId("checkout-total").textContent(),
+    "$227.70",
+  );
+  await page.getByRole("link", { name: "Back to cart", exact: true }).click();
   await cloudAgain.getByRole("button", { name: /Remove / }).click();
   await total("$127.90");
   await page
@@ -218,7 +214,7 @@ try {
     "PASS white cart header, shop selection, compact search and unchanged recommendation cards/load more",
   );
   console.log(
-    "PASS Add to Cart, persistence, duplicate merge, variants/sizes, badge, selection/totals, quantity and shared stock caps, checkout preview, single/bulk delete and corrupt-storage recovery; no runtime errors",
+    "PASS Add to Cart, persistence, duplicate merge, variants/sizes, badge, selection/totals, quantity and shared stock caps, checkout navigation/totals, single/bulk delete and corrupt-storage recovery; no runtime errors",
   );
 } finally {
   await browser.close();

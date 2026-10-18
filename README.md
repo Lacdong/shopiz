@@ -68,7 +68,7 @@ Responsive layouts target 1440, 1280, 1024, 768 and 375 pixels. Recommendations 
 - The updated cart upper section follows the supplied reference: a white logo/title/search header under the black utility bar, aligned product/variation/price/quantity columns, shop-level selection, shop-offer and voucher rows, and a three-row summary. Coins are visibly unavailable in the simulator. The A LITTLE MORE TO LOVE section retains its existing product grid and load-more behavior.
 - Cart contents persist in this browser under `shopiz-cart-v1`. The cart is shared between guests and mock accounts on the same browser. Only product IDs, selected variations, sizes, quantities and selection flags are stored; prices and stock come from the catalog.
 - Supports selection, select all, quantity changes, individual deletion, deleting selected rows, total/savings calculations and an empty state. Header count includes all item quantities. Standard delivery is free in the cart preview.
-- Checkout shows an explicit summary preview. No payment, order submission or inventory reservation occurs.
+- Checkout opens `/checkout` with the selected products grouped by shop, delivery address, seller notes, shipping options, voucher and payment summary.
 - `npm run check:cart` verifies additions, merging, variant separation, stock limits, persistence, selection, totals, deletion and responsive layouts without screenshots; accepts `SHOPIZ_URL` (default port 5173).
 
 ## Voucher popup
@@ -76,7 +76,7 @@ Responsive layouts target 1440, 1280, 1024, 768 and 375 pixels. Recommendations 
 - The cart’s Select or enter a code and shop-voucher buttons open `src/pages/cart/VoucherDialog.jsx`, styled with its own CSS Module. The original recommendations section remains unchanged.
 - The modal includes code entry, grouped voucher cards, terms, eligibility notices, selection, Back, Clear selection and Confirm. Applying a typed code selects it inside the dialog; only Confirm updates the cart. Back, Escape and backdrop dismissal discard the draft.
 - `src/data/vouchers.js` defines sample offers and eligibility: `SHOPIZ10` (10% off, minimum $25, maximum $15), `SHOPIZ5` ($5 off, minimum $50), `WELCOME15` (15% off, minimum $100, maximum $25), plus `FREESHIP` and `SHIPPLUS` delivery offers. These demo offers expire December 31, 2026 in Vietnam time.
-- One voucher can be applied at a time, using only selected-item spend. Discounts round to cents, respect caps and re-evaluate after selection/quantity changes. The selected code persists as `shopiz-cart-voucher-v1`, while its discount is always calculated from the current cart. Cart and checkout preview totals include the eligible discount.
+- One voucher can be applied at a time, using only selected-item spend. Discounts round to cents, respect caps and re-evaluate after selection/quantity changes. The selected code persists as `shopiz-cart-voucher-v1`, while its discount is always calculated from the current cart. Cart and checkout totals include the eligible discount.
 - Standard shipping is already free, so shipping vouchers explicitly report that condition and do not fabricate additional savings. No voucher redemption or usage tracking is sent to a backend.
 - `npm run check:vouchers` verifies coupon rules and the modal flow at all five target sizes without screenshots; supports `SHOPIZ_URL` (default port 5173).
 
@@ -89,6 +89,14 @@ Responsive layouts target 1440, 1280, 1024, 768 and 375 pixels. Recommendations 
 - Query, filters, sort and pagination are URL parameters. Changing a filter or sort resets pagination. Active filters can be removed individually or cleared. The header input follows query changes during browser navigation.
 - Related-shop links open the matching `/shop/:shopId` storefront based on the same seller metadata as product detail and cart pages.
 - `npm run check:search` verifies layout, combined filtering, sorting, pagination, invalid ranges, empty states, URL persistence, navigation and mobile filters without screenshots; accepts `SHOPIZ_URL` (default port 5173).
+
+## Checkout
+
+- `/checkout` follows `references/marketplace/checkout.png` using Shopiz’s monochrome theme. Only selected cart items appear, grouped by their seller.
+- Page files and mock address/shipping/payment data live in `src/pages/checkout/`. Delivery address selection/editing validates required fields and phone format; address edits and seller notes last only for the current checkout visit.
+- Shipping is selected per shop: standard delivery is free; express delivery costs $2.90 per shop. Eligible shipping vouchers reduce the actual shipping total. Merchandise vouchers retain their existing thresholds and caps.
+- Cash on delivery and Demo wallet are simulated choices. Place demo order displays a receipt, clears the applied voucher and removes only the ordered lines from the cart. It prevents duplicate submissions and stores up to 20 mock order summaries under `shopiz-demo-orders-v1`, excluding delivery addresses, phone numbers and seller notes. No payment, shipment, seller notification or backend order is created.
+- Empty selection routes back to the cart. `npm run check:checkout` verifies layout at five sizes, address validation, shipping/voucher totals, payment choices, duplicate submission protection and preservation of unselected products without screenshots.
 
 ## Shop storefronts
 

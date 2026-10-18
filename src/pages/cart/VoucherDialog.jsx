@@ -6,7 +6,7 @@ import { money } from "../../data/catalog";
 import { useCart } from "../../components/cart/CartProvider";
 import s from "./VoucherDialog.module.css";
 
-export default function VoucherDialog({ onClose }) {
+export default function VoucherDialog({ onClose, shippingFee = 0 }) {
   const { subtotal, selectedCount, appliedVoucher, applyVoucher } = useCart();
   const dialog = useRef(null);
   const input = useRef(null);
@@ -15,7 +15,11 @@ export default function VoucherDialog({ onClose }) {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const status = draft
-    ? voucherStatus(findVoucher(draft), { subtotal, selectedCount })
+    ? voucherStatus(findVoucher(draft), {
+        subtotal,
+        selectedCount,
+        shippingFee,
+      })
     : null;
   useEffect(() => {
     const node = dialog.current;
@@ -35,7 +39,11 @@ export default function VoucherDialog({ onClose }) {
   function enterCode(e) {
     e.preventDefault();
     const voucher = findVoucher(code);
-    const check = voucherStatus(voucher, { subtotal, selectedCount });
+    const check = voucherStatus(voucher, {
+      subtotal,
+      selectedCount,
+      shippingFee,
+    });
     setMessage("");
     if (!check.eligible) {
       setError(check.reason);
@@ -46,7 +54,7 @@ export default function VoucherDialog({ onClose }) {
     setMessage(`${voucher.code} selected. Confirm to apply it to your cart.`);
   }
   function confirm() {
-    const result = applyVoucher(draft);
+    const result = applyVoucher(draft, { shippingFee });
     if (result.success) close();
     else setError(result.error);
   }
@@ -127,6 +135,7 @@ export default function VoucherDialog({ onClose }) {
                   const eligibility = voucherStatus(v, {
                     subtotal,
                     selectedCount,
+                    shippingFee,
                   });
                   return (
                     <div

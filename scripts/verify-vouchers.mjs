@@ -176,11 +176,16 @@ try {
   await page.getByRole("article").getByRole("spinbutton").blur();
   await total("$184.60");
   await page.getByRole("button", { name: "Checkout (4)", exact: true }).click();
-  await page
-    .getByRole("dialog", { name: "Checkout preview" })
-    .getByText("SHOPIZ10: −$15.00", { exact: true })
-    .waitFor();
-  await page.getByRole("button", { name: "Back to cart", exact: true }).click();
+  await page.waitForURL("**/checkout");
+  assert.equal(
+    await page.getByTestId("checkout-discount").textContent(),
+    "−$15.00",
+  );
+  assert.equal(
+    await page.getByTestId("checkout-total").textContent(),
+    "$184.60",
+  );
+  await page.getByRole("link", { name: "Back to cart", exact: true }).click();
   await page
     .getByRole("checkbox", { name: "Select all products", exact: true })
     .uncheck();

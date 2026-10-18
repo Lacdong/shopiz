@@ -124,7 +124,7 @@ export function CartProvider({ children }) {
     0,
     Math.round((subtotal - voucherDiscount) * 100) / 100,
   );
-  function applyVoucher(code) {
+  function applyVoucher(code, { shippingFee = 0 } = {}) {
     if (!code) {
       setVoucherCode(null);
       try {
@@ -135,7 +135,11 @@ export function CartProvider({ children }) {
       return { success: true };
     }
     const voucher = findVoucher(code);
-    const status = voucherStatus(voucher, { subtotal, selectedCount });
+    const status = voucherStatus(voucher, {
+      subtotal,
+      selectedCount,
+      shippingFee,
+    });
     if (!status.eligible) return { success: false, error: status.reason };
     setVoucherCode(voucher.code);
     try {
@@ -144,6 +148,21 @@ export function CartProvider({ children }) {
       setStorageError(true);
     }
     return { success: true };
+  }
+  function completeCheckout(expected) {
+    if (!expected.length) return false;
+    const valid = expected.every((line) =>
+      current.current.some(
+        (item) =>
+          lineId(item) === line.id &&
+          item.selected &&
+          item.quantity === line.quantity,
+      ),
+    );
+    if (!valid) return false;
+    const ids = new Set(expected.map((line) => line.id));
+    commit(current.current.filter((item) => !ids.has(lineId(item))));
+    return true;
   }
   return (
     <CartContext.Provider
@@ -158,6 +177,7 @@ export function CartProvider({ children }) {
         voucherDiscount,
         total,
         applyVoucher,
+        completeCheckout,
         storageError,
         addItem,
         setQuantity,

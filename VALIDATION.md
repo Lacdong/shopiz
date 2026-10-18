@@ -16,7 +16,7 @@ Start `npm run dev`, then run `npm run check:ui` in a second terminal. The check
 
 ## Limitations
 
-The product catalog, inventory and sold counts are mock data. Product photos load from Unsplash and require network access. Unimplemented pages use explicit placeholders. Authentication forms are interactive frontend previews without account services. No backend, checkout, payments, shipping integration or production Shopee API is present. No pixel-perfect similarity score is claimed.
+The product catalog, inventory and sold counts are mock data. Product photos load from Unsplash and require network access. Unimplemented pages use explicit placeholders. Authentication forms are interactive frontend previews without account services. Checkout simulates browser-local orders; no backend, real payments, shipping integration or production Shopee API is present. No pixel-perfect similarity score is claimed.
 
 ## Authentication and page-folder refactor
 
@@ -68,3 +68,10 @@ The product catalog, inventory and sold counts are mock data. Product photos loa
 - All three storefronts and their catalog tabs pass overflow checks at 1440, 1280, 1024, 768 and 375 pixels.
 - Verified following/unfollowing, persistence after reload and separation across shops; chat availability/Escape; tab navigation; scoped search and browser Back synchronization; category reload persistence; price/latest/sales sorting; six-item pagination; and the missing-shop fallback.
 - Search, product-detail and cart seller links were checked end to end. Store product links reach product detail pages. No screenshots or runtime errors during shop validation.
+
+## Checkout
+
+- Implemented `checkout.png` as `/checkout` with a compact checkout header, delivery address, seller groups, notes, shipping, voucher, payment and order summary. Cart Checkout now opens this page.
+- Build, cart, voucher and checkout checks pass. Layout and address-dialog bounds were checked at 1440, 1280, 1024, 768 and 375 pixels without screenshots.
+- Verified selected products only, address editing and required-name validation, per-shop express/standard shipping, shipping voucher recalculation, payment confirmation/cancel, duplicate submission protection, receipt totals and persistence of unselected cart products.
+- Mock order summaries exclude recipient address/phone and seller notes. Refreshing checkout after completion shows the empty-selection state and creates no duplicate order. No real payment or backend order is sent.
