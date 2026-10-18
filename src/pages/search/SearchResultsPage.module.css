@@ -1,0 +1,9 @@
+.routePage {
+  composes: routePage from "../../styles/Page.module.css";
+}
+.back {
+  composes: back from "../../styles/Page.module.css";
+}
+.muted {
+  composes: muted from "../../styles/Page.module.css";
+}

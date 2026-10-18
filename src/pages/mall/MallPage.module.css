@@ -1,0 +1,223 @@
+.mallHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin: 20px 0;
+}
+
+.mallHeading h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 25px;
+  margin: 0;
+  letter-spacing: -0.7px;
+}
+
+.mallHeading > span {
+  font-size: 12px;
+  color: #737373;
+}
+.mallShortcuts {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+  padding: 24px;
+  background: #fff;
+}
+.mallShortcuts > a {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 12px;
+  text-align: center;
+}
+.mallShortcuts > a > span {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #ddd;
+  border-radius: 16px;
+}
+.mallShortcuts > a:hover > span {
+  background: #f5f5f5;
+}
+.offerBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background: #eae9e6;
+  padding: 23px 30px;
+  margin: 20px 0;
+}
+.offerBanner h2 {
+  font-size: 24px;
+  letter-spacing: -0.7px;
+  margin: 10px 0;
+}
+.offerBanner p {
+  font-size: 11px;
+  color: #555;
+  margin: 0;
+}
+.offerBanner > a {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: #111;
+  color: white;
+  padding: 12px 18px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.brands {
+  margin-top: 20px;
+  background: white;
+  scroll-margin-top: 20px;
+}
+.sectionHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 22px;
+}
+.sectionHeading h2 {
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+.sectionHeading button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  font-size: 11px;
+  padding: 8px;
+}
+.brandGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.brandGrid > button {
+  min-width: 0;
+  background: #fafafa;
+  border: 1px solid #e5e5e5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 15px;
+  gap: 15px;
+  min-height: 175px;
+}
+.brandGrid .selectedBrand {
+  border-color: #111;
+  background: #eee;
+  box-shadow: inset 0 -2px #111;
+}
+.brandGrid strong {
+  font-size: 24px;
+  letter-spacing: 2px;
+}
+.brandGrid .serif {
+  font-family: Georgia, serif;
+  font-size: 36px;
+  letter-spacing: -1px;
+  font-weight: 400;
+}
+.brandGrid span {
+  font-size: 11px;
+  color: #737373;
+}
+.brandGrid small {
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mallAbout {
+  margin-top: 30px;
+  padding: 26px;
+  background: #fff;
+}
+.mallAbout h2 {
+  font-size: 13px;
+  letter-spacing: 0.5px;
+}
+.mallAbout p {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #737373;
+}
+.mallAbout a {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  margin-top: 10px;
+}
+@media (max-width: 1024px) {
+  .brandGrid strong {
+    font-size: 19px;
+  }
+}
+@media (max-width: 768px) {
+  .mallHeading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .mallHeading h1 {
+    font-size: 23px;
+  }
+  .mallShortcuts {
+    gap: 10px;
+    padding: 20px 10px;
+  }
+  .mallShortcuts > a {
+    font-size: 10px;
+    gap: 10px;
+  }
+  .mallShortcuts > a > span {
+    width: 45px;
+    height: 45px;
+    border-radius: 12px;
+  }
+  .mallShortcuts svg {
+    width: 24px;
+  }
+  .offerBanner {
+    padding: 20px;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .offerBanner h2 {
+    font-size: 22px;
+  }
+  .sectionHeading {
+    padding: 15px 12px;
+  }
+  .sectionHeading h2 {
+    font-size: 11px;
+  }
+  .sectionHeading button {
+    font-size: 10px;
+    white-space: nowrap;
+  }
+  .brandGrid {
+    grid-template-columns: 1fr;
+  }
+  .brandGrid > button {
+    min-height: 150px;
+  }
+  .mallAbout {
+    padding: 20px;
+  }
+}

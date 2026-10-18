@@ -1,0 +1,33 @@
+.placeholder {
+  min-height: 520px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+  padding: 55px 20px;
+}
+.placeholderIcon {
+  border: 1px solid #ddd;
+  background: #fff;
+  padding: 22px;
+  border-radius: 50%;
+  margin-bottom: 25px;
+}
+.placeholder h1 {
+  font-size: 30px;
+  letter-spacing: -0.9px;
+  margin: 17px 0 8px;
+}
+.placeholder > p {
+  color: #737373;
+  max-width: 420px;
+  font-size: 13px;
+  line-height: 1.8;
+  margin-bottom: 25px;
+}
+@media (max-width: 768px) {
+  .placeholder h1 {
+    font-size: 25px;
+  }
+}

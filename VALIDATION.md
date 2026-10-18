@@ -16,4 +16,12 @@ Start `npm run dev`, then run `npm run check:ui` in a second terminal. The check
 
 ## Limitations
 
-The product catalog, inventory and sold counts are mock data. Product photos load from Unsplash and require network access. Unimplemented pages use explicit placeholders. No backend, authentication, checkout, payments, shipping integration or production Shopee API is present. Visual checks confirm the implemented layout; no pixel-perfect similarity score is claimed.
+The product catalog, inventory and sold counts are mock data. Product photos load from Unsplash and require network access. Unimplemented pages use explicit placeholders. Authentication forms are interactive frontend previews without account services. No backend, checkout, payments, shipping integration or production Shopee API is present. No pixel-perfect similarity score is claimed.
+
+## Authentication and page-folder refactor
+
+- Production build succeeds after separating routing, layouts, per-page JSX/CSS Modules and shared controls.
+- Login, Register, the signup alias and password recovery pass overflow checks at 1440, 1280, 1024, 768 and 375 pixels.
+- Authentication checks cover blank/invalid identity, password visibility, provider and QR notices, mock account matching and incorrect passwords, phone validation, two-step registration, short/mismatched passwords, terms consent, registration-to-login handoff, and recovery preview.
+- The authentication test observes no non-GET requests, no persisted demo password and no browser runtime errors.
+- The full existing marketplace browser suite passes after the refactor, including the homepage, search, product preview, collection pages and mobile navigation. No screenshots were captured.

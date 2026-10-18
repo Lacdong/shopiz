@@ -1,0 +1,202 @@
+.field {
+  margin-bottom: 18px;
+}
+.field > label {
+  display: block;
+  font-size: 11px;
+  margin-bottom: 8px;
+  color: #555;
+}
+.field > input,
+.password {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #d4d4d4;
+  background: white;
+  border-radius: 2px;
+}
+.field > input {
+  padding: 12px;
+  font-size: 12px;
+  color: #111;
+}
+.field > input::placeholder {
+  color: #999;
+}
+.field > input:focus {
+  outline: 1px solid #111;
+  outline-offset: 0;
+  border-color: #111;
+}
+.field > input[aria-invalid="true"],
+.password.invalid {
+  border-color: #b42318;
+}
+.password {
+  display: flex;
+  align-items: stretch;
+}
+.password:focus-within {
+  outline: 1px solid #111;
+  border-color: #111;
+}
+.password input {
+  border: 0;
+  outline: none;
+  min-width: 0;
+  flex: 1;
+  padding: 12px;
+  font-size: 12px;
+  background: transparent;
+  color: #111;
+}
+.password input:focus-visible {
+  outline: none;
+}
+.password button {
+  flex: 0 0 42px;
+  border: 0;
+  background: transparent;
+  color: #737373;
+  display: grid;
+  place-items: center;
+}
+.error {
+  font-size: 11px;
+  color: #b42318;
+  margin: 7px 0 0;
+  line-height: 1.5;
+}
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-size: 10px;
+  color: #737373;
+  margin: 23px 0 18px;
+}
+.divider:before,
+.divider:after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid #e5e5e5;
+}
+.social {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.social button {
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  background: white;
+  border: 1px solid #d4d4d4;
+  border-radius: 2px;
+  font-size: 12px;
+}
+.social button:hover {
+  background: #fafafa;
+  border-color: #111;
+}
+.google {
+  font-size: 20px;
+  font-weight: 700;
+}
+.terms {
+  font-size: 10px;
+  text-align: center;
+  line-height: 1.7;
+  color: #737373;
+  margin: 23px 0;
+}
+.terms a {
+  color: #111;
+  text-decoration: underline;
+}
+.submit {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  border-radius: 2px;
+  background: #111;
+  color: white;
+  font-size: 12px;
+  font-weight: 500;
+}
+.submit:hover {
+  background: #292929;
+}
+.switch {
+  text-align: center;
+  font-size: 12px;
+  color: #737373;
+  margin: 25px 0 0;
+}
+.switch a {
+  font-weight: 600;
+  color: #111;
+  margin-left: 5px;
+}
+.message {
+  font-size: 11px;
+  line-height: 1.7;
+  padding: 12px;
+  background: #f5f5f5;
+  border: 1px solid #e5e5e5;
+  margin: 0 0 18px;
+}
+.hint {
+  font-size: 10px;
+  color: #737373;
+  line-height: 1.6;
+  margin: 10px 0 0;
+}
+.checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 11px;
+  color: #555;
+  line-height: 1.6;
+  margin: 15px 0;
+}
+.checkbox input {
+  accent-color: #111;
+  margin: 2px 0;
+  min-width: 14px;
+  min-height: 14px;
+}
+.heading {
+  font-size: 23px;
+  font-weight: 500;
+  letter-spacing: -0.5px;
+  margin: 0 0 24px;
+}
+.intro {
+  font-size: 12px;
+  color: #737373;
+  line-height: 1.7;
+  margin: -8px 0 22px;
+}
+.successIcon {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  background: #f5f5f5;
+  border-radius: 50%;
+  margin: 0 0 20px;
+}
+.successText {
+  font-size: 12px;
+  color: #737373;
+  line-height: 1.8;
+  margin-bottom: 24px;
+}

@@ -14,7 +14,9 @@ import {
   X,
 } from "lucide-react";
 import s from "./Header.module.css";
+import { useAuth } from "./auth/AuthProvider";
 export function UtilityNav() {
+  const { user, logout } = useAuth();
   return (
     <div className={s.utility}>
       <div>
@@ -40,11 +42,23 @@ export function UtilityNav() {
         <Link to="/language">
           <Globe size={13} /> English <ChevronDown size={11} />
         </Link>
-        <Link to="/login">Login</Link>
-        <i />
-        <Link to="/signup">
-          <strong>Sign Up</strong>
-        </Link>
+        {user ? (
+          <>
+            <span>{user.name}</span>
+            <i />
+            <button className={s.logout} onClick={logout}>
+              Log out
+            </button>
+          </>
+        ) : (
+          <>
+            <Link to="/login">Login</Link>
+            <i />
+            <Link to="/register">
+              <strong>Sign Up</strong>
+            </Link>
+          </>
+        )}
       </div>
     </div>
   );
@@ -95,6 +109,7 @@ export function SearchBar() {
   );
 }
 export default function Header() {
+  const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
   return (
     <header className={s.header}>
@@ -130,12 +145,30 @@ export default function Header() {
               ["Help", "help"],
               ["English", "language"],
               ["Login", "login"],
-              ["Sign Up", "signup"],
-            ].map(([label, path]) => (
-              <Link onClick={() => setOpen(false)} key={path} to={`/${path}`}>
-                {label}
-              </Link>
-            ))}
+              ["Sign Up", "register"],
+            ]
+              .filter(
+                ([, path]) => !user || !["login", "register"].includes(path),
+              )
+              .map(([label, path]) => (
+                <Link onClick={() => setOpen(false)} key={path} to={`/${path}`}>
+                  {label}
+                </Link>
+              ))}
+            {user && (
+              <>
+                <span>{user.name}</span>
+                <button
+                  className={s.logout}
+                  onClick={() => {
+                    logout();
+                    setOpen(false);
+                  }}
+                >
+                  Log out
+                </button>
+              </>
+            )}
           </nav>
         )}
       </div>

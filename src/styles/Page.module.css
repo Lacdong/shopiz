@@ -1,0 +1,49 @@
+.routePage {
+  padding: 28px 0 35px;
+  min-height: 60vh;
+}
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #737373;
+  margin-bottom: 16px;
+}
+.routePage > h1 {
+  font-size: 28px;
+  letter-spacing: -0.8px;
+  margin: 8px 0;
+}
+.muted {
+  color: #737373;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.kicker {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: #737373;
+  text-transform: uppercase;
+}
+.primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: #111;
+  color: #fff;
+  padding: 14px 22px;
+  font-size: 12px;
+  border: 0;
+  border-radius: 2px;
+}
+.primary:hover {
+  background: #292929;
+}
+@media (max-width: 768px) {
+  .routePage > h1 {
+    font-size: 24px;
+  }
+}

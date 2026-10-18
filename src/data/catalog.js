@@ -168,13 +168,41 @@ export const products = entries.map(
 );
 // Illustrative search trends for the marketplace simulator.
 export const topSearches = [
-  { label: "Wireless Headphones", query: "headphones", productId: "1", searches: "12.8k" },
-  { label: "Everyday Sneakers", query: "shoes", productId: "4", searches: "10.2k" },
-  { label: "Skincare Essentials", query: "skincare", productId: "8", searches: "8.6k" },
-  { label: "Shoulder Bags", query: "shoulder bag", productId: "10", searches: "7.4k" },
-  { label: "Classic Watches", query: "watch", productId: "3", searches: "6.9k" },
+  {
+    label: "Wireless Headphones",
+    query: "headphones",
+    productId: "1",
+    searches: "12.8k",
+  },
+  {
+    label: "Everyday Sneakers",
+    query: "shoes",
+    productId: "4",
+    searches: "10.2k",
+  },
+  {
+    label: "Skincare Essentials",
+    query: "skincare",
+    productId: "8",
+    searches: "8.6k",
+  },
+  {
+    label: "Shoulder Bags",
+    query: "shoulder bag",
+    productId: "10",
+    searches: "7.4k",
+  },
+  {
+    label: "Classic Watches",
+    query: "watch",
+    productId: "3",
+    searches: "6.9k",
+  },
   { label: "Home & Living", query: "home", productId: "6", searches: "5.8k" },
-].map((item) => ({ ...item, image: products.find((p) => p.id === item.productId).image }));
+].map((item) => ({
+  ...item,
+  image: products.find((p) => p.id === item.productId).image,
+}));
 
 export const money = (value) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
