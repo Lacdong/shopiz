@@ -51,3 +51,12 @@ Responsive layouts target 1440, 1280, 1024, 768 and 375 pixels. Recommendations 
 - Demo login: `demo@shopiz.com` / `Shopiz@123` (also accepts `demo` or `0901234567`). Second account: `alex@shopiz.com` / `Shopiz@123` (also accepts `alex` or `0912345678`).
 - `AuthProvider` exposes the current demo user to the header and provides logout. Keep-me-logged-in stores only a demo user ID in localStorage; otherwise the ID goes to sessionStorage. Entered passwords are never persisted or sent. This public mock session is not a production authentication mechanism.
 - `npm run check:auth` checks validation, navigation and responsive layouts without screenshots. Both browser scripts accept `SHOPIZ_URL` to select the running server; their defaults are 5173 for auth and 5174 for marketplace regression checks.
+
+## Product detail
+
+- `src/pages/product/ProductPage.jsx` follows the `product-detail.png` reference: gallery and purchase controls, seller information, specifications, description, ratings, related collection and recommendations.
+- `ProductGallery.jsx` provides thumbnails, detail crops, an accessible native enlargement dialog, share-link copying and visit-only favorites. Crop labels describe the reused product photo rather than claiming separate product angles.
+- `ProductReviews.jsx` provides illustrative reviews, seller replies, photo/rating filters, pagination and helpful toggles.
+- `productData.js` supplies category-specific sample variants, sizes, stock, seller details and review data.
+- Quantity is bounded to the sample stock. Destination and delivery-method selectors update the order preview. Add to Cart and Buy Now open explicit selection previews; cart items are not persisted and no checkout occurs. Seller chat displays an availability notice.
+- `npm run check:product` checks responsive layouts and interactions without screenshots; its default server is `http://127.0.0.1:5173`, overridable with `SHOPIZ_URL`.

@@ -25,3 +25,10 @@ The product catalog, inventory and sold counts are mock data. Product photos loa
 - Authentication checks cover blank/invalid identity, password visibility, provider and QR notices, mock account matching and incorrect passwords, phone validation, two-step registration, short/mismatched passwords, terms consent, registration-to-login handoff, and recovery preview.
 - The authentication test observes no non-GET requests, no persisted demo password and no browser runtime errors.
 - The full existing marketplace browser suite passes after the refactor, including the homepage, search, product preview, collection pages and mobile navigation. No screenshots were captured.
+
+## Redesigned product detail
+
+- Read `references/marketplace/product-detail.png`; retained its dense marketplace structure with monochrome Shopiz branding and sample catalog content.
+- Product layouts pass overflow checks at 1440, 1280, 1024, 768 and 375 pixels, including a product with size options.
+- Browser checks pass for thumbnail changes, enlarged-image dialog and Escape handling, favorites, variant/size selections, minimum/maximum stock bounds, delivery destination and method, preview totals, cart/chat notices, review filters and pagination, helpful toggles, product-state reset and the missing-product fallback.
+- No browser runtime errors or screenshots during product validation. Purchase actions remain simulator previews.
