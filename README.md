@@ -124,3 +124,10 @@ Responsive layouts target 1440, 1280, 1024, 768 and 375 pixels. Recommendations 
 - Following is a browser-local preference under `shopiz-followed-shops-v1`, independent for each shop. No subscription or notification is sent. Seller messaging opens an availability notice.
 - Product detail View Shop, search-related-shop links and cart Visit Shop/Shop more links open the corresponding storefront. Product cards link back to existing product detail pages. Unknown shop IDs show an explicit not-found page.
 - `npm run check:shop` checks three storefronts at all five target sizes, follow persistence, tabs/search/filters/sorting/pagination and seller links without screenshots. Accepts `SHOPIZ_URL` (default port 5173).
+
+## Seller Center
+
+- `/seller` opens a dedicated English seller interface inspired by Shopee, with Shopiz branding and the shared monochrome palette and responsive navigation.
+- Overview includes sample sales metrics with today/week switching, a revenue chart, task shortcuts, recent orders and shop health. Menu sections include orders, products, marketing, analytics, finance, shop profile and settings.
+- Search/filter orders, confirm pending sample orders, export sample orders as CSV, add/hide sample products, filter out-of-stock items, activate sample campaigns and edit the shop name. These changes last for the current visit; no backend, actual shipment or campaign is triggered.
+- `npm run check:seller` verifies responsive layouts, order actions, CSV download, product actions, marketing, shop editing and navigation. Set `SHOPIZ_URL` to the local preview URL when needed.

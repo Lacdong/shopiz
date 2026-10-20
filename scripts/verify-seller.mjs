@@ -1,0 +1,70 @@
+import { chromium } from "playwright";
+const browser = await chromium.launch({ channel: "chrome", headless: true });
+const page = await browser.newPage();
+const base = process.env.SHOPIZ_URL || "http://127.0.0.1:5174";
+const errors = [];
+page.on("pageerror", e => errors.push(e.message));
+const check = (value, message) => { if (!value) throw new Error(message); };
+try {
+  for (const width of [1440, 1024, 768, 390, 375]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto(`${base}/seller`);
+    await page.getByRole("heading", { name: /Welcome back/ }).waitFor();
+    check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `Overflow at ${width}`);
+    console.log(`PASS seller layout ${width}px`);
+  }
+  await page.getByRole("button", { name: "Open menu" }).click();
+  await page.getByRole("link", { name: "Orders 12" }).click();
+  await page.getByRole("textbox", { name: "Search orders" }).fill("minh.anh");
+  check(await page.locator("tbody tr").count() === 2, "Order search failed");
+  await page.getByRole("textbox", { name: "Search orders" }).fill("");
+  await page.getByRole("button", { name: "To Confirm" }).click();
+  check(await page.locator("tbody tr").count() === 3, "Order filter failed");
+  await page.getByRole("button", { name: "Confirm", exact: true }).first().click();
+  check(await page.locator("tbody tr").count() === 2, "Confirm order failed");
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export orders" }).click();
+  check((await download).suggestedFilename().endsWith(".csv"), "CSV download failed");
+  await page.goto(`${base}/seller?tab=products`);
+  await page.getByRole("button", { name: "Add product", exact: true }).click();
+  await page.getByRole("textbox", { name: "Product name" }).fill("Sample Headphones");
+  await page.getByRole("spinbutton", { name: "Price" }).fill("250000");
+  await page.getByRole("dialog").getByRole("button", { name: "Add product" }).click();
+  await page.getByRole("textbox", { name: "Search products" }).fill("Sample Headphones");
+  check(await page.locator("tbody tr").count() === 1, "New product search failed");
+  await page.getByRole("button", { name: "Hide product" }).click();
+  await page.getByRole("button", { name: "Hidden", exact: true }).click();
+  check(await page.locator("tbody tr").count() === 1, "Hide product failed");
+  await page.goto(`${base}/seller`);
+  await page.getByRole("button", { name: "Out of Stock" }).click();
+  check(await page.locator("tbody tr").count() === 3, "Out of stock shortcut failed");
+  await page.getByRole("button", { name: "All", exact: true }).click();
+  await page.waitForURL("**/seller?tab=products");
+  await page.waitForFunction(() => document.querySelectorAll("tbody tr").length === 8);
+  check(await page.locator("tbody tr").count() === 8, "Product filter reset failed");
+  for (const tab of ["orders", "products", "marketing", "analytics", "finance", "shop", "settings"]) {
+    await page.goto(`${base}/seller?tab=${tab}`);
+    check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `Mobile overflow: ${tab}`);
+  }
+  await page.goto(`${base}/seller?tab=marketing`);
+  await page.getByRole("button", { name: "Get started" }).first().click();
+  check(await page.getByRole("button", { name: "Activated" }).isDisabled(), "Campaign activation failed");
+  await page.goto(`${base}/seller?tab=shop`);
+  await page.getByRole("textbox", { name: "Shop name" }).fill("My Demo Shop");
+  await page.getByRole("button", { name: "Save changes" }).click();
+  check(await page.locator("header").getByText("My Demo Shop", { exact: true }).count() === 1, "Shop save failed");
+  await page.setViewportSize({ width: 1440, height: 1100 });
+  await page.goto(`${base}/seller`);
+  await page.getByRole("button", { name: "Last 7 Days" }).click();
+  await page.getByText("₫86,420,000", { exact: true }).waitFor();
+  await page.getByRole("button", { name: "Notifications", exact: true }).click();
+  await page.getByText("Shop notifications", { exact: true }).waitFor();
+  await page.getByRole("button", { name: "Notifications", exact: true }).click();
+  await page.screenshot({ path: "D:/shopiz/references/seller-center-desktop.png", fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.getByRole("button", { name: "Open menu" }).waitFor();
+  await page.screenshot({ path: "D:/shopiz/references/seller-center-mobile.png", fullPage: true });
+  check(!errors.length, errors.join("\n"));
+  console.log("PASS seller orders, search, filters, confirmation, CSV, product creation/visibility, campaigns, shop profile, chart, notifications; no runtime errors");
+} finally { await browser.close(); }

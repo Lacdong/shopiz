@@ -88,3 +88,15 @@ The product catalog, inventory and sold counts are mock data. Product photos loa
 - Profile/address layouts and address editor fit 1440, 1280, 1024, 768 and 375 pixels. Verified name/contact/date validation, leap dates, avatar format and preview/save, reload persistence, sidebar/header identity, address create/edit/cancel/default/delete, account separation and malformed storage.
 - Shared account sidebar is used across Profile, Addresses and My Purchases. Authentication, checkout and purchase regression suites passed after the refactor.
 - Purchase actions now follow Completed, Cancelled and pending status groups. Verified review rating validation and persistence, cancellation reason/confirmation and keep-order flow, persisted Cancelled state and details, and existing Buy Again/Contact Seller behavior. No screenshots were captured.
+
+## Seller Center — 2026-10-20
+
+- Added a separate `/seller` layout and seven linked management sections with Vietnamese labels, orange accents and a collapsible mobile sidebar.
+- Production build passed. Browser checks cover desktop/tablet/mobile widths (1440, 1024, 768, 390, 375), search/status filtering, sample order confirmation, CSV export, product creation/visibility, campaign activation, shop name editing, period switching and notifications without runtime errors.
+- Screenshots: `references/seller-center-desktop.png` and `references/seller-center-mobile.png`. All business data is illustrative and actions are session-only; existing marketplace pages keep their layout.
+
+### Seller Center theme and language update
+
+- Converted all Seller Center copy, accessible labels, forms, notifications and CSV headings to English. VND amounts use English number formatting.
+- Replaced orange and colored accents with Shopiz monochrome styling, using shared brand, text, surface, background and border tokens for primary elements.
+- Production build and the updated seller browser checks passed at all five viewport widths. Refreshed desktop/mobile screenshots and checked all management sections for mobile overflow; no runtime errors.
