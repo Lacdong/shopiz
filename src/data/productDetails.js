@@ -74,6 +74,7 @@ const profiles = {
   },
 };
 export function getProductDetails(product) {
+  if (!product) return {};
   const profile = profiles[product.category] || {
     brand:
       product.category === "Watches" ||
@@ -90,9 +91,38 @@ export function getProductDetails(product) {
       "Follow the included care instructions.",
     ],
   };
-  const shop = findShopByBrand(profile.brand);
-  const sizes = product.id === "7" ? ["S", "M", "L", "XL"] : profile.sizes;
-  const reviews = Array.from({ length: 8 }, (_, index) => ({
+  const shop = findShopByBrand(profile.brand) || {
+    id: product.shopId || "shop-001",
+    rating: "4.9",
+    responseRate: "98%",
+    joined: "2 years ago",
+    followers: 12800,
+    products: [1, 2, 3],
+  };
+
+  let variants = profile.variants;
+  let sizes = product.id === "7" ? ["S", "M", "L", "XL"] : profile.sizes;
+  let option = profile.option;
+
+  if (
+    product.tierVariation &&
+    Array.isArray(product.tierVariation) &&
+    product.tierVariation.length > 0
+  ) {
+    option = product.tierVariation[0].name || "Phân loại";
+    if (product.tierVariation[0].options?.length) {
+      variants = product.tierVariation[0].options.map(
+        (opt) => (typeof opt === "object" ? opt.option : opt),
+      );
+    }
+    if (product.tierVariation[1]?.options?.length) {
+      sizes = product.tierVariation[1].options.map(
+        (opt) => (typeof opt === "object" ? opt.option : opt),
+      );
+    }
+  }
+
+  const defaultReviews = Array.from({ length: 8 }, (_, index) => ({
     id: index + 1,
     name: [
       "Alex N.",
@@ -106,7 +136,7 @@ export function getProductDetails(product) {
     ][index],
     rating: index < (product.rating === "4.9" ? 7 : 6) ? 5 : 4,
     date: `2026-10-${String(16 - index).padStart(2, "0")}`,
-    variant: profile.variants[index % profile.variants.length],
+    variant: variants[index % variants.length] || "Standard",
     text: [
       "Just what I was looking for. The finish is clean and it fits nicely into my everyday routine.",
       "Arrived neatly packed. The product looks like the listing and feels well made for the price.",
@@ -119,24 +149,56 @@ export function getProductDetails(product) {
         ? "Thank you for sharing your experience. We’re happy you found a new everyday favorite."
         : null,
   }));
+
+  const reviews =
+    Array.isArray(product.comments) && product.comments.length
+      ? product.comments.map((c, i) => ({
+          id: c.comment_id || i + 1,
+          name: c.buyer_username || "Shopper",
+          rating: c.rating_star || 5,
+          date: c.create_time
+            ? new Date(c.create_time * 1000).toISOString().slice(0, 10)
+            : "2026-10-22",
+          variant: variants[0] || "Default",
+          text: c.comment || "Great product!",
+          hasPhoto: Boolean(c.images?.length),
+          response: c.reply || null,
+        }))
+      : defaultReviews;
+
+  const seller = product.seller?.shop_name
+    ? {
+        id: product.seller.shop_id || product.shopId,
+        name: product.seller.shop_name,
+        rating: String(product.seller.rating_star || "4.9"),
+        responseRate: "99%",
+        responseTime: "Within a few hours",
+        joined: "1 year ago",
+        followers: "15.4k",
+        products: Number(product.seller.total_products || 24),
+      }
+    : {
+        id: shop.id,
+        name: `${profile.brand} Official Store`,
+        rating: shop.rating,
+        responseRate: shop.responseRate,
+        responseTime: "Within a few hours",
+        joined: shop.joined,
+        followers: new Intl.NumberFormat("en-US", {
+          notation: "compact",
+          maximumFractionDigits: 1,
+        }).format(shop.followers),
+        products: shop.products.length,
+      };
+
   return {
     ...profile,
+    option,
+    variants,
     sizes,
     stock: product.stock,
-    sku: `SZ-${product.id.padStart(4, "0")}`,
-    seller: {
-      id: shop.id,
-      name: `${profile.brand} Official Store`,
-      rating: shop.rating,
-      responseRate: shop.responseRate,
-      responseTime: "Within a few hours",
-      joined: shop.joined,
-      followers: new Intl.NumberFormat("en-US", {
-        notation: "compact",
-        maximumFractionDigits: 1,
-      }).format(shop.followers),
-      products: shop.products.length,
-    },
+    sku: `SZ-${String(product.id).padStart(4, "0")}`,
+    seller,
     reviews,
     gallery: [
       { label: "Overview", scale: 1, position: "center" },

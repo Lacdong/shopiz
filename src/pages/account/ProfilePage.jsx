@@ -5,6 +5,7 @@ import {
   useAccount,
   validBirthday,
 } from "../../components/account/AccountProvider";
+import mediaService from "../../services/mediaService";
 import CheckoutDialog from "../checkout/CheckoutDialog";
 import d from "../checkout/CheckoutPage.module.css";
 import s from "./AccountPages.module.css";
@@ -103,6 +104,12 @@ export default function ProfilePage() {
         if (operation === version.current) {
           change("avatar", reader.result);
           setErrors((current) => ({ ...current, avatar: "" }));
+          // Upload to cloud storage in background
+          mediaService.uploadMedia(file).then((uploaded) => {
+            if (uploaded?.url && operation === version.current) {
+              change("avatar", uploaded.url);
+            }
+          }).catch(() => {});
         }
       };
       picture.src = reader.result;

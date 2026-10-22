@@ -22,6 +22,7 @@ import ProductGallery from "./ProductGallery";
 import ProductReviews, { Stars } from "./ProductReviews";
 import { getProductDetails } from "../../data/productDetails";
 import { useCart } from "../../components/cart/CartProvider";
+import catalogService, { mapBackendProduct } from "../../services/catalogService";
 import s from "./ProductPage.module.css";
 
 function ProductDetail({ product: p }) {
@@ -452,7 +453,44 @@ function ProductDetail({ product: p }) {
 }
 export default function ProductPage() {
   const { id } = useParams();
-  const product = products.find((p) => p.id === id);
+  const localProduct = products.find((p) => p.id === id);
+  const [product, setProduct] = useState(localProduct || null);
+  const [loading, setLoading] = useState(!localProduct);
+
+  useEffect(() => {
+    if (!localProduct || Number(id) > 20) {
+      catalogService
+        .getProductDetail(id)
+        .then((detail) => {
+          if (detail) {
+            setProduct(mapBackendProduct(detail));
+          }
+        })
+        .catch(() => {
+          if (!localProduct) setProduct(null);
+        })
+        .finally(() => setLoading(false));
+    } else {
+      setProduct(localProduct);
+      setLoading(false);
+    }
+  }, [id, localProduct]);
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          minHeight: "400px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        Loading product details...
+      </div>
+    );
+  }
+
   return product ? (
     <ProductDetail key={product.id} product={product} />
   ) : (

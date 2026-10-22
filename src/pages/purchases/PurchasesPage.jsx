@@ -10,6 +10,9 @@ import {
 } from "lucide-react";
 import AccountSidebar from "../../components/account/AccountSidebar";
 import { useCart } from "../../components/cart/CartProvider";
+import { useAuth } from "../../components/auth/AuthProvider";
+import orderService from "../../services/orderService";
+import { getNumericBuyerId } from "../../services/authService";
 import { products, money } from "../../data/catalog";
 import { getProductDetails } from "../../data/productDetails";
 import {
@@ -28,8 +31,11 @@ import OrderActionDialog from "./OrderActionDialog";
 
 export default function PurchasesPage() {
   const { addItem } = useCart();
+  const { user } = useAuth();
+  const buyerId = getNumericBuyerId(user?.id);
   const [params, setParams] = useSearchParams();
   const [orders, setOrders] = useState(readOrders);
+  const [backendOrders, setBackendOrders] = useState([]);
   const [popup, setPopup] = useState(null);
   const [notice, setNotice] = useState("");
   const [feedback, setFeedback] = useState("");
@@ -37,6 +43,61 @@ export default function PurchasesPage() {
     ? params.get("status")
     : "all";
   const query = params.get("q") || "";
+
+  function mapBackendOrder(o) {
+    let status = "to-ship";
+    if (o.order_status === "UNPAID") status = "to-pay";
+    else if (o.order_status === "READY_TO_SHIP" || o.order_status === "PROCESSED") status = "to-ship";
+    else if (o.order_status === "SHIPPED") status = "to-receive";
+    else if (o.order_status === "COMPLETED") status = "completed";
+    else if (o.order_status === "CANCELLED") status = "cancelled";
+    if (o.has_return || o.return_status) status = "returns";
+
+    return {
+      id: o.order_sn,
+      orderSn: o.order_sn,
+      backendStatus: o.order_status,
+      status,
+      createdAt: o.create_time ? new Date(o.create_time * 1000).toISOString() : new Date().toISOString(),
+      items: (o.items || []).map((it) => ({
+        productId: String(it.item_id),
+        itemId: it.item_id,
+        modelId: it.model_id,
+        title: it.item_name,
+        variant: it.model_name ? it.model_name.split(",")[0]?.trim() : "Standard",
+        size: it.model_name && it.model_name.includes(",") ? it.model_name.split(",")[1]?.trim() : "",
+        quantity: it.model_quantity_purchased || 1,
+        price: it.model_discounted_price || it.model_original_price || 0,
+        image: it.image || "",
+      })),
+      subtotal: Number(o.total_amount || 0),
+      shippingFee: Number(o.buyer_paid_shipping_fee || 0),
+      discount: 0,
+      total: Number(o.total_amount || 0),
+      payment: o.payment_method || "cod",
+      shipping: [{ method: o.shipping_carrier || "Shopee Xpress", fee: Number(o.buyer_paid_shipping_fee || 0) }],
+      hasReviewed: o.has_reviewed,
+      hasReturn: o.has_return,
+      returnStatus: o.return_status,
+      isBackend: true,
+    };
+  }
+
+  const loadBackendOrders = () => {
+    orderService
+      .getOrders(buyerId)
+      .then((serverOrders) => {
+        if (serverOrders && Array.isArray(serverOrders)) {
+          setBackendOrders(serverOrders.map(mapBackendOrder));
+        }
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    loadBackendOrders();
+  }, [buyerId]);
+
   useEffect(() => {
     function sync(e) {
       if (e.key === orderStorageKey || e.key === null) setOrders(readOrders());
@@ -44,19 +105,81 @@ export default function PurchasesPage() {
     window.addEventListener("storage", sync);
     return () => window.removeEventListener("storage", sync);
   }, []);
+
   function update(key, value) {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
     else next.delete(key);
     setParams(next, { replace: key === "q" });
   }
+
   const all = [
-    ...orders,
+    ...backendOrders,
+    ...orders.filter((o) => !backendOrders.some((b) => b.id === o.id)),
     ...sampleOrders.filter(
-      (sample) => !orders.some((order) => order.id === sample.id),
+      (sample) =>
+        !orders.some((order) => order.id === sample.id) &&
+        !backendOrders.some((b) => b.id === sample.id),
     ),
   ];
-  function submitAction(value) {
+
+  async function handleConfirmDelivery(order) {
+    try {
+      await orderService.confirmDelivery(order.orderSn || order.id, buyerId);
+      setNotice("Delivery confirmed! Your order is now marked as Completed.");
+      loadBackendOrders();
+    } catch (err) {
+      setNotice(`Failed to confirm delivery: ${err.message}`);
+    }
+  }
+
+  async function submitAction(value) {
+    if (popup.type === "return") {
+      const orderSn = popup.order.orderSn || popup.order.id;
+      const formData = new FormData();
+      formData.append("order_sn", orderSn);
+      formData.append("reason", value.reason);
+      formData.append("refund_amount", String(popup.order.total));
+      formData.append("description", value.description || "");
+      if (value.files?.length) {
+        value.files.forEach((file) => formData.append("files", file));
+      }
+      try {
+        await orderService.requestReturn(formData);
+        setPopup(null);
+        setFeedback("Return and refund request submitted successfully to Shopee.");
+        loadBackendOrders();
+      } catch (err) {
+        setFeedback(`Return request failed: ${err.message}`);
+      }
+      return;
+    }
+
+    if (popup.type === "review" && popup.order.isBackend) {
+      const firstItem = popup.order.items[0];
+      try {
+        await orderService.createReview({
+          orderSn: popup.order.orderSn || popup.order.id,
+          itemId: firstItem.itemId || Number(firstItem.productId) || 10001,
+          modelId: firstItem.modelId,
+          ratingStar: value.rating,
+          comment: value.comment,
+          buyerUsername: user?.username || "demo",
+          buyerUserId: buyerId,
+        });
+        loadBackendOrders();
+      } catch {}
+    } else if (popup.type === "cancel" && popup.order.isBackend) {
+      try {
+        await orderService.cancelOrder(
+          popup.order.orderSn || popup.order.id,
+          value,
+          popup.order.backendStatus,
+        );
+        loadBackendOrders();
+      } catch {}
+    }
+
     const result = updateOrderAction(popup.order.id, popup.type, value);
     setPopup(null);
     setOrders(readOrders());
@@ -257,13 +380,37 @@ export default function PurchasesPage() {
                           ? "Thank you for shopping with Shopiz"
                           : "Awaiting seller confirmation or shipping"}
                     </span>
-                    {orderStatus(order) === "completed" ? (
+                    {order.status === "to-receive" || order.backendStatus === "SHIPPED" ? (
+                      <>
+                        <button
+                          className={s.primary}
+                          onClick={() => handleConfirmDelivery(order)}
+                        >
+                          Confirm Delivery
+                        </button>
+                        <button
+                          onClick={() =>
+                            setPopup({ type: "chat", shop: groups[0].shop })
+                          }
+                        >
+                          Contact Seller
+                        </button>
+                        <button onClick={() => buyAgain(order)}>
+                          Buy Again
+                        </button>
+                      </>
+                    ) : orderStatus(order) === "completed" ? (
                       <>
                         <button
                           className={s.primary}
                           onClick={() => setPopup({ type: "review", order })}
                         >
                           {order.review ? "Edit Review" : "Review"}
+                        </button>
+                        <button
+                          onClick={() => setPopup({ type: "return", order })}
+                        >
+                          Return / Refund
                         </button>
                         <button
                           onClick={() =>
@@ -337,7 +484,8 @@ export default function PurchasesPage() {
           </section>
         )}
       </section>
-      {popup && ["review", "cancel", "cancellation"].includes(popup.type) && (
+      {popup &&
+        ["review", "cancel", "cancellation", "return"].includes(popup.type) && (
         <OrderActionDialog
           key={`${popup.type}-${popup.order.id}`}
           type={popup.type}

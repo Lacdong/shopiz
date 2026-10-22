@@ -205,10 +205,19 @@ export const topSearches = [
   image: products.find((p) => p.id === item.productId).image,
 }));
 
-export const money = (value) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
-    value,
-  );
+export const money = (value) => {
+  const num = Number(value) || 0;
+  if (num >= 1000) {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(num);
+  }
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(num);
+};
 export const banners = [
   {
     eyebrow: "THE EVERYDAY EDIT",

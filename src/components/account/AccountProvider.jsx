@@ -1,6 +1,9 @@
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { sampleAddresses, validateAddress } from "../../data/addresses";
+import addressService from "../../services/addressService";
+import authService, { getNumericBuyerId } from "../../services/authService";
+
 const Context = createContext(null);
 const fields = [
   "name",
@@ -12,6 +15,7 @@ const fields = [
   "year",
   "avatar",
 ];
+
 export function validBirthday(profile) {
   const { day, month, year } = profile;
   if (!day && !month && !year) return true;
@@ -27,6 +31,7 @@ export function validBirthday(profile) {
     date.getDate() === Number(day)
   );
 }
+
 function defaults(user) {
   return {
     profile: {
@@ -37,7 +42,7 @@ function defaults(user) {
       day: "",
       month: "",
       year: "",
-      avatar: "",
+      avatar: user?.avatar || "",
     },
     addresses: sampleAddresses.map((address) => ({
       ...address,
@@ -46,6 +51,7 @@ function defaults(user) {
     })),
   };
 }
+
 function read(user) {
   const base = defaults(user);
   try {
@@ -69,8 +75,9 @@ function read(user) {
     if (!validBirthday(profile))
       Object.assign(profile, { day: "", month: "", year: "" });
     if (
-      !/^data:image\/(png|jpeg);base64,/.test(profile.avatar) ||
-      profile.avatar.length > 1400000
+      !/^data:image\/(png|jpeg);base64,/.test(profile.avatar) &&
+      !profile.avatar.startsWith("http") &&
+      !profile.avatar.startsWith("/uploads")
     )
       profile.avatar = "";
     let addresses = base.addresses;
@@ -109,15 +116,54 @@ function read(user) {
     return base;
   }
 }
+
 export function AccountProvider({ children }) {
   const { user } = useAuth();
   const owner = user?.id || "guest";
+  const buyerId = getNumericBuyerId(user?.id);
   const [records, setRecords] = useState({});
   const [failures, setFailures] = useState({});
+
   const account = useMemo(
     () => records[owner] || read(user),
     [records, owner, user],
   );
+
+  // Sync addresses from backend when user is logged in
+  useEffect(() => {
+    if (!user) return;
+    addressService
+      .getAddresses(buyerId)
+      .then((serverAddrs) => {
+        if (serverAddrs && serverAddrs.length) {
+          const mapped = serverAddrs.map((a) => ({
+            id: String(a.id),
+            name: a.recipient_name,
+            phone: a.recipient_phone,
+            street: a.address_line,
+            ward: a.ward || "",
+            district: a.district || "",
+            city: a.city || "",
+            label: a.state || (a.is_default ? "Default" : "Home"),
+            isDefault: Boolean(a.is_default),
+          }));
+          setRecords((curr) => {
+            const existing = curr[owner] || read(user);
+            return {
+              ...curr,
+              [owner]: {
+                ...existing,
+                addresses: mapped,
+              },
+            };
+          });
+        }
+      })
+      .catch(() => {
+        // Backend unavailable
+      });
+  }, [user, owner, buyerId]);
+
   function commit(next) {
     setRecords((current) => ({ ...current, [owner]: next }));
     try {
@@ -127,9 +173,21 @@ export function AccountProvider({ children }) {
       setFailures((current) => ({ ...current, [owner]: true }));
     }
   }
+
   function saveProfile(profile) {
     commit({ ...account, profile });
+    if (user) {
+      authService
+        .updateProfile(buyerId, {
+          name: profile.name,
+          email: profile.email,
+          phone: profile.phone,
+          avatarUrl: profile.avatar,
+        })
+        .catch(() => {});
+    }
   }
+
   function saveAddress(address) {
     const isNew = !account.addresses.some((item) => item.id === address.id);
     if (isNew && account.addresses.length >= 20) return false;
@@ -142,15 +200,29 @@ export function AccountProvider({ children }) {
       address.isDefault || next.length === 1
         ? address.id
         : (next.find((item) => item.isDefault) || next[0]).id;
+
+    const normalizedAddresses = next.map((item) => ({
+      ...item,
+      isDefault: item.id === defaultId,
+    }));
+
     commit({
       ...account,
-      addresses: next.map((item) => ({
-        ...item,
-        isDefault: item.id === defaultId,
-      })),
+      addresses: normalizedAddresses,
     });
+
+    // Sync to backend in background
+    if (user) {
+      if (isNew) {
+        addressService.createAddress(buyerId, address).catch(() => {});
+      } else {
+        addressService.updateAddress(address.id, address).catch(() => {});
+      }
+    }
+
     return true;
   }
+
   function removeAddress(id) {
     const next = account.addresses.filter((item) => item.id !== id);
     const defaultId = (next.find((item) => item.isDefault) || next[0])?.id;
@@ -161,9 +233,14 @@ export function AccountProvider({ children }) {
         isDefault: item.id === defaultId,
       })),
     });
+
+    if (user) {
+      addressService.deleteAddress(id).catch(() => {});
+    }
   }
+
   function setDefaultAddress(id) {
-    if (account.addresses.some((item) => item.id === id))
+    if (account.addresses.some((item) => item.id === id)) {
       commit({
         ...account,
         addresses: account.addresses.map((item) => ({
@@ -171,7 +248,13 @@ export function AccountProvider({ children }) {
           isDefault: item.id === id,
         })),
       });
+
+      if (user) {
+        addressService.setDefaultAddress(id).catch(() => {});
+      }
+    }
   }
+
   return (
     <Context.Provider
       value={{
@@ -188,4 +271,5 @@ export function AccountProvider({ children }) {
     </Context.Provider>
   );
 }
+
 export const useAccount = () => useContext(Context);

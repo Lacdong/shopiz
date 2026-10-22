@@ -19,7 +19,7 @@ export default function LoginPage() {
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState(false);
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault();
     const next = {};
     if (!identity.trim())
@@ -34,7 +34,8 @@ export default function LoginPage() {
     setMessage("");
     setAuthError("");
     if (!Object.keys(next).length) {
-      if (!login(identity, password, remember)) {
+      const ok = await login(identity, password, remember);
+      if (!ok) {
         setAuthError("Incorrect phone number, email, username or password.");
         return;
       }

@@ -1,6 +1,6 @@
 # Shopiz
 
-Independent SmartOmni marketplace simulator built with React, JavaScript/JSX, Vite, React Router, CSS Modules, Lucide React and Axios. No backend or production marketplace API is connected.
+Independent SmartOmni marketplace simulator built with React 19, JavaScript/JSX, Vite 6, React Router 7, CSS Modules, Lucide React and Axios. Fully integrated with the **Shopee Open API v2 Mock Simulator backend** (`http://127.0.0.1:8080`) supporting live buyer authentication, category hierarchy, catalog sync, multi-shop batch checkout, delivery confirmation, returns/refunds, reviews, cloud media uploads, and Seller Center analytics with seamless offline fallback.
 
 ## Run
 
@@ -9,7 +9,20 @@ npm install
 npm run dev
 npm run build
 npm run preview
+npm run check:integration
 ```
+
+## Backend Integration Architecture
+
+- `vite.config.js`: reverse-proxy routes `/api/*` and `/uploads/*` directly to `http://127.0.0.1:8080`.
+- `src/services/api.js`: centralized Axios client configured with `/api/v2` base URL, session token interceptors, and standard Shopee envelope unwrap (`{ error, message, response }`).
+- `src/services/authService.js`: live login, registration, password recovery, and buyer profile synchronization.
+- `src/services/addressService.js`: buyer shipping address book CRUD and default address management.
+- `src/services/catalogService.js`: live category tree, product search, multi-tier variation attributes, and shop details.
+- `src/services/checkoutService.js`: carrier channels, basket voucher eligibility validation, and atomic multi-shop batch checkout.
+- `src/services/orderService.js`: live purchases synchronization, buyer delivery confirmation (escrow release), cancellation, 5-star product reviews, and return/refund claims.
+- `src/services/sellerService.js`: Seller Center live business metrics (revenue, orders, conversion rate), stock updates, and product management.
+- `src/services/mediaService.js`: cloud photo/video upload directly to Google Drive (with local storage fallback).
 
 ## Implementation
 

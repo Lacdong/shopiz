@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowDownToLine, ArrowRight, ArrowUpRight, BarChart3, Bell, BookOpen, Box, Check, ChevronDown, ChevronRight, CircleHelp, ClipboardList, ExternalLink, Gift, LayoutDashboard, Megaphone, Menu, Package, Plus, Search, Settings, ShieldCheck, ShoppingBag, Star, Store, Ticket, Users, Wallet, X } from "lucide-react";
 import { products } from "../../data/catalog";
+import sellerService from "../../services/sellerService";
 import s from "./SellerCenter.module.css";
 
 const money = (n) => new Intl.NumberFormat("en-US", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
@@ -30,7 +31,18 @@ export default function SellerCenter() {
   const [campaigns, setCampaigns] = useState([]);
   const [shopName, setShopName] = useState("SONORA Official Store");
   const [savedName, setSavedName] = useState(shopName);
+  const [liveAnalytics, setLiveAnalytics] = useState(null);
   const modal = useRef(null);
+
+  useEffect(() => {
+    sellerService
+      .getAnalytics(727720655, period)
+      .then((res) => {
+        if (res?.metrics) setLiveAnalytics(res);
+      })
+      .catch(() => {});
+  }, [period]);
+
   useEffect(() => { document.title = `${headings[section]} · Shopiz Seller Center`; setQuery(""); setFilter("all"); }, [section]);
   useEffect(() => { if (!notice) return; const timer = setTimeout(() => setNotice(""), 4500); return () => clearTimeout(timer); }, [notice]);
   useEffect(() => {
@@ -57,7 +69,22 @@ export default function SellerCenter() {
   const filteredOrders = orders.filter(o => (filter === "all" || o.status === filter) && `${o.id} ${o.buyer} ${o.product.title}`.toLowerCase().includes(query.toLowerCase()));
   const productFilter = params.get("stock") === "empty" ? "stock" : filter;
   const filteredItems = items.filter(p => p.title.toLowerCase().includes(query.toLowerCase()) && (productFilter === "all" || (productFilter === "stock" ? p.stock === 0 : productFilter === "active" ? p.active : !p.active)));
-  const metrics = period === "today" ? ["₫12,850,000", "48", "1,284", "3.74%"] : ["₫86,420,000", "326", "8,910", "3.66%"];
+  const metrics = liveAnalytics?.metrics
+    ? [
+        new Intl.NumberFormat("vi-VN", {
+          style: "currency",
+          currency: "VND",
+          maximumFractionDigits: 0,
+        }).format(liveAnalytics.metrics.revenue),
+        String(liveAnalytics.metrics.orders_count),
+        new Intl.NumberFormat("en-US").format(
+          liveAnalytics.metrics.visitors_count || 1284,
+        ),
+        `${liveAnalytics.metrics.conversion_rate || 3.74}%`,
+      ]
+    : period === "today"
+      ? ["₫12,850,000", "48", "1,284", "3.74%"]
+      : ["₫86,420,000", "326", "8,910", "3.66%"];
   const chart = <><div className={s.chartLegend}><span><i /> Revenue</span><span><i /> Previous period</span></div><div className={s.chart} role="img" aria-label={`Sample revenue chart for ${period === "today" ? "today" : "Last 7 Days"}, trending upward at the end of the period`}><div className={s.chartLabels}><span>15m</span><span>10m</span><span>5m</span><span>0</span></div><svg viewBox="0 0 700 160" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="sellerArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--brand)" stopOpacity=".18"/><stop offset="100%" stopColor="var(--brand)" stopOpacity="0"/></linearGradient></defs>{[10, 55, 100, 145].map(y => <line key={y} x1="0" y1={y} x2="700" y2={y} stroke="var(--border)" strokeDasharray="4 4"/>)}<path d="M0 140 C40 138 55 115 90 125 S145 112 175 119 S230 80 265 96 S330 65 350 82 S410 110 440 75 S505 60 530 70 S590 35 620 50 S670 30 700 35" fill="none" stroke="var(--disabled)" strokeWidth="2" strokeDasharray="5 5"/><path d={period === "today" ? "M0 138 C35 140 55 125 85 130 S140 92 175 105 S230 70 265 89 S325 40 350 60 S410 93 440 58 S490 24 525 40 S575 60 610 30 S665 32 700 10 L700 160 L0 160 Z" : "M0 145 C60 145 70 90 120 105 S190 50 240 85 S320 15 380 55 S460 70 510 30 S600 45 700 6 L700 160 L0 160 Z"} fill="url(#sellerArea)" stroke="var(--brand)" strokeWidth="2.6" strokeLinejoin="round"/></svg><div className={s.chartTimes}>{(period === "today" ? ["00:00", "04:00", "08:00", "12:00", "16:00", "20:00", "23:59"] : ["14/10", "15/10", "16/10", "17/10", "18/10", "19/10", "20/10"]).map(t => <span key={t}>{t}</span>)}</div></div></>;
   const orderTable = (list, compact = false) => <div className={s.tableScroll}><table><thead><tr><th>Product / Order ID</th><th>Buyer</th><th>Total</th><th>Status</th>{!compact && <th>Actions</th>}</tr></thead><tbody>{list.map(o => <tr key={o.id}><td><div className={s.productCell}><img src={o.product.image} alt=""/><div><strong>{o.product.title.split(" · ")[0]}</strong><small>#{o.id} · Qty: {o.quantity}</small></div></div></td><td>{o.buyer}</td><td className={s.amount}>{money(o.product.price * 25000 * o.quantity)}</td><td><span className={`${s.badge} ${s[o.status]}`}>{statuses[o.status]}</span></td>{!compact && <td>{o.status === "pending" ? <button className={s.textButton} onClick={() => { setOrders(orders.map(x => x.id === o.id ? { ...x, status: "shipping" } : x)); setNotice(`Confirmed sample order #${o.id}`); }}>Confirm</button> : <span className={s.muted}>—</span>}</td>}</tr>)}</tbody></table>{!list.length && <div className={s.empty}><Package size={32}/><p>No matching orders found.</p></div>}</div>;
 

@@ -19,6 +19,8 @@ import { useAuth } from "../../components/auth/AuthProvider";
 import { getProductDetails } from "../../data/productDetails";
 import { money } from "../../data/catalog";
 import { voucherStatus } from "../../data/vouchers";
+import checkoutService from "../../services/checkoutService";
+import { getNumericBuyerId } from "../../services/authService";
 import VoucherDialog from "../cart/VoucherDialog";
 import AddressDialog from "./AddressDialog";
 import CheckoutDialog from "./CheckoutDialog";
@@ -151,6 +153,55 @@ export default function CheckoutPage() {
     setReceipt({ ...order, saved });
     setReceiptPopup(true);
     window.scrollTo(0, 0);
+
+    // Synchronize multi-shop checkout to Shopee Simulator backend
+    const batchPayload = {
+      buyer_user_id: getNumericBuyerId(user?.id || 1001),
+      buyer_username: user?.username || "demo",
+      recipient_name: address.name || "Demo Shopper",
+      recipient_phone: address.phone || "0901234567",
+      recipient_address: address.street || "Sample Address",
+      recipient_district: address.district || "District 1",
+      recipient_city: address.city || "Ho Chi Minh City",
+      payment_method: payment === "wallet" ? "ShopeePay" : "Cash on Delivery",
+      orders: groups.map((group) => {
+        const backendShopId =
+          typeof group.shop.id === "number"
+            ? group.shop.id
+            : group.shop.id === "shop-002"
+              ? 839910244
+              : 727720655;
+        return {
+          shop_id: backendShopId,
+          channel_id: 30001,
+          shipping_carrier:
+            methodFor(group.shop.id).id === "express"
+              ? "Express Delivery"
+              : "Shopee Xpress",
+          message_to_seller: notes[group.shop.id] || "",
+          voucher_code: discountStatus.eligible ? appliedVoucher.code : undefined,
+          items: group.lines.map((l) => ({
+            item_id:
+              Number(l.product.itemId || l.product.id) > 100
+                ? Number(l.product.itemId || l.product.id)
+                : 10001,
+            quantity: l.quantity,
+          })),
+        };
+      }),
+    };
+
+    checkoutService
+      .batchCheckout(batchPayload)
+      .then((res) => {
+        if (res?.orders?.length) {
+          const firstSn = res.orders[0].order_sn;
+          setReceipt((prev) =>
+            prev ? { ...prev, id: firstSn, backendOrders: res.orders } : prev,
+          );
+        }
+      })
+      .catch(() => {});
   }
   if (receipt)
     return (
