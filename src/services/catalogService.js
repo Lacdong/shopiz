@@ -1,43 +1,119 @@
 import api from "./api";
 
+const fallbackCategoryImages = {
+  Electronics:
+    "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=500&q=85",
+  "Fashion & Apparel":
+    "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=500&q=85",
+  "Men’s Fashion":
+    "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=500&q=85",
+  "Women’s Fashion":
+    "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=500&q=85",
+  Shoes:
+    "https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=500&q=85",
+  "Home & Living":
+    "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&w=500&q=85",
+  "Beauty & Skincare":
+    "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=500&q=85",
+};
+
 export function mapBackendProduct(item) {
   if (!item) return null;
   const price = Number(item.current_price || item.original_price || 0);
   const original = Number(item.original_price || price);
   const discount =
-    item.discount_percentage !== undefined
+    item.discount_percentage !== undefined && item.discount_percentage !== null
       ? Number(item.discount_percentage)
       : original > price
         ? Math.round((1 - price / original) * 100)
         : 0;
 
-  const images = Array.isArray(item.images)
-    ? item.images
-    : item.image
-      ? [item.image]
-      : [];
+  // Extract images from array, object, or string
+  let imgList = [];
+  if (Array.isArray(item.images)) {
+    imgList = item.images;
+  } else if (item.images && typeof item.images === "object") {
+    if (Array.isArray(item.images.image_url_list)) {
+      imgList = item.images.image_url_list;
+    }
+  } else if (typeof item.image === "string") {
+    imgList = [item.image];
+  }
+
+  const categoryName = item.category_name || item.category || "General";
+  let primaryImage = imgList[0];
+
+  // If missing or mock URL, select appropriate high-res Unsplash photo
+  if (
+    !primaryImage ||
+    primaryImage.includes("mock_default_image") ||
+    primaryImage.includes("custom_product_image")
+  ) {
+    const titleLower = (item.item_name || "").toLowerCase();
+    if (
+      titleLower.includes("trouser") ||
+      titleLower.includes("pant") ||
+      titleLower.includes("denim") ||
+      titleLower.includes("tee") ||
+      titleLower.includes("jacket")
+    ) {
+      primaryImage =
+        "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=500&q=85";
+    } else if (titleLower.includes("sneaker") || titleLower.includes("shoe")) {
+      primaryImage =
+        "https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=500&q=85";
+    } else if (titleLower.includes("watch")) {
+      primaryImage =
+        "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=500&q=85";
+    } else if (
+      titleLower.includes("earbud") ||
+      titleLower.includes("headphone") ||
+      titleLower.includes("audio")
+    ) {
+      primaryImage =
+        "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=500&q=85";
+    } else if (titleLower.includes("keyboard")) {
+      primaryImage =
+        "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=500&q=85";
+    } else {
+      primaryImage =
+        fallbackCategoryImages[categoryName] ||
+        "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=500&q=85";
+    }
+  }
+
+  const stock =
+    Array.isArray(item.models) && item.models.length
+      ? item.models.reduce(
+          (sum, m) => sum + Number(m.seller_stock || m.normal_stock || 0),
+          0,
+        )
+      : Number(item.stock || item.normal_stock || 50);
 
   return {
     id: String(item.item_id),
     itemId: item.item_id,
     title: item.item_name,
-    image: item.image || images[0] || "",
-    images,
+    image: primaryImage,
+    images: imgList.length ? imgList : [primaryImage],
     price,
     original,
-    category: item.category_name || item.category || "General",
+    category: categoryName,
     categoryId: item.category_id,
-    stock: Number(item.stock || item.normal_stock || 0),
+    stock,
     discount,
     rating: item.shop_rating
       ? String(item.shop_rating)
       : item.rating
         ? String(item.rating)
         : "4.9",
-    sold: Number(item.sales || item.sold || 0),
+    sold: Number(item.sales || item.sold || 48),
     location: item.location || "Ho Chi Minh City",
-    progress: Math.min(100, Math.max(15, ((Number(item.sales || 0) * 3) % 95) + 10)),
-    mall: Boolean(item.is_official_shop || item.mall),
+    progress: Math.min(
+      100,
+      Math.max(25, ((Number(item.sales || 20) * 3) % 85) + 15),
+    ),
+    mall: Boolean(item.is_official_shop || item.shop_name?.includes("Official")),
     shopId: item.shop_id,
     shopName: item.shop_name || "Official Store",
     tierVariation: item.tier_variation,
@@ -45,10 +121,10 @@ export function mapBackendProduct(item) {
     description: item.description || "",
     seller: item.seller || {
       id: item.shop_id,
-      name: item.shop_name || "Official Store",
+      name: item.shop_name || "Official Flagship",
       rating: "4.9",
-      followers: "12.8k",
-      responseRate: "98%",
+      followers: "15.4k",
+      responseRate: "99%",
     },
   };
 }
@@ -59,7 +135,7 @@ export const catalogService = {
     return data.categories || [];
   },
 
-  async getProducts({ query, categoryId, sort, page = 1, pageSize = 24 } = {}) {
+  async getProducts({ query, categoryId, sort, page = 1, pageSize = 50 } = {}) {
     const params = new URLSearchParams();
     if (query) params.set("q", query);
     if (categoryId) params.set("category_id", categoryId);

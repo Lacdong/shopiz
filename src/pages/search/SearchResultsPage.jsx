@@ -15,6 +15,7 @@ import { money } from "../../data/catalog";
 import { getProductDetails } from "../../data/productDetails";
 import SearchFilters from "./SearchFilters";
 import { filterSearch, searchCatalog } from "./searchUtils";
+import { useCatalog } from "../../components/catalog/CatalogProvider";
 import s from "./SearchResultsPage.module.css";
 const pageSize = 15;
 const filterKeys = [
@@ -28,6 +29,7 @@ const filterKeys = [
   "shipping",
 ];
 export default function SearchResultsPage() {
+  const { products: catalogProducts } = useCatalog();
   const [params, setParams] = useSearchParams();
   const query = params.get("q") || "";
   const [filtersOpen, setFiltersOpen] = useState(false);

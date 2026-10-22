@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Bell, Check, ChevronRight, Zap } from "lucide-react";
 import { products } from "../../data/catalog";
+import { useCatalog } from "../../components/catalog/CatalogProvider";
 
 import { Countdown, ProductCard, TrustBar } from "../../components/Commerce";
 import {
@@ -20,11 +21,12 @@ const sessions = [
   { time: "21:00", label: "Tonight’s picks" },
 ];
 export default function FlashSalePage() {
+  const { products: allProducts } = useCatalog();
   const [session, setSession] = useState(0);
   const [category, setCategory] = useState("All");
   const [reminders, setReminders] = useState([]);
   const [sort, setSort] = useState("discount");
-  const items = products
+  const items = allProducts
     .filter((p) => category === "All" || p.category === category)
     .sort((a, b) =>
       sort === "price" ? a.price - b.price : b.discount - a.discount,

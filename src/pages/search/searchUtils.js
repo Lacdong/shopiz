@@ -1,17 +1,30 @@
 import { products } from "../../data/catalog";
 import { getProductDetails } from "../../data/productDetails";
-export const searchCatalog = products.map((product) => ({
-  ...product,
-  brand: getProductDetails(product).brand,
-  freeShipping: true,
-}));
+
+export function getSearchCatalog() {
+  return products.map((product) => ({
+    ...product,
+    brand: getProductDetails(product)?.brand || "Official Store",
+    freeShipping: true,
+  }));
+}
+
+export const searchCatalog = new Proxy([], {
+  get(target, prop) {
+    const list = getSearchCatalog();
+    if (prop === "length") return list.length;
+    if (typeof list[prop] === "function") return list[prop].bind(list);
+    return list[prop];
+  },
+});
+
 export const searchCategories = [
-  ...new Set(searchCatalog.map((p) => p.category)),
+  ...new Set(products.map((p) => p.category)),
 ];
 export const searchLocations = [
-  ...new Set(searchCatalog.map((p) => p.location)),
+  ...new Set(products.map((p) => p.location)),
 ];
-export const searchBrands = [...new Set(searchCatalog.map((p) => p.brand))];
+export const searchBrands = [...new Set(products.map((p) => getProductDetails(p)?.brand || "Official Store"))];
 const normalize = (value) =>
   String(value)
     .normalize("NFD")

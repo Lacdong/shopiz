@@ -74,11 +74,10 @@ const profiles = {
   },
 };
 export function getProductDetails(product) {
-  if (!product) return {};
-  const profile = profiles[product.category] || {
+  const category = product?.category || "General";
+  const profile = profiles[category] || {
     brand:
-      product.category === "Watches" ||
-      product.category === "Bags & Accessories"
+      category === "Watches" || category === "Bags & Accessories"
         ? "NORTH / FORM"
         : "atelier.",
     material: "See individual product specifications",
@@ -92,7 +91,7 @@ export function getProductDetails(product) {
     ],
   };
   const shop = findShopByBrand(profile.brand) || {
-    id: product.shopId || "shop-001",
+    id: product?.shopId || "shop-001",
     rating: "4.9",
     responseRate: "98%",
     joined: "2 years ago",
@@ -101,23 +100,27 @@ export function getProductDetails(product) {
   };
 
   let variants = profile.variants;
-  let sizes = product.id === "7" ? ["S", "M", "L", "XL"] : profile.sizes;
+  let sizes = product?.id === "7" ? ["S", "M", "L", "XL"] : profile.sizes;
   let option = profile.option;
 
   if (
-    product.tierVariation &&
+    product?.tierVariation &&
     Array.isArray(product.tierVariation) &&
     product.tierVariation.length > 0
   ) {
     option = product.tierVariation[0].name || "Phân loại";
-    if (product.tierVariation[0].options?.length) {
-      variants = product.tierVariation[0].options.map(
-        (opt) => (typeof opt === "object" ? opt.option : opt),
+    const tier0List =
+      product.tierVariation[0].option_list || product.tierVariation[0].options;
+    if (tier0List?.length) {
+      variants = tier0List.map((opt) =>
+        typeof opt === "object" ? opt.option || opt.name || "" : opt,
       );
     }
-    if (product.tierVariation[1]?.options?.length) {
-      sizes = product.tierVariation[1].options.map(
-        (opt) => (typeof opt === "object" ? opt.option : opt),
+    const tier1List =
+      product.tierVariation[1]?.option_list || product.tierVariation[1]?.options;
+    if (tier1List?.length) {
+      sizes = tier1List.map((opt) =>
+        typeof opt === "object" ? opt.option || opt.name || "" : opt,
       );
     }
   }
@@ -134,7 +137,7 @@ export function getProductDetails(product) {
       "Robin V.",
       "Jordan K.",
     ][index],
-    rating: index < (product.rating === "4.9" ? 7 : 6) ? 5 : 4,
+    rating: index < (product?.rating === "4.9" ? 7 : 6) ? 5 : 4,
     date: `2026-10-${String(16 - index).padStart(2, "0")}`,
     variant: variants[index % variants.length] || "Standard",
     text: [
@@ -151,7 +154,7 @@ export function getProductDetails(product) {
   }));
 
   const reviews =
-    Array.isArray(product.comments) && product.comments.length
+    Array.isArray(product?.comments) && product.comments.length
       ? product.comments.map((c, i) => ({
           id: c.comment_id || i + 1,
           name: c.buyer_username || "Shopper",
@@ -166,38 +169,60 @@ export function getProductDetails(product) {
         }))
       : defaultReviews;
 
-  const seller = product.seller?.shop_name
-    ? {
-        id: product.seller.shop_id || product.shopId,
-        name: product.seller.shop_name,
-        rating: String(product.seller.rating_star || "4.9"),
-        responseRate: "99%",
-        responseTime: "Within a few hours",
-        joined: "1 year ago",
-        followers: "15.4k",
-        products: Number(product.seller.total_products || 24),
-      }
-    : {
-        id: shop.id,
-        name: `${profile.brand} Official Store`,
-        rating: shop.rating,
-        responseRate: shop.responseRate,
-        responseTime: "Within a few hours",
-        joined: shop.joined,
-        followers: new Intl.NumberFormat("en-US", {
-          notation: "compact",
-          maximumFractionDigits: 1,
-        }).format(shop.followers),
-        products: shop.products.length,
-      };
+  const seller =
+    product?.seller?.shop_name || product?.seller?.name
+      ? {
+          id:
+            product.seller.shop_id ||
+            product.seller.id ||
+            product.shopId ||
+            "shop-001",
+          name: product.seller.shop_name || product.seller.name,
+          rating: String(
+            product.seller.rating_star || product.seller.rating || "4.9",
+          ),
+          responseRate: "99%",
+          responseTime: "Within a few hours",
+          joined: "1 year ago",
+          followers: "15.4k",
+          products: Number(
+            product.seller.total_products ||
+              product.seller.products?.length ||
+              24,
+          ),
+        }
+      : product?.shopName
+        ? {
+            id: product.shopId || "shop-001",
+            name: product.shopName,
+            rating: "4.9",
+            responseRate: "99%",
+            responseTime: "Within a few hours",
+            joined: "1 year ago",
+            followers: "15.4k",
+            products: 24,
+          }
+        : {
+            id: shop.id,
+            name: `${profile.brand} Official Store`,
+            rating: shop.rating,
+            responseRate: shop.responseRate,
+            responseTime: "Within a few hours",
+            joined: shop.joined,
+            followers: new Intl.NumberFormat("en-US", {
+              notation: "compact",
+              maximumFractionDigits: 1,
+            }).format(shop.followers),
+            products: shop.products.length,
+          };
 
   return {
     ...profile,
     option,
     variants,
     sizes,
-    stock: product.stock,
-    sku: `SZ-${String(product.id).padStart(4, "0")}`,
+    stock: Number(product?.stock || 50),
+    sku: `SZ-${String(product?.id || "0001").padStart(4, "0")}`,
     seller,
     reviews,
     gallery: [

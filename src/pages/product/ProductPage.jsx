@@ -453,28 +453,29 @@ function ProductDetail({ product: p }) {
 }
 export default function ProductPage() {
   const { id } = useParams();
-  const localProduct = products.find((p) => p.id === id);
+  const localProduct = products.find((p) => String(p.id) === String(id));
   const [product, setProduct] = useState(localProduct || null);
   const [loading, setLoading] = useState(!localProduct);
 
   useEffect(() => {
-    if (!localProduct || Number(id) > 20) {
-      catalogService
-        .getProductDetail(id)
-        .then((detail) => {
-          if (detail) {
-            setProduct(mapBackendProduct(detail));
-          }
-        })
-        .catch(() => {
-          if (!localProduct) setProduct(null);
-        })
-        .finally(() => setLoading(false));
-    } else {
-      setProduct(localProduct);
+    const found = products.find((p) => String(p.id) === String(id));
+    if (found) {
+      setProduct(found);
       setLoading(false);
     }
-  }, [id, localProduct]);
+
+    catalogService
+      .getProductDetail(id)
+      .then((detail) => {
+        if (detail) {
+          setProduct(mapBackendProduct(detail));
+        }
+      })
+      .catch(() => {
+        if (!found) setProduct(null);
+      })
+      .finally(() => setLoading(false));
+  }, [id]);
 
   if (loading) {
     return (

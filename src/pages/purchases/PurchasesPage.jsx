@@ -198,7 +198,11 @@ export default function PurchasesPage() {
           const product = products.find(
             (product) => product.id === item.productId,
           );
-          return [item.title, getProductDetails(product).seller.name];
+          const sellerName =
+            getProductDetails(product)?.seller?.name ||
+            item.shopName ||
+            "Official Store";
+          return [item.title, sellerName];
         }),
       ]
         .join(" ")
@@ -274,13 +278,29 @@ export default function PurchasesPage() {
               const product = products.find(
                 (product) => product.id === item.productId,
               );
-              const shop = getProductDetails(product).seller;
+              const details = getProductDetails(product);
+              const shop = details?.seller || {
+                id: item.shopId || "shop-001",
+                name: item.shopName || "Official Store",
+                rating: "4.9",
+                followers: "15.4k",
+                responseRate: "99%",
+              };
               let group = list.find((group) => group.shop.id === shop.id);
               if (!group) {
                 group = { shop, items: [] };
                 list.push(group);
               }
-              group.items.push({ ...item, product });
+              const safeProduct = product || {
+                id: item.productId,
+                title: item.title,
+                image:
+                  item.image ||
+                  "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=500&q=85",
+                price: item.price,
+                original: item.price,
+              };
+              group.items.push({ ...item, product: safeProduct });
               return list;
             }, []);
             return (
@@ -328,7 +348,18 @@ export default function PurchasesPage() {
                         key={`${item.productId}-${index}`}
                       >
                         <Link to={`/product/${item.productId}`}>
-                          <img src={item.product.image} alt={item.title} />
+                          <img
+                            src={
+                              item.product?.image ||
+                              item.image ||
+                              "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=500&q=85"
+                            }
+                            alt={item.title}
+                            onError={(e) => {
+                              e.currentTarget.src =
+                                "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=500&q=85";
+                            }}
+                          />
                         </Link>
                         <div>
                           <Link to={`/product/${item.productId}`}>
@@ -341,7 +372,7 @@ export default function PurchasesPage() {
                           <span>x{item.quantity}</span>
                         </div>
                         <div className={s.price}>
-                          {item.product.original > item.price && (
+                          {item.product?.original > item.price && (
                             <del>{money(item.product.original)}</del>
                           )}
                           <strong>{money(item.price)}</strong>
@@ -499,7 +530,7 @@ export default function PurchasesPage() {
           title={
             popup.type === "details"
               ? "Order Details"
-              : `Contact ${popup.shop.name}`
+              : `Contact ${popup.shop?.name || "Seller"}`
           }
           onClose={() => setPopup(null)}
         >

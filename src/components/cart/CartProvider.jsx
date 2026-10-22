@@ -92,11 +92,27 @@ export function CartProvider({ children }) {
   function removeSelected() {
     commit(current.current.filter((item) => !item.selected));
   }
-  const lines = items.map((item) => ({
-    ...item,
-    id: lineId(item),
-    product: products.find((p) => p.id === item.productId),
-  }));
+  const lines = items.map((item) => {
+    const product =
+      products.find((p) => String(p.id) === String(item.productId)) || {
+        id: String(item.productId),
+        title: item.title || `Product #${item.productId}`,
+        image:
+          item.image ||
+          "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=500&q=85",
+        price: Number(item.price || 50),
+        original: Number(item.original || item.price || 50),
+        stock: 50,
+        discount: 0,
+        category: "General",
+        mall: true,
+      };
+    return {
+      ...item,
+      id: lineId(item),
+      product,
+    };
+  });
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const selected = lines.filter((item) => item.selected);
   const selectedCount = selected.reduce((sum, item) => sum + item.quantity, 0);
