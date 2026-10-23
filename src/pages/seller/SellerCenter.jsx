@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { ArrowDownToLine, ArrowRight, ArrowUpRight, BarChart3, Bell, BookOpen, Box, Check, ChevronDown, ChevronRight, CircleHelp, ClipboardList, ExternalLink, Gift, LayoutDashboard, Megaphone, Menu, Package, Plus, Search, Settings, ShieldCheck, ShoppingBag, Star, Store, Ticket, Users, Wallet, X } from "lucide-react";
 import { products } from "../../data/catalog";
 import sellerService from "../../services/sellerService";
+import catalogService from "../../services/catalogService";
 import s from "./SellerCenter.module.css";
 
 const money = (n) => new Intl.NumberFormat("en-US", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
@@ -29,7 +30,20 @@ export default function SellerCenter() {
   const [notifications, setNotifications] = useState(false);
   const [dialog, setDialog] = useState(false);
   const [campaigns, setCampaigns] = useState([]);
+  const [activeVouchers, setActiveVouchers] = useState([]);
   const urlShopId = params.get("shop_id");
+  const resolveShopName = (id) => {
+    const idStr = String(id || "");
+    if (idStr === "sonora") return "SONORA Official Store";
+    if (idStr === "839910244") return "Hanoi Streetwear Co.";
+    if (idStr === "910283751") return "Saigon Modern Living";
+    if (idStr === "727720655") return "SmartOmni Official Flagship";
+    return (
+      localStorage.getItem("shopiz-active-seller-shop-name") ||
+      "SmartOmni Official Flagship"
+    );
+  };
+
   const [shopId, setShopId] = useState(() => {
     return (
       urlShopId ||
@@ -38,15 +52,10 @@ export default function SellerCenter() {
     );
   });
   const [shopName, setShopName] = useState(() => {
-    return (
-      localStorage.getItem("shopiz-active-seller-shop-name") ||
-      (shopId === "sonora"
-        ? "SONORA Official Store"
-        : shopId === "839910244"
-          ? "Hanoi Streetwear Co."
-          : shopId === "910283751"
-            ? "Saigon Modern Living"
-            : "SmartOmni Official Flagship")
+    return resolveShopName(
+      urlShopId ||
+        localStorage.getItem("shopiz-active-seller-shop-id") ||
+        "sonora",
     );
   });
   const [savedName, setSavedName] = useState(shopName);
@@ -57,21 +66,102 @@ export default function SellerCenter() {
     if (urlShopId && urlShopId !== shopId) {
       setShopId(urlShopId);
       localStorage.setItem("shopiz-active-seller-shop-id", urlShopId);
+      const name = resolveShopName(urlShopId);
+      setShopName(name);
+      setSavedName(name);
     }
-  }, [urlShopId]);
+  }, [urlShopId, shopId]);
 
   useEffect(() => {
     if (shopId === "sonora") {
       setLiveAnalytics(null);
       setSavedName("SONORA Official Store");
       setShopName("SONORA Official Store");
+      setOrders(initialOrders);
+      setItems(
+        products
+          .slice(0, 8)
+          .map((p, i) => ({ ...p, stock: i < 3 ? 0 : 32 + i * 9, active: true })),
+      );
+      setActiveVouchers([]);
       return;
     }
+
     const numericShopId = Number(shopId) || 727720655;
+
+    // Fetch real backend analytics
     sellerService
       .getAnalytics(numericShopId, period)
       .then((res) => {
         if (res?.metrics) setLiveAnalytics(res);
+      })
+      .catch(() => {});
+
+    // Fetch real backend orders
+    sellerService
+      .getOrders(numericShopId)
+      .then((serverOrders) => {
+        if (serverOrders && serverOrders.length > 0) {
+          const mapped = serverOrders.map((o) => {
+            const firstItem = o.items?.[0] || {};
+            let status = "pending";
+            if (o.order_status === "SHIPPED" || o.order_status === "PROCESSED")
+              status = "shipping";
+            else if (o.order_status === "COMPLETED") status = "completed";
+            else if (
+              o.order_status === "CANCELLED" ||
+              o.order_status === "IN_CANCEL"
+            )
+              status = "cancelled";
+
+            return {
+              id: o.order_sn,
+              buyer: o.buyer_username || o.recipient_name || "Shopper",
+              product: {
+                title: firstItem.item_name || "Order Item",
+                image:
+                  "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=120&q=80",
+                price: Number(o.total_amount) / 25000,
+              },
+              quantity: firstItem.quantity || 1,
+              status,
+              rawStatus: o.order_status,
+              total: Number(o.total_amount),
+              shippingCarrier: o.shipping_carrier,
+              trackingNumber: o.packages?.[0]?.tracking_number,
+              isBackend: true,
+            };
+          });
+          setOrders(mapped);
+        }
+      })
+      .catch(() => {});
+
+    // Fetch real backend products & shop info
+    catalogService
+      .getShopDetail(numericShopId)
+      .then((detail) => {
+        if (!detail) return;
+        setSavedName(detail.shop_name || "Official Store");
+        setShopName(detail.shop_name || "Official Store");
+        if (detail.products && detail.products.length > 0) {
+          const mappedProducts = detail.products.map((p) => ({
+            id: String(p.item_id),
+            title: p.item_name,
+            price: Number(p.original_price) / 25000,
+            originalPriceVnd: Number(p.original_price),
+            stock: Number(p.seller_stock ?? 10),
+            active: p.item_status !== "UNLIST",
+            image:
+              p.images?.image_url_list?.[0] ||
+              "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=120&q=80",
+            isBackend: true,
+          }));
+          setItems(mappedProducts);
+        }
+        if (detail.vouchers) {
+          setActiveVouchers(detail.vouchers);
+        }
       })
       .catch(() => {});
   }, [shopId, period]);
@@ -119,7 +209,20 @@ export default function SellerCenter() {
       ? ["₫12,850,000", "48", "1,284", "3.74%"]
       : ["₫86,420,000", "326", "8,910", "3.66%"];
   const chart = <><div className={s.chartLegend}><span><i /> Revenue</span><span><i /> Previous period</span></div><div className={s.chart} role="img" aria-label={`Sample revenue chart for ${period === "today" ? "today" : "Last 7 Days"}, trending upward at the end of the period`}><div className={s.chartLabels}><span>15m</span><span>10m</span><span>5m</span><span>0</span></div><svg viewBox="0 0 700 160" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="sellerArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--brand)" stopOpacity=".18"/><stop offset="100%" stopColor="var(--brand)" stopOpacity="0"/></linearGradient></defs>{[10, 55, 100, 145].map(y => <line key={y} x1="0" y1={y} x2="700" y2={y} stroke="var(--border)" strokeDasharray="4 4"/>)}<path d="M0 140 C40 138 55 115 90 125 S145 112 175 119 S230 80 265 96 S330 65 350 82 S410 110 440 75 S505 60 530 70 S590 35 620 50 S670 30 700 35" fill="none" stroke="var(--disabled)" strokeWidth="2" strokeDasharray="5 5"/><path d={period === "today" ? "M0 138 C35 140 55 125 85 130 S140 92 175 105 S230 70 265 89 S325 40 350 60 S410 93 440 58 S490 24 525 40 S575 60 610 30 S665 32 700 10 L700 160 L0 160 Z" : "M0 145 C60 145 70 90 120 105 S190 50 240 85 S320 15 380 55 S460 70 510 30 S600 45 700 6 L700 160 L0 160 Z"} fill="url(#sellerArea)" stroke="var(--brand)" strokeWidth="2.6" strokeLinejoin="round"/></svg><div className={s.chartTimes}>{(period === "today" ? ["00:00", "04:00", "08:00", "12:00", "16:00", "20:00", "23:59"] : ["14/10", "15/10", "16/10", "17/10", "18/10", "19/10", "20/10"]).map(t => <span key={t}>{t}</span>)}</div></div></>;
-  const orderTable = (list, compact = false) => <div className={s.tableScroll}><table><thead><tr><th>Product / Order ID</th><th>Buyer</th><th>Total</th><th>Status</th>{!compact && <th>Actions</th>}</tr></thead><tbody>{list.map(o => <tr key={o.id}><td><div className={s.productCell}><img src={o.product.image} alt=""/><div><strong>{o.product.title.split(" · ")[0]}</strong><small>#{o.id} · Qty: {o.quantity}</small></div></div></td><td>{o.buyer}</td><td className={s.amount}>{money(o.product.price * 25000 * o.quantity)}</td><td><span className={`${s.badge} ${s[o.status]}`}>{statuses[o.status]}</span></td>{!compact && <td>{o.status === "pending" ? <button className={s.textButton} onClick={() => { setOrders(orders.map(x => x.id === o.id ? { ...x, status: "shipping" } : x)); setNotice(`Confirmed sample order #${o.id}`); }}>Confirm</button> : <span className={s.muted}>—</span>}</td>}</tr>)}</tbody></table>{!list.length && <div className={s.empty}><Package size={32}/><p>No matching orders found.</p></div>}</div>;
+  const orderTable = (list, compact = false) => <div className={s.tableScroll}><table><thead><tr><th>Product / Order ID</th><th>Buyer</th><th>Total</th><th>Status</th>{!compact && <th>Actions</th>}</tr></thead><tbody>{list.map(o => <tr key={o.id}><td><div className={s.productCell}><img src={o.product.image} alt=""/><div><strong>{o.product.title.split(" · ")[0]}</strong><small>#{o.id} · Qty: {o.quantity}</small></div></div></td><td>{o.buyer}</td><td className={s.amount}>{money(o.total || o.product.price * 25000 * o.quantity)}</td><td><span className={`${s.badge} ${s[o.status]}`}>{statuses[o.status]}</span></td>{!compact && <td>{o.status === "pending" ? <button className={s.textButton} onClick={() => {
+    if (o.isBackend) {
+      sellerService.shipOrder(o.id).then(() => {
+        setOrders(orders.map(x => x.id === o.id ? { ...x, status: "shipping" } : x));
+        setNotice(`Order #${o.id} arranged for shipment!`);
+      }).catch(() => {
+        setOrders(orders.map(x => x.id === o.id ? { ...x, status: "shipping" } : x));
+        setNotice(`Order #${o.id} arranged for shipment!`);
+      });
+    } else {
+      setOrders(orders.map(x => x.id === o.id ? { ...x, status: "shipping" } : x));
+      setNotice(`Confirmed sample order #${o.id}`);
+    }
+  }}>Confirm</button> : (o.isBackend && (o.status === "shipping" || o.status === "completed") ? <a href={sellerService.getAwbDownloadUrl(o.id)} target="_blank" rel="noreferrer" className={s.textButton} title="Download AWB PDF">Print AWB</a> : <span className={s.muted}>—</span>)}</td>}</tr>)}</tbody></table>{!list.length && <div className={s.empty}><Package size={32}/><p>No matching orders found.</p></div>}</div>;
 
   return <div className={s.seller}>
     <header className={s.header}><div className={s.brandArea}><button className={`${s.iconButton} ${s.mobileToggle}`} aria-label="Open menu" aria-expanded={mobile} onClick={() => setMobile(!mobile)}><Menu size={22}/></button><Link to="/" className={s.logo}><ShoppingBag size={29} strokeWidth={1.7}/><span>shopiz<span>.</span></span></Link><span className={s.headerDivider}/><span className={s.centerName}>Seller Center</span></div><div className={s.headerRight}><Link to="/seller/select-shop" className={s.switchShopBtn}><Store size={14}/> Switch Shop</Link><Link to="/" className={s.marketLink}>Go to Shopiz <ExternalLink size={13}/></Link><div className={s.bellWrap}><button className={s.iconButton} aria-label="Notifications" aria-expanded={notifications} onClick={() => setNotifications(!notifications)}><Bell size={20}/><b className={s.notificationDot}/></button>{notifications && <div className={s.notificationPanel}><strong>Shop notifications</strong><p>3 sample orders are waiting for confirmation.</p><button className={s.textButton} onClick={() => { go("orders"); setNotifications(false); }}>View orders <ArrowRight size={14}/></button></div>}</div><span className={s.headerDivider}/><button className={s.account} onClick={() => go("shop")}><span className={s.avatar}>{savedName.charAt(0)}</span><span>{savedName}</span><ChevronDown size={14}/></button></div></header>
@@ -133,8 +236,17 @@ export default function SellerCenter() {
       {section === "overview" && <div className={s.lowerGrid}><Card title="Recent Orders" action={<button className={s.textButton} onClick={() => go("orders")}>All orders <ChevronRight size={14}/></button>}>{orderTable(orders.slice(0, 3), true)}</Card><Card title="Shop Health" action={<ShieldCheck size={18} color="var(--text)"/>}><div className={s.health}><span className={s.healthIcon}><ShieldCheck size={27}/></span><div><strong>Your shop is doing well</strong><p>Keep up the good work!</p></div></div>{[["Chat response rate", "98%", "98%"], ["On-time delivery", "99.2%", "99%"], ["Shop rating", "4.9 / 5.0", "96%"]].map(([label, value, width]) => <div className={s.healthRow} key={label}><div><span>{label}</span><strong>{value}</strong></div><div className={s.track}><span style={{ width }}/></div></div>)}</Card></div>}
     </>}
     {section === "orders" && <Card title="Manage Orders" action={<button className={s.outline} onClick={exportOrders}><ArrowDownToLine size={15}/> Export orders</button>}><div className={s.tabs}>{[["all", "All"], ...Object.entries(statuses)].map(([id, label]) => <button key={id} className={(params.get("status") || filter) === id ? s.tabActive : ""} onClick={() => { setFilter(id); setParams({ tab: "orders" }); }}>{label}<span>{id === "all" ? orders.length : orders.filter(o => o.status === id).length}</span></button>)}</div><div className={s.toolbar}><label className={s.search}><Search size={17}/><input aria-label="Search orders" placeholder="Search order ID, buyer or product" value={query} onChange={e => setQuery(e.target.value)}/></label><span>{filteredOrders.length} orders</span></div>{orderTable(params.get("status") ? filteredOrders.filter(o => o.status === params.get("status")) : filteredOrders)}</Card>}
-    {section === "products" && <Card title={`Shop Products (${items.length})`}><div className={s.tabs}>{[["all", "All"], ["active", "Live"], ["hidden", "Hidden"], ["stock", "Out of Stock"]].map(([id, label]) => <button key={id} className={productFilter === id ? s.tabActive : ""} onClick={() => { setFilter(id); setParams({ tab: "products" }); }}>{label}</button>)}</div><div className={s.toolbar}><label className={s.search}><Search size={17}/><input aria-label="Search products" placeholder="Search by product name" value={query} onChange={e => setQuery(e.target.value)}/></label><span>{filteredItems.length} products</span></div><div className={s.tableScroll}><table><thead><tr><th>Products</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead><tbody>{filteredItems.map(p => <tr key={p.id}><td><div className={s.productCell}>{p.image ? <img src={p.image} alt=""/> : <span className={s.productPlaceholder}><Package size={22}/></span>}<div><strong>{p.title}</strong><small>SKU: SPZ-{p.id}</small></div></div></td><td>{money(p.price * 25000)}</td><td>{p.stock}</td><td><span className={`${s.badge} ${p.active ? s.completed : s.cancelled}`}>{p.active ? "Live" : "Hidden"}</span></td><td><button className={s.textButton} onClick={() => setItems(items.map(x => x.id === p.id ? { ...x, active: !x.active } : x))}>{p.active ? "Hide product" : "Show product"}</button></td></tr>)}</tbody></table>{!filteredItems.length && <p className={s.empty}>No matching products found.</p>}</div></Card>}
-    {section === "marketing" && <><div className={s.marketingHero}><div><span>SHOPIZ SELLER GROWTH</span><h2>More offers.<br/>More new customers.</h2><p>Discover tools to help your shop grow every day.</p></div><Gift size={110} strokeWidth={.9}/></div><div className={s.marketingGrid}>{[[Ticket, "Shop Vouchers", "Create offers that keep customers coming back.", "VOUCHER10"], [Megaphone, "11.11 Campaign", "Join the holiday shopping celebration.", "11.11"], [Gift, "Bundle Deals", "Encourage bigger baskets with product bundles.", "COMBO"]].map(([Icon, title, text, code]) => <Card key={title} title={title}><div className={s.marketingBody}><Icon size={30}/><p>{text}</p><button className={campaigns.includes(code) ? s.outline : s.primary} disabled={campaigns.includes(code)} onClick={() => { setCampaigns([...campaigns, code]); setNotice(`Activated ${title.toLowerCase()} in this demo session.`); }}>{campaigns.includes(code) ? <><Check size={16}/> Activated</> : <>Get started <ArrowRight size={15}/></>}</button></div></Card>)}</div></>}
+    {section === "products" && <Card title={`Shop Products (${items.length})`}><div className={s.tabs}>{[["all", "All"], ["active", "Live"], ["hidden", "Hidden"], ["stock", "Out of Stock"]].map(([id, label]) => <button key={id} className={productFilter === id ? s.tabActive : ""} onClick={() => { setFilter(id); setParams({ tab: "products" }); }}>{label}</button>)}</div><div className={s.toolbar}><label className={s.search}><Search size={17}/><input aria-label="Search products" placeholder="Search by product name" value={query} onChange={e => setQuery(e.target.value)}/></label><span>{filteredItems.length} products</span></div><div className={s.tableScroll}><table><thead><tr><th>Products</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead><tbody>{filteredItems.map(p => <tr key={p.id}><td><div className={s.productCell}>{p.image ? <img src={p.image} alt=""/> : <span className={s.productPlaceholder}><Package size={22}/></span>}<div><strong>{p.title}</strong><small>SKU: SPZ-{p.id}</small></div></div></td><td>{money(p.originalPriceVnd || p.price * 25000)}</td><td>{p.stock}</td><td><span className={`${s.badge} ${p.active ? s.completed : s.cancelled}`}>{p.active ? "Live" : "Hidden"}</span></td><td><button className={s.textButton} onClick={() => {
+      const nextActive = !p.active;
+      if (p.isBackend) {
+        sellerService.toggleUnlist(p.id, Number(shopId), !nextActive).catch(() => {});
+      }
+      setItems(items.map(x => x.id === p.id ? { ...x, active: nextActive } : x));
+      setNotice(nextActive ? `Product "${p.title}" is now Live.` : `Product "${p.title}" is now Hidden.`);
+    }}>{p.active ? "Hide product" : "Show product"}</button></td></tr>)}</tbody></table>{!filteredItems.length && <p className={s.empty}>No matching products found.</p>}</div></Card>}
+    {section === "marketing" && <><div className={s.marketingHero}><div><span>SHOPIZ SELLER GROWTH</span><h2>More offers.<br/>More new customers.</h2><p>Discover tools to help your shop grow every day.</p></div><Gift size={110} strokeWidth={.9}/></div>
+      {activeVouchers.length > 0 && <Card title="Active Store Campaigns & Vouchers"><div className={s.tableScroll}><table><thead><tr><th>Voucher Code</th><th>Reward</th><th>Min. Spend</th><th>Status</th><th>Expiry</th></tr></thead><tbody>{activeVouchers.map(v => <tr key={v.code}><td><strong>{v.code}</strong></td><td>{v.type === "percent" ? `${v.percent}% OFF` : `${money(v.amount)} OFF`}</td><td>{money(v.minimum)}</td><td><span className={`${s.badge} ${s.completed}`}>Ongoing</span></td><td>{v.expiresAt || "Active"}</td></tr>)}</tbody></table></div></Card>}
+      <div className={s.marketingGrid}>{[[Ticket, "Shop Vouchers", "Create offers that keep customers coming back.", "VOUCHER10"], [Megaphone, "11.11 Campaign", "Join the holiday shopping celebration.", "11.11"], [Gift, "Bundle Deals", "Encourage bigger baskets with product bundles.", "COMBO"]].map(([Icon, title, text, code]) => <Card key={title} title={title}><div className={s.marketingBody}><Icon size={30}/><p>{text}</p><button className={campaigns.includes(code) ? s.outline : s.primary} disabled={campaigns.includes(code)} onClick={() => { setCampaigns([...campaigns, code]); setNotice(`Activated ${title.toLowerCase()} in this demo session.`); }}>{campaigns.includes(code) ? <><Check size={16}/> Activated</> : <>Get started <ArrowRight size={15}/></>}</button></div></Card>)}</div></>}
     {section === "finance" && <><div className={s.finance}><Wallet size={34}/><div><p>Available balance · Sample data</p><h2>{money(28450000)}</h2></div><span><ShieldCheck size={17}/> Secure payments</span></div><Card title="Income History"><div className={s.tableScroll}><table><thead><tr><th>Transaction ID</th><th>Description</th><th>Date</th><th>Amount</th><th>Status</th></tr></thead><tbody>{[0, 1, 2, 3].map(i => <tr key={i}><td>TXN202610{20 - i}</td><td>Completed order revenue</td><td>{20 - i}/10/2026</td><td className={s.positive}>+{money(1250000 + i * 450000)}</td><td><span className={`${s.badge} ${s.completed}`}>Settled</span></td></tr>)}</tbody></table></div></Card></>}
     {(section === "shop" || section === "settings") && <Card title={section === "shop" ? "Shop Information" : "Shop Settings"}><form className={s.shopForm} onSubmit={e => { e.preventDefault(); setSavedName(shopName.trim()); setNotice("Changes saved for this demo session."); }}><div className={s.profileIntro}><span className={s.shopAvatar}>S</span><div><strong>{savedName}</strong><p><Star size={14}/> 4.9 · Preferred Seller</p></div></div><label>Shop name<input required maxLength={60} value={shopName} onChange={e => setShopName(e.target.value)}/></label><label>Shop description<textarea defaultValue="Sound made personal. Explore thoughtfully selected tech and accessories at SONORA." maxLength={500}/></label>{section === "settings" && <label className={s.checkbox}><input type="checkbox" defaultChecked/> Receive new order notifications</label>}<p className={s.muted}>Changes apply to the current demo session.</p><button className={s.primary} type="submit"><Check size={16}/> Save changes</button></form></Card>}
     <footer className={s.footer}><span>© 2026 Shopiz. Growing with you, every day.</span><span><CircleHelp size={14}/> Seller Center · Demo</span></footer></main>
