@@ -39,6 +39,7 @@ import SellerHeader from "./SellerHeader";
 import SellerSidebar, { findActiveItem } from "./SellerSidebar";
 import SellerComingSoon from "./SellerComingSoon";
 import AllOrdersPage from "./orders/AllOrdersPage";
+import ProductsPage from "./products/ProductsPage";
 import s from "./SellerCenter.module.css";
 
 const money = (n) =>
@@ -584,120 +585,7 @@ export default function SellerCenter() {
           ) : isOrdersTab ? (
             <AllOrdersPage shopId={Number(shopId) || 727720655} />
           ) : isProductsTab ? (
-            <Card title={`Sản Phẩm Của Shop (${items.length})`}>
-              <div className={s.tabs}>
-                {[
-                  ["all", "Tất cả"],
-                  ["active", "Đang hoạt động"],
-                  ["hidden", "Đã ẩn"],
-                  ["stock", "Hết hàng"],
-                ].map(([id, label]) => (
-                  <button
-                    key={id}
-                    className={productFilter === id ? s.tabActive : ""}
-                    onClick={() => {
-                      setFilter(id);
-                      setParams({ tab: "products_all", ...(shopId ? { shop_id: shopId } : {}) });
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-              <div className={s.toolbar}>
-                <label className={s.search}>
-                  <Search size={17} />
-                  <input
-                    aria-label="Search products"
-                    placeholder="Tìm tên sản phẩm, SKU..."
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                  />
-                </label>
-                <span>{filteredItems.length} Sản phẩm</span>
-              </div>
-              <div className={s.tableScroll}>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Sản phẩm</th>
-                      <th>Giá bán</th>
-                      <th>Kho hàng</th>
-                      <th>Trạng thái</th>
-                      <th>Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredItems.map((p) => (
-                      <tr key={p.id}>
-                        <td>
-                          <div className={s.productCell}>
-                            {p.image ? (
-                              <img src={p.image} alt="" />
-                            ) : (
-                              <span className={s.productPlaceholder}>
-                                <Package size={22} />
-                              </span>
-                            )}
-                            <div>
-                              <strong>{p.title}</strong>
-                              <small>SKU: SPZ-{p.id}</small>
-                            </div>
-                          </div>
-                        </td>
-                        <td>
-                          {money(p.originalPriceVnd || p.price * 25000)}
-                        </td>
-                        <td>{p.stock}</td>
-                        <td>
-                          <span
-                            className={`${s.badge} ${
-                              p.active ? s.completed : s.cancelled
-                            }`}
-                          >
-                            {p.active ? "Đang bán" : "Đã ẩn"}
-                          </span>
-                        </td>
-                        <td>
-                          <button
-                            className={s.textButton}
-                            onClick={() => {
-                              const nextActive = !p.active;
-                              if (p.isBackend) {
-                                sellerService
-                                  .toggleUnlist(
-                                    p.id,
-                                    Number(shopId),
-                                    !nextActive,
-                                  )
-                                  .catch(() => {});
-                              }
-                              setItems(
-                                items.map((x) =>
-                                  x.id === p.id
-                                    ? { ...x, active: nextActive }
-                                    : x,
-                                ),
-                              );
-                              setNotice(
-                                nextActive
-                                  ? `Sản phẩm "${p.title}" đang được hiển thị.`
-                                  : `Sản phẩm "${p.title}" đã được ẩn.`,
-                              );
-                            }}
-                          >
-                            {p.active ? "Ẩn sản phẩm" : "Hiện sản phẩm"}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {!filteredItems.length && (
-                  <p className={s.empty}>Không tìm thấy sản phẩm phù hợp.</p>
-                )}
-              </div>
-            </Card>
+            <ProductsPage shopId={Number(shopId) || 727720655} />
           ) : isMarketingTab ? (
             <>
               <div className={s.marketingHero}>
