@@ -20,6 +20,7 @@ import PurchasesPage from "./pages/purchases/PurchasesPage";
 import ProfilePage from "./pages/account/ProfilePage";
 import AddressesPage from "./pages/account/AddressesPage";
 import SellerCenter from "./pages/seller/SellerCenter";
+import ErrorBoundary from "./components/common/ErrorBoundary";
 function ScrollManager() {
   const { pathname, search, hash } = useLocation();
   useEffect(() => {
@@ -33,7 +34,7 @@ function ScrollManager() {
 }
 export default function App() {
   return (
-    <>
+    <ErrorBoundary>
       <ScrollManager />
       <Routes>
         <Route path="seller" element={<SellerCenter />} />
@@ -75,6 +76,6 @@ export default function App() {
           ))}
         </Route>
       </Routes>
-    </>
+    </ErrorBoundary>
   );
 }

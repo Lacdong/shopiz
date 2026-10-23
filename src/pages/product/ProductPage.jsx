@@ -36,8 +36,14 @@ function ProductDetail({ product: p }) {
     );
     return () => clearTimeout(timer);
   }, [cartNotice]);
+
+  const catTitle =
+    typeof p.category === "string"
+      ? p.category
+      : p.category?.category_name || "General";
+
   const details = getProductDetails(p);
-  const [variant, setVariant] = useState(details.variants[0]);
+  const [variant, setVariant] = useState(details.variants[0] || "Standard");
   const [size, setSize] = useState(details.sizes[0] || "");
   const [quantity, setQuantity] = useState("1");
   const [destination, setDestination] = useState("Ho Chi Minh City");
@@ -45,16 +51,37 @@ function ProductDetail({ product: p }) {
   const [message, setMessage] = useState("");
   const [mode, setMode] = useState("buy");
   const preview = useRef(null);
+
+  // Model-specific pricing and stock if multi-variant
+  const selectedModel =
+    Array.isArray(p.models) && p.models.length > 0
+      ? p.models.find((m) => {
+          const name = (m.model_name || "").toLowerCase();
+          const v = (variant || "").toLowerCase();
+          const sz = (size || "").toLowerCase();
+          if (sz) {
+            return name.includes(v) && name.includes(sz);
+          }
+          return name.includes(v);
+        }) || p.models[0]
+      : null;
+
+  const currentPrice = selectedModel?.current_price ?? p.price ?? 0;
+  const currentOriginal =
+    selectedModel?.original_price ?? p.original ?? currentPrice;
+  const currentStock = selectedModel?.seller_stock ?? details.stock ?? 50;
+
   const count = Math.max(
     1,
-    Math.min(details.stock, Math.floor(Number(quantity) || 1)),
+    Math.min(currentStock, Math.floor(Number(quantity) || 1)),
   );
   const shipping = delivery === "express" ? 2.9 : 0;
   const related = products
-    .filter((x) => x.id !== p.id)
+    .filter((x) => String(x.id) !== String(p.id))
     .sort(
       (a, b) =>
-        Number(b.category === p.category) - Number(a.category === p.category),
+        Number((a.category || "") === catTitle) -
+        Number((b.category || "") === catTitle),
     )
     .slice(0, 6);
   function showPreview(next) {
@@ -64,7 +91,14 @@ function ProductDetail({ product: p }) {
   }
   function addToCart() {
     setQuantity(String(count));
-    const result = addItem({ productId: p.id, variant, size, quantity: count });
+    const result = addItem({
+      productId: p.id,
+      modelId: selectedModel?.model_id,
+      variant,
+      size,
+      quantity: count,
+      price: currentPrice,
+    });
     setCartNotice({
       id: Date.now(),
       error: !result.added,
@@ -89,11 +123,11 @@ function ProductDetail({ product: p }) {
       <nav className={s.breadcrumb} aria-label="Breadcrumb">
         <Link to="/">Home</Link>
         <ChevronRight size={12} />
-        <Link to={`/category/${encodeURIComponent(p.category)}`}>
-          {p.category}
+        <Link to={`/category/${encodeURIComponent(catTitle)}`}>
+          {catTitle}
         </Link>
         <ChevronRight size={12} />
-        <span>{p.title}</span>
+        <span>{p.title || "Product"}</span>
       </nav>
       <section className={s.overview}>
         <ProductGallery
@@ -108,21 +142,21 @@ function ProductDetail({ product: p }) {
           </h1>
           <div className={s.metrics}>
             <a href="#product-reviews">
-              <strong>{p.rating}</strong>
-              <Stars rating={Number(p.rating)} />
+              <strong>{p.rating || "5.0"}</strong>
+              <Stars rating={Number(p.rating) || 5.0} />
             </a>
             <a href="#product-reviews">
-              <strong>{details.reviews.length}</strong>Ratings
+              <strong>{(details.reviews || []).length}</strong>Ratings
             </a>
             <span>
-              <strong>{p.sold.toLocaleString()}</strong>Sold
+              <strong>{(p.sold ?? 0).toLocaleString()}</strong>Sold
             </span>
           </div>
           <div className={s.pricePanel}>
             <div>
-              <del>{money(p.original)}</del>
-              <strong>{money(p.price)}</strong>
-              <span>{p.discount}% OFF</span>
+              <del>{money(currentOriginal)}</del>
+              <strong>{money(currentPrice)}</strong>
+              {p.discount ? <span>{p.discount}% OFF</span> : null}
             </div>
             <p>
               <ShieldCheck size={14} />
@@ -145,7 +179,7 @@ function ProductDetail({ product: p }) {
               <dd>
                 <span className={s.deliveryLine}>
                   <Truck size={17} />
-                  Ships from {p.location}
+                  Ships from {p.location || "Ho Chi Minh City"}
                 </span>
                 <label className={s.deliveryLabel}>
                   Deliver to{" "}
@@ -237,7 +271,7 @@ function ProductDetail({ product: p }) {
                   <input
                     type="number"
                     min="1"
-                    max={details.stock}
+                    max={currentStock}
                     step="1"
                     aria-label="Quantity"
                     value={quantity}
@@ -246,13 +280,13 @@ function ProductDetail({ product: p }) {
                   />
                   <button
                     aria-label="Increase quantity"
-                    disabled={count >= details.stock}
+                    disabled={count >= currentStock}
                     onClick={() => setQuantity(String(count + 1))}
                   >
                     <Plus size={13} />
                   </button>
                 </div>
-                <span>{details.stock} pieces available</span>
+                <span>{currentStock} pieces available</span>
               </dd>
             </div>
           </dl>
@@ -292,14 +326,14 @@ function ProductDetail({ product: p }) {
             <Store size={28} strokeWidth={1.3} />
           </span>
           <div>
-            <h2>{details.seller.name}</h2>
+            <h2>{details.seller?.name || p.shopName || "Official Store"}</h2>
             <p>Online recently</p>
             <div>
               <button onClick={() => showPreview("chat")}>
                 <MessageCircle size={13} />
                 Chat Now
               </button>
-              <Link to={`/shop/${details.seller.id}`}>
+              <Link to={`/shop/${details.seller?.id || p.shopId || "shop-001"}`}>
                 <Store size={13} />
                 View Shop
               </Link>
@@ -308,12 +342,12 @@ function ProductDetail({ product: p }) {
         </div>
         <dl className={s.sellerStats}>
           {[
-            ["Ratings", details.seller.rating],
-            ["Products", details.seller.products],
-            ["Response rate", details.seller.responseRate],
-            ["Response time", details.seller.responseTime],
-            ["Joined", details.seller.joined],
-            ["Followers", details.seller.followers],
+            ["Ratings", details.seller?.rating || "4.9"],
+            ["Products", details.seller?.products || 24],
+            ["Response rate", details.seller?.responseRate || details.seller?.response_rate || "98%"],
+            ["Response time", details.seller?.responseTime || "Within a few hours"],
+            ["Joined", details.seller?.joined || "2 years ago"],
+            ["Followers", details.seller?.followers || "15.4k"],
           ].map(([label, value]) => (
             <div key={label}>
               <dt>{label}</dt>
@@ -326,19 +360,19 @@ function ProductDetail({ product: p }) {
         <h2 className={s.sectionTitle}>PRODUCT SPECIFICATIONS</h2>
         <dl className={s.specs}>
           {[
-            ["Category", p.category],
-            ["Brand", details.brand],
-            ["SKU", details.sku],
-            ["Material", details.material],
+            ["Category", catTitle],
+            ["Brand", details.brand || "Shopiz Select"],
+            ["SKU", details.sku || "SZ-0001"],
+            ["Material", details.material || "High Quality Material"],
             ["Condition", "New"],
-            ["Stock", `${details.stock} pieces`],
-            ["Ships from", p.location],
+            ["Stock", `${currentStock} pieces`],
+            ["Ships from", p.location || "Ho Chi Minh City"],
           ].map(([label, value]) => (
             <div key={label}>
               <dt>{label}</dt>
               <dd>
                 {label === "Category" ? (
-                  <Link to={`/category/${encodeURIComponent(p.category)}`}>
+                  <Link to={`/category/${encodeURIComponent(value)}`}>
                     {value}
                     <ChevronRight size={11} />
                   </Link>
@@ -359,15 +393,15 @@ function ProductDetail({ product: p }) {
           </p>
           <h4>A little more in the details</h4>
           <ul>
-            {details.highlights.map((text) => (
+            {(details.highlights || []).map((text) => (
               <li key={text}>{text}</li>
             ))}
           </ul>
           <h4>What’s included</h4>
           <p>
-            1 × {p.title.split(" · ")[0]}. Select your preferred{" "}
-            {details.option.toLowerCase()}
-            {details.sizes.length ? " and size" : ""} before reviewing your
+            1 × {(p.title || "").split(" · ")[0]}. Select your preferred{" "}
+            {(details.option || "style").toLowerCase()}
+            {details.sizes?.length ? " and size" : ""} before reviewing your
             order.
           </p>
           <p className={s.demoNote}>
@@ -377,7 +411,7 @@ function ProductDetail({ product: p }) {
           </p>
         </div>
       </section>
-      <ProductReviews product={p} reviews={details.reviews} />
+      <ProductReviews product={p} reviews={details.reviews || []} />
       <ProductGrid
         items={related}
         title="MORE FROM THIS COLLECTION"
@@ -385,7 +419,7 @@ function ProductDetail({ product: p }) {
         loadMore={false}
       />
       <ProductGrid
-        items={products.filter((x) => x.id !== p.id).slice(-6)}
+        items={products.filter((x) => String(x.id) !== String(p.id)).slice(-6)}
         title="YOU MAY ALSO LIKE"
         loadMore={false}
       />
@@ -409,7 +443,7 @@ function ProductDetail({ product: p }) {
         </h2>
         {mode === "chat" ? (
           <>
-            <p>{details.seller.name}</p>
+            <p>{details.seller?.name || p.shopName || "Official Store"}</p>
             <p className={s.demoNote}>
               Seller messaging is not connected in this simulator.
             </p>
@@ -424,7 +458,7 @@ function ProductDetail({ product: p }) {
                   {variant}
                   {size ? ` · ${size}` : ""} · Quantity: {count}
                 </p>
-                <strong>{money(p.price * count)}</strong>
+                <strong>{money(currentPrice * count)}</strong>
               </div>
             </div>
             <dl className={s.orderTotals}>
@@ -438,7 +472,7 @@ function ProductDetail({ product: p }) {
               </div>
               <div>
                 <dt>Total</dt>
-                <dd>{money(p.price * count + shipping)}</dd>
+                <dd>{money(currentPrice * count + shipping)}</dd>
               </div>
             </dl>
             <p className={s.demoNote}>
@@ -458,23 +492,35 @@ export default function ProductPage() {
   const [loading, setLoading] = useState(!localProduct);
 
   useEffect(() => {
+    let isMounted = true;
     const found = products.find((p) => String(p.id) === String(id));
     if (found) {
       setProduct(found);
-      setLoading(false);
+    } else {
+      setLoading(true);
     }
 
     catalogService
       .getProductDetail(id)
       .then((detail) => {
-        if (detail) {
-          setProduct(mapBackendProduct(detail));
+        if (isMounted && detail) {
+          const mapped = mapBackendProduct(detail);
+          setProduct(mapped);
         }
       })
-      .catch(() => {
-        if (!found) setProduct(null);
+      .catch((err) => {
+        console.warn("Could not fetch remote product detail:", err);
+        if (isMounted && !found) {
+          setProduct(null);
+        }
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
   if (loading) {

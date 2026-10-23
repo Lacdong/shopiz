@@ -18,6 +18,7 @@
     "check:checkout": "node scripts/verify-checkout.mjs",
     "check:purchases": "node scripts/verify-purchases.mjs",
     "check:account": "node scripts/verify-account.mjs",
+    "check:backend-product": "node scripts/verify-backend-product.mjs",
     "check:integration": "node scripts/verify-integration.mjs"
   },
   "dependencies": {

@@ -74,10 +74,14 @@ const profiles = {
   },
 };
 export function getProductDetails(product) {
-  const category = product?.category || "General";
-  const profile = profiles[category] || {
+  const categoryStr =
+    typeof product?.category === "string"
+      ? product.category
+      : product?.category?.category_name || "General";
+
+  const profile = profiles[categoryStr] || {
     brand:
-      category === "Watches" || category === "Bags & Accessories"
+      categoryStr === "Watches" || categoryStr === "Bags & Accessories"
         ? "NORTH / FORM"
         : "atelier.",
     material: "See individual product specifications",
@@ -90,6 +94,7 @@ export function getProductDetails(product) {
       "Follow the included care instructions.",
     ],
   };
+
   const shop = findShopByBrand(profile.brand) || {
     id: product?.shopId || "shop-001",
     rating: "4.9",
@@ -99,30 +104,48 @@ export function getProductDetails(product) {
     products: [1, 2, 3],
   };
 
-  let variants = profile.variants;
-  let sizes = product?.id === "7" ? ["S", "M", "L", "XL"] : profile.sizes;
-  let option = profile.option;
+  let tierVar = product?.tierVariation || product?.tier_variation;
+  if (typeof tierVar === "string") {
+    try {
+      tierVar = JSON.parse(tierVar);
+    } catch {
+      tierVar = [];
+    }
+  }
 
-  if (
-    product?.tierVariation &&
-    Array.isArray(product.tierVariation) &&
-    product.tierVariation.length > 0
-  ) {
-    option = product.tierVariation[0].name || "Phân loại";
-    const tier0List =
-      product.tierVariation[0].option_list || product.tierVariation[0].options;
-    if (tier0List?.length) {
-      variants = tier0List.map((opt) =>
-        typeof opt === "object" ? opt.option || opt.name || "" : opt,
-      );
+  let variants = profile.variants || ["Standard"];
+  let sizes = product?.id === "7" ? ["S", "M", "L", "XL"] : profile.sizes || [];
+  let option = profile.option || "Style";
+
+  if (Array.isArray(tierVar) && tierVar.length > 0) {
+    option = tierVar[0]?.name || "Option";
+    const tier0List = tierVar[0]?.option_list || tierVar[0]?.options;
+    if (Array.isArray(tier0List) && tier0List.length > 0) {
+      const parsed0 = tier0List
+        .map((opt) =>
+          typeof opt === "object" ? opt.option || opt.name || "" : String(opt),
+        )
+        .filter(Boolean);
+      if (parsed0.length > 0) variants = parsed0;
     }
-    const tier1List =
-      product.tierVariation[1]?.option_list || product.tierVariation[1]?.options;
-    if (tier1List?.length) {
-      sizes = tier1List.map((opt) =>
-        typeof opt === "object" ? opt.option || opt.name || "" : opt,
-      );
+    const tier1List = tierVar[1]?.option_list || tierVar[1]?.options;
+    if (Array.isArray(tier1List) && tier1List.length > 0) {
+      const parsed1 = tier1List
+        .map((opt) =>
+          typeof opt === "object" ? opt.option || opt.name || "" : String(opt),
+        )
+        .filter(Boolean);
+      if (parsed1.length > 0) sizes = parsed1;
     }
+  } else if (Array.isArray(product?.models) && product.models.length > 0) {
+    const fromModels = product.models
+      .map((m) => m.model_name || m.name || "")
+      .filter(Boolean);
+    if (fromModels.length > 0) variants = fromModels;
+  }
+
+  if (!variants || variants.length === 0) {
+    variants = ["Standard"];
   }
 
   const defaultReviews = Array.from({ length: 8 }, (_, index) => ({
@@ -153,21 +176,29 @@ export function getProductDetails(product) {
         : null,
   }));
 
-  const reviews =
+  const commentsList =
     Array.isArray(product?.comments) && product.comments.length
-      ? product.comments.map((c, i) => ({
-          id: c.comment_id || i + 1,
-          name: c.buyer_username || "Shopper",
-          rating: c.rating_star || 5,
-          date: c.create_time
+      ? product.comments
+      : Array.isArray(product?.reviews?.items) && product.reviews.items.length
+        ? product.reviews.items
+        : null;
+
+  const reviews = commentsList
+    ? commentsList.map((c, i) => ({
+        id: c.comment_id || i + 1,
+        name: c.buyer_username || "Shopper",
+        rating: Number(c.rating_star || 5),
+        date: c.created_at
+          ? String(c.created_at).slice(0, 10)
+          : c.create_time
             ? new Date(c.create_time * 1000).toISOString().slice(0, 10)
             : "2026-10-22",
-          variant: variants[0] || "Default",
-          text: c.comment || "Great product!",
-          hasPhoto: Boolean(c.images?.length),
-          response: c.reply || null,
-        }))
-      : defaultReviews;
+        variant: variants[0] || "Standard",
+        text: c.comment || "Great product!",
+        hasPhoto: Boolean(c.images?.length),
+        response: c.reply || null,
+      }))
+    : defaultReviews;
 
   const seller =
     product?.seller?.shop_name || product?.seller?.name
@@ -181,13 +212,18 @@ export function getProductDetails(product) {
           rating: String(
             product.seller.rating_star || product.seller.rating || "4.9",
           ),
-          responseRate: "99%",
-          responseTime: "Within a few hours",
-          joined: "1 year ago",
-          followers: "15.4k",
+          responseRate:
+            product.seller.responseRate ||
+            product.seller.response_rate ||
+            "99%",
+          responseTime:
+            product.seller.responseTime || "Within a few hours",
+          joined: product.seller.joined || "2 years ago",
+          followers: product.seller.followers || "15.4k",
           products: Number(
             product.seller.total_products ||
               product.seller.products?.length ||
+              product.seller.products ||
               24,
           ),
         }
@@ -198,7 +234,7 @@ export function getProductDetails(product) {
             rating: "4.9",
             responseRate: "99%",
             responseTime: "Within a few hours",
-            joined: "1 year ago",
+            joined: "2 years ago",
             followers: "15.4k",
             products: 24,
           }

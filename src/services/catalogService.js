@@ -31,16 +31,25 @@ export function mapBackendProduct(item) {
   // Extract images from array, object, or string
   let imgList = [];
   if (Array.isArray(item.images)) {
-    imgList = item.images;
+    imgList = item.images.filter(Boolean);
   } else if (item.images && typeof item.images === "object") {
     if (Array.isArray(item.images.image_url_list)) {
-      imgList = item.images.image_url_list;
+      imgList = item.images.image_url_list.filter(Boolean);
     }
   } else if (typeof item.image === "string") {
     imgList = [item.image];
   }
 
-  const categoryName = item.category_name || item.category || "General";
+  // Handle category both as string name or as object { category_id, category_name }
+  const categoryName =
+    typeof item.category === "string"
+      ? item.category
+      : item.category?.category_name || item.category_name || "General";
+
+  const categoryId =
+    item.category_id ||
+    (typeof item.category === "object" ? item.category?.category_id : null);
+
   let primaryImage = imgList[0];
 
   // If missing or mock URL, select appropriate high-res Unsplash photo
@@ -82,6 +91,14 @@ export function mapBackendProduct(item) {
     }
   }
 
+  const finalImages = imgList.length
+    ? imgList.map((url) =>
+        url.includes("mock_default_image") || url.includes("custom_product_image")
+          ? primaryImage
+          : url,
+      )
+    : [primaryImage];
+
   const stock =
     Array.isArray(item.models) && item.models.length
       ? item.models.reduce(
@@ -90,23 +107,32 @@ export function mapBackendProduct(item) {
         )
       : Number(item.stock || item.normal_stock || 50);
 
+  const rawComments =
+    Array.isArray(item.comments) && item.comments.length
+      ? item.comments
+      : Array.isArray(item.reviews?.items)
+        ? item.reviews.items
+        : [];
+
   return {
     id: String(item.item_id),
     itemId: item.item_id,
-    title: item.item_name,
+    title: item.item_name || "Untitled Product",
     image: primaryImage,
-    images: imgList.length ? imgList : [primaryImage],
+    images: finalImages,
     price,
     original,
     category: categoryName,
-    categoryId: item.category_id,
+    categoryId,
     stock,
     discount,
     rating: item.shop_rating
       ? String(item.shop_rating)
       : item.rating
         ? String(item.rating)
-        : "4.9",
+        : item.reviews?.average_rating
+          ? String(item.reviews.average_rating)
+          : "4.9",
     sold: Number(item.sales || item.sold || 48),
     location: item.location || "Ho Chi Minh City",
     progress: Math.min(
@@ -114,17 +140,30 @@ export function mapBackendProduct(item) {
       Math.max(25, ((Number(item.sales || 20) * 3) % 85) + 15),
     ),
     mall: Boolean(item.is_official_shop || item.shop_name?.includes("Official")),
-    shopId: item.shop_id,
-    shopName: item.shop_name || "Official Store",
+    shopId: item.shop_id || item.seller?.shop_id,
+    shopName: item.shop_name || item.seller?.shop_name || "Official Store",
     tierVariation: item.tier_variation,
     models: item.models || [],
     description: item.description || "",
-    seller: item.seller || {
-      id: item.shop_id,
-      name: item.shop_name || "Official Flagship",
-      rating: "4.9",
-      followers: "15.4k",
-      responseRate: "99%",
+    comments: rawComments,
+    reviews: item.reviews || null,
+    seller: {
+      id: item.seller?.shop_id || item.shop_id || "shop-001",
+      name: item.seller?.shop_name || item.shop_name || "Official Flagship",
+      rating: String(item.seller?.rating || item.shop_rating || "4.9"),
+      ratingCount: Number(item.seller?.rating_count || 0),
+      isVacation: Boolean(item.seller?.is_vacation),
+      responseRate:
+        item.seller?.response_rate || item.seller?.responseRate || "98%",
+      responseTime: item.seller?.responseTime || "Within a few hours",
+      joined: item.seller?.joined || "2 years ago",
+      followers: item.seller?.followers || "15.4k",
+      products: Number(
+        item.seller?.total_products ||
+          item.seller?.products?.length ||
+          item.seller?.products ||
+          24,
+      ),
     },
   };
 }
