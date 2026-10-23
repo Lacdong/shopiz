@@ -47,10 +47,10 @@ try {
 
   // Should navigate to /seller with shop_id=727720655
   await page.waitForURL("**/seller?shop_id=727720655");
-  await page.getByRole("heading", { name: /SmartOmni/i }).waitFor();
+  await page.locator("header").getByText("SmartOmni", { exact: false }).waitFor();
   console.log("Successfully navigated to Seller Center for SmartOmni Flagship!");
 
-  // Verify header and sidebar show SmartOmni
+  // Verify header reflects selected shop
   assert.ok(
     (await page.locator("header").getByText("SmartOmni", { exact: false }).count()) >= 1,
     "Header reflects selected shop",
@@ -67,7 +67,7 @@ try {
     .filter({ hasText: "Hanoi Streetwear Co." });
   await hanoiCard.getByRole("button").click();
   await page.waitForURL("**/seller?shop_id=839910244");
-  await page.getByRole("heading", { name: /Hanoi Streetwear/i }).waitFor();
+  await page.locator("header").getByText("Hanoi Streetwear", { exact: false }).waitFor();
   console.log("Successfully switched shop to Hanoi Streetwear Co.!");
 
   assert.equal(errors.length, 0, `Page errors: ${errors.join(", ")}`);

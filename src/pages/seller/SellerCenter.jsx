@@ -1,37 +1,109 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowDownToLine, ArrowRight, ArrowUpRight, BarChart3, Bell, BookOpen, Box, Check, ChevronDown, ChevronRight, CircleHelp, ClipboardList, ExternalLink, Gift, LayoutDashboard, Megaphone, Menu, Package, Plus, Search, Settings, ShieldCheck, ShoppingBag, Star, Store, Ticket, Users, Wallet, X } from "lucide-react";
+import {
+  ArrowDownToLine,
+  ArrowRight,
+  ArrowUpRight,
+  BarChart3,
+  Bell,
+  BookOpen,
+  Box,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  CircleHelp,
+  ClipboardList,
+  ExternalLink,
+  Gift,
+  LayoutDashboard,
+  Megaphone,
+  Menu,
+  Package,
+  Plus,
+  Search,
+  Settings,
+  ShieldCheck,
+  ShoppingBag,
+  Star,
+  Store,
+  Ticket,
+  Users,
+  Wallet,
+  X,
+} from "lucide-react";
 import { products } from "../../data/catalog";
+import api from "../../services/api";
 import sellerService from "../../services/sellerService";
 import catalogService from "../../services/catalogService";
+import SellerHeader from "./SellerHeader";
+import SellerSidebar, { findActiveItem } from "./SellerSidebar";
+import SellerComingSoon from "./SellerComingSoon";
 import s from "./SellerCenter.module.css";
 
-const money = (n) => new Intl.NumberFormat("en-US", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
-const navigation = [
-  ["OVERVIEW", [["overview", "Overview", LayoutDashboard]]],
-  ["MANAGE YOUR BUSINESS", [["orders", "Orders", ClipboardList, "12"], ["products", "Products", Box], ["marketing", "Marketing Center", Megaphone], ["analytics", "Sales Analytics", BarChart3], ["finance", "Finance", Wallet]]],
-  ["GROW YOUR SHOP", [["shop", "Shop Profile", Store], ["settings", "Shop Settings", Settings]]],
-];
-const headings = Object.fromEntries(navigation.flatMap(([, items]) => items.map(([id, name]) => [id, name])));
-const initialOrders = Array.from({ length: 8 }, (_, i) => ({ id: `SPZ2610200${48 - i}`, buyer: ["minh.anh_98", "ngoclinh.store", "hoangnam.vn", "thao.nguyen"][i % 4], product: products[i % 4], quantity: i % 3 + 1, status: ["pending", "pending", "shipping", "completed", "pending", "shipping", "completed", "cancelled"][i] }));
-const statuses = { pending: "To Confirm", shipping: "Shipping", completed: "Completed", cancelled: "Cancelled" };
-function Card({ title, action, children, className = "" }) { return <section className={`${s.card} ${className}`}><div className={s.cardHead}><h2>{title}</h2>{action}</div>{children}</section>; }
+const money = (n) =>
+  new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    maximumFractionDigits: 0,
+  }).format(n);
+
+const initialOrders = Array.from({ length: 8 }, (_, i) => ({
+  id: `SPZ2610200${48 - i}`,
+  buyer: ["minh.anh_98", "ngoclinh.store", "hoangnam.vn", "thao.nguyen"][i % 4],
+  product: products[i % 4],
+  quantity: (i % 3) + 1,
+  status: [
+    "pending",
+    "pending",
+    "shipping",
+    "completed",
+    "pending",
+    "shipping",
+    "completed",
+    "cancelled",
+  ][i],
+}));
+
+const statuses = {
+  pending: "To Confirm",
+  shipping: "Shipping",
+  completed: "Completed",
+  cancelled: "Cancelled",
+};
+
+function Card({ title, action, children, className = "" }) {
+  return (
+    <section className={`${s.card} ${className}`}>
+      <div className={s.cardHead}>
+        <h2>{title}</h2>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
+}
 
 export default function SellerCenter() {
   const [params, setParams] = useSearchParams();
-  const section = headings[params.get("tab")] ? params.get("tab") : "overview";
+  const rawTab = params.get("tab") || "orders_all";
+  const { group: activeGroup, item: activeItem } = findActiveItem(rawTab);
+
   const [mobile, setMobile] = useState(false);
   const [period, setPeriod] = useState("today");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
   const [orders, setOrders] = useState(initialOrders);
-  const [items, setItems] = useState(products.slice(0, 8).map((p, i) => ({ ...p, stock: i < 3 ? 0 : 32 + i * 9, active: true })));
+  const [items, setItems] = useState(
+    products
+      .slice(0, 8)
+      .map((p, i) => ({ ...p, stock: i < 3 ? 0 : 32 + i * 9, active: true })),
+  );
   const [notice, setNotice] = useState("");
-  const [notifications, setNotifications] = useState(false);
   const [dialog, setDialog] = useState(false);
   const [campaigns, setCampaigns] = useState([]);
   const [activeVouchers, setActiveVouchers] = useState([]);
   const urlShopId = params.get("shop_id");
+
   const resolveShopName = (id) => {
     const idStr = String(id || "");
     if (idStr === "sonora") return "SONORA Official Store";
@@ -150,24 +222,42 @@ export default function SellerCenter() {
             title: p.item_name,
             price: Number(p.original_price) / 25000,
             originalPriceVnd: Number(p.original_price),
-            stock: Number(p.seller_stock ?? 10),
-            active: p.item_status !== "UNLIST",
+            stock: p.models?.length
+              ? p.models.reduce((acc, m) => acc + (m.seller_stock || 0), 0)
+              : 50,
+            active: p.item_status === "NORMAL",
             image:
-              p.images?.image_url_list?.[0] ||
-              "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=120&q=80",
+              p.images?.[0] ||
+              "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=120&q=80",
             isBackend: true,
           }));
           setItems(mappedProducts);
         }
-        if (detail.vouchers) {
-          setActiveVouchers(detail.vouchers);
+      })
+      .catch(() => {});
+
+    // Fetch active vouchers
+    api
+      ?.get?.(`/simulator/promotions?shop_id=${numericShopId}`)
+      .then((res) => {
+        if (res?.vouchers) {
+          const mappedVouchers = res.vouchers.map((v) => ({
+            code: v.voucher_code,
+            type: v.discount_percentage ? "percent" : "fixed",
+            percent: v.discount_percentage,
+            amount: Number(v.discount_value || 0),
+            minimum: Number(v.min_basket_price || 0),
+            expiresAt: v.end_time
+              ? new Date(v.end_time * 1000).toLocaleDateString("vi-VN")
+              : "Active",
+          }));
+          setActiveVouchers(mappedVouchers);
         }
       })
       .catch(() => {});
   }, [shopId, period]);
 
-  useEffect(() => { document.title = `${headings[section]} · Shopiz Seller Center`; setQuery(""); setFilter("all"); }, [section]);
-  useEffect(() => { if (!notice) return; const timer = setTimeout(() => setNotice(""), 4500); return () => clearTimeout(timer); }, [notice]);
+  // Modal accessibility
   useEffect(() => {
     if (!dialog) return;
     const before = document.activeElement;
@@ -175,23 +265,66 @@ export default function SellerCenter() {
     function keyboard(e) {
       if (e.key === "Escape") setDialog(false);
       if (e.key === "Tab") {
-        const nodes = [...modal.current.querySelectorAll("button, input")];
-        if (e.shiftKey && document.activeElement === nodes[0]) { e.preventDefault(); nodes.at(-1).focus(); }
-        else if (!e.shiftKey && document.activeElement === nodes.at(-1)) { e.preventDefault(); nodes[0].focus(); }
+        const nodes = modal.current?.querySelectorAll(
+          "button, input, [tabindex='0']",
+        );
+        if (!nodes?.length) return;
+        if (e.shiftKey && document.activeElement === nodes[0]) {
+          e.preventDefault();
+          nodes.at(-1).focus();
+        } else if (!e.shiftKey && document.activeElement === nodes.at(-1)) {
+          e.preventDefault();
+          nodes[0].focus();
+        }
       }
     }
     document.addEventListener("keydown", keyboard);
-    return () => { document.removeEventListener("keydown", keyboard); before?.focus(); };
+    return () => {
+      document.removeEventListener("keydown", keyboard);
+      before?.focus();
+    };
   }, [dialog]);
-  function go(tab, status = "all") { setParams(tab === "overview" ? {} : { tab }); setFilter(status); setMobile(false); }
+
   function exportOrders() {
-    const csv = "\uFEFFOrder ID,Buyer,Status,Total\n" + orders.map(o => `${o.id},${o.buyer},${statuses[o.status]},${Math.round(o.product.price * 25000 * o.quantity)}`).join("\n");
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-    const a = document.createElement("a"); a.href = url; a.download = "shopiz-sample-orders.csv"; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    const csv =
+      "\uFEFFOrder ID,Buyer,Status,Total\n" +
+      orders
+        .map(
+          (o) =>
+            `${o.id},${o.buyer},${statuses[o.status]},${Math.round(
+              o.product.price * 25000 * o.quantity,
+            )}`,
+        )
+        .join("\n");
+    const url = URL.createObjectURL(
+      new Blob([csv], { type: "text/csv;charset=utf-8" }),
+    );
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "shopiz-sample-orders.csv";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
-  const filteredOrders = orders.filter(o => (filter === "all" || o.status === filter) && `${o.id} ${o.buyer} ${o.product.title}`.toLowerCase().includes(query.toLowerCase()));
+
+  const filteredOrders = orders.filter(
+    (o) =>
+      (filter === "all" || o.status === filter) &&
+      `${o.id} ${o.buyer} ${o.product.title}`
+        .toLowerCase()
+        .includes(query.toLowerCase()),
+  );
   const productFilter = params.get("stock") === "empty" ? "stock" : filter;
-  const filteredItems = items.filter(p => p.title.toLowerCase().includes(query.toLowerCase()) && (productFilter === "all" || (productFilter === "stock" ? p.stock === 0 : productFilter === "active" ? p.active : !p.active)));
+  const filteredItems = items.filter(
+    (p) =>
+      p.title.toLowerCase().includes(query.toLowerCase()) &&
+      (productFilter === "all" ||
+        (productFilter === "stock"
+          ? p.stock === 0
+          : productFilter === "active"
+            ? p.active
+            : !p.active)),
+  );
+
   const metrics = liveAnalytics?.metrics
     ? [
         new Intl.NumberFormat("vi-VN", {
@@ -208,49 +341,772 @@ export default function SellerCenter() {
     : period === "today"
       ? ["₫12,850,000", "48", "1,284", "3.74%"]
       : ["₫86,420,000", "326", "8,910", "3.66%"];
-  const chart = <><div className={s.chartLegend}><span><i /> Revenue</span><span><i /> Previous period</span></div><div className={s.chart} role="img" aria-label={`Sample revenue chart for ${period === "today" ? "today" : "Last 7 Days"}, trending upward at the end of the period`}><div className={s.chartLabels}><span>15m</span><span>10m</span><span>5m</span><span>0</span></div><svg viewBox="0 0 700 160" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="sellerArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--brand)" stopOpacity=".18"/><stop offset="100%" stopColor="var(--brand)" stopOpacity="0"/></linearGradient></defs>{[10, 55, 100, 145].map(y => <line key={y} x1="0" y1={y} x2="700" y2={y} stroke="var(--border)" strokeDasharray="4 4"/>)}<path d="M0 140 C40 138 55 115 90 125 S145 112 175 119 S230 80 265 96 S330 65 350 82 S410 110 440 75 S505 60 530 70 S590 35 620 50 S670 30 700 35" fill="none" stroke="var(--disabled)" strokeWidth="2" strokeDasharray="5 5"/><path d={period === "today" ? "M0 138 C35 140 55 125 85 130 S140 92 175 105 S230 70 265 89 S325 40 350 60 S410 93 440 58 S490 24 525 40 S575 60 610 30 S665 32 700 10 L700 160 L0 160 Z" : "M0 145 C60 145 70 90 120 105 S190 50 240 85 S320 15 380 55 S460 70 510 30 S600 45 700 6 L700 160 L0 160 Z"} fill="url(#sellerArea)" stroke="var(--brand)" strokeWidth="2.6" strokeLinejoin="round"/></svg><div className={s.chartTimes}>{(period === "today" ? ["00:00", "04:00", "08:00", "12:00", "16:00", "20:00", "23:59"] : ["14/10", "15/10", "16/10", "17/10", "18/10", "19/10", "20/10"]).map(t => <span key={t}>{t}</span>)}</div></div></>;
-  const orderTable = (list, compact = false) => <div className={s.tableScroll}><table><thead><tr><th>Product / Order ID</th><th>Buyer</th><th>Total</th><th>Status</th>{!compact && <th>Actions</th>}</tr></thead><tbody>{list.map(o => <tr key={o.id}><td><div className={s.productCell}><img src={o.product.image} alt=""/><div><strong>{o.product.title.split(" · ")[0]}</strong><small>#{o.id} · Qty: {o.quantity}</small></div></div></td><td>{o.buyer}</td><td className={s.amount}>{money(o.total || o.product.price * 25000 * o.quantity)}</td><td><span className={`${s.badge} ${s[o.status]}`}>{statuses[o.status]}</span></td>{!compact && <td>{o.status === "pending" ? <button className={s.textButton} onClick={() => {
-    if (o.isBackend) {
-      sellerService.shipOrder(o.id).then(() => {
-        setOrders(orders.map(x => x.id === o.id ? { ...x, status: "shipping" } : x));
-        setNotice(`Order #${o.id} arranged for shipment!`);
-      }).catch(() => {
-        setOrders(orders.map(x => x.id === o.id ? { ...x, status: "shipping" } : x));
-        setNotice(`Order #${o.id} arranged for shipment!`);
-      });
-    } else {
-      setOrders(orders.map(x => x.id === o.id ? { ...x, status: "shipping" } : x));
-      setNotice(`Confirmed sample order #${o.id}`);
-    }
-  }}>Confirm</button> : (o.isBackend && (o.status === "shipping" || o.status === "completed") ? <a href={sellerService.getAwbDownloadUrl(o.id)} target="_blank" rel="noreferrer" className={s.textButton} title="Download AWB PDF">Print AWB</a> : <span className={s.muted}>—</span>)}</td>}</tr>)}</tbody></table>{!list.length && <div className={s.empty}><Package size={32}/><p>No matching orders found.</p></div>}</div>;
 
-  return <div className={s.seller}>
-    <header className={s.header}><div className={s.brandArea}><button className={`${s.iconButton} ${s.mobileToggle}`} aria-label="Open menu" aria-expanded={mobile} onClick={() => setMobile(!mobile)}><Menu size={22}/></button><Link to="/" className={s.logo}><ShoppingBag size={29} strokeWidth={1.7}/><span>shopiz<span>.</span></span></Link><span className={s.headerDivider}/><span className={s.centerName}>Seller Center</span></div><div className={s.headerRight}><Link to="/seller/select-shop" className={s.switchShopBtn}><Store size={14}/> Switch Shop</Link><Link to="/" className={s.marketLink}>Go to Shopiz <ExternalLink size={13}/></Link><div className={s.bellWrap}><button className={s.iconButton} aria-label="Notifications" aria-expanded={notifications} onClick={() => setNotifications(!notifications)}><Bell size={20}/><b className={s.notificationDot}/></button>{notifications && <div className={s.notificationPanel}><strong>Shop notifications</strong><p>3 sample orders are waiting for confirmation.</p><button className={s.textButton} onClick={() => { go("orders"); setNotifications(false); }}>View orders <ArrowRight size={14}/></button></div>}</div><span className={s.headerDivider}/><button className={s.account} onClick={() => go("shop")}><span className={s.avatar}>{savedName.charAt(0)}</span><span>{savedName}</span><ChevronDown size={14}/></button></div></header>
-    {mobile && <button className={s.backdrop} aria-label="Close menu" onClick={() => setMobile(false)}/>}
-    <aside className={`${s.sidebar} ${mobile ? s.sidebarOpen : ""}`}><div className={s.shopCard}><span className={s.shopAvatar}>{savedName.charAt(0)}<span><Check size={9}/></span></span><div><strong>{savedName}</strong><small><span/> Preferred Seller</small></div><Link to="/seller/select-shop" className={s.sidebarSwitchBtn} title="Switch Shop">Switch</Link></div><nav aria-label="Seller navigation">{navigation.map(([title, links]) => <div className={s.navGroup} key={title}><p>{title}</p>{links.map(([id, label, Icon, count]) => <Link key={id} to={id === "overview" ? "/seller" : `/seller?tab=${id}`} className={`${s.navLink} ${section === id ? s.active : ""}`} aria-current={section === id ? "page" : undefined} onClick={() => setMobile(false)}><Icon size={19}/><span>{label}</span>{count && <b>{count}</b>}</Link>)}</div>)}</nav><div className={s.learnCard}><BookOpen size={21}/><strong>Shopiz Academy</strong><p>A little knowledge,<br/>a better business every day.</p><button onClick={() => { go("marketing"); }}>Explore now <ArrowUpRight size={14}/></button></div><div className={s.sidebarFoot}><ShieldCheck size={15}/> Your partner in business</div></aside>
-    <main className={s.main}><div className={s.breadcrumb}>Seller Center <ChevronRight size={13}/><span>{headings[section]}</span></div><div className={s.pageHeading}><div><h1>{section === "overview" ? `Welcome back, ${savedName.replace(" Official Store", "").replace(" Official Flagship", "")}` : headings[section]}</h1><p>{section === "overview" ? "Here’s to another great day of selling." : "Everything you need to manage your shop, in one place."}</p></div><div className={s.headingActions}><span className={s.demo}>Sample data</span>{section === "products" ? <button className={s.primary} onClick={() => setDialog(true)}><Plus size={16}/> Add product</button> : <Link className={s.outline} to={`/shop/${shopId === "sonora" ? "sonora" : shopId}`}><Store size={15}/> View Shop <ArrowUpRight size={14}/></Link>}</div></div>
-    {(section === "overview" || section === "analytics") && <>
-      {section === "overview" && <div className={s.banner}><span className={s.bannerIcon}><Megaphone size={21}/></span><div><strong>Ready to grow your holiday sales?</strong><p>Join the 11.11 campaign and reach new customers.</p></div><button onClick={() => go("marketing")}>Explore now <ArrowRight size={15}/></button><span className={s.bannerArt}>11<span>.</span>11<small>MEGA SALE</small></span></div>}
-      {section === "overview" && <Card title="To-do List" action={<span className={s.subtle}>Keep your business on track</span>}><div className={s.todos}>{[["12", "To Confirm", "pending"], ["08", "To Ship", "shipping"], ["02", "Cancellation Requests", "cancelled"], ["03", "Out of Stock", "products"]].map(([n, label, tab]) => <button key={label} onClick={() => { if (tab === "products") setParams({ tab: "products", stock: "empty" }); else { setParams({ tab: "orders", status: tab }); } }}><strong>{n}</strong><span>{label}</span></button>)}</div></Card>}
-      <Card title="Business Insights" action={<div className={s.period}><button className={period === "today" ? s.selected : ""} onClick={() => setPeriod("today")}>Today</button><button className={period === "week" ? s.selected : ""} onClick={() => setPeriod("week")}>Last 7 Days</button></div>}><div className={s.stats}>{[["Revenue", "+18.6%", Wallet], ["Orders", "+12.4%", ShoppingBag], ["Visitors", "+8.2%", Users], ["Conversion Rate", "+2.1%", BarChart3]].map(([label, growth, Icon], i) => <div key={label}><div className={s.statTitle}>{label}<Icon size={15}/></div><strong>{metrics[i]}</strong><p><span><ArrowUpRight size={13}/>{growth}</span> vs. previous period</p></div>)}</div>{chart}<div className={s.chartFoot}><span>Last updated: 09:41 · 20/10/2026</span><button className={s.textButton} onClick={() => section === "analytics" ? exportOrders() : go("analytics")}>{section === "analytics" ? "Export order data" : "View details"} <ChevronRight size={14}/></button></div></Card>
-      {section === "overview" && <div className={s.lowerGrid}><Card title="Recent Orders" action={<button className={s.textButton} onClick={() => go("orders")}>All orders <ChevronRight size={14}/></button>}>{orderTable(orders.slice(0, 3), true)}</Card><Card title="Shop Health" action={<ShieldCheck size={18} color="var(--text)"/>}><div className={s.health}><span className={s.healthIcon}><ShieldCheck size={27}/></span><div><strong>Your shop is doing well</strong><p>Keep up the good work!</p></div></div>{[["Chat response rate", "98%", "98%"], ["On-time delivery", "99.2%", "99%"], ["Shop rating", "4.9 / 5.0", "96%"]].map(([label, value, width]) => <div className={s.healthRow} key={label}><div><span>{label}</span><strong>{value}</strong></div><div className={s.track}><span style={{ width }}/></div></div>)}</Card></div>}
-    </>}
-    {section === "orders" && <Card title="Manage Orders" action={<button className={s.outline} onClick={exportOrders}><ArrowDownToLine size={15}/> Export orders</button>}><div className={s.tabs}>{[["all", "All"], ...Object.entries(statuses)].map(([id, label]) => <button key={id} className={(params.get("status") || filter) === id ? s.tabActive : ""} onClick={() => { setFilter(id); setParams({ tab: "orders" }); }}>{label}<span>{id === "all" ? orders.length : orders.filter(o => o.status === id).length}</span></button>)}</div><div className={s.toolbar}><label className={s.search}><Search size={17}/><input aria-label="Search orders" placeholder="Search order ID, buyer or product" value={query} onChange={e => setQuery(e.target.value)}/></label><span>{filteredOrders.length} orders</span></div>{orderTable(params.get("status") ? filteredOrders.filter(o => o.status === params.get("status")) : filteredOrders)}</Card>}
-    {section === "products" && <Card title={`Shop Products (${items.length})`}><div className={s.tabs}>{[["all", "All"], ["active", "Live"], ["hidden", "Hidden"], ["stock", "Out of Stock"]].map(([id, label]) => <button key={id} className={productFilter === id ? s.tabActive : ""} onClick={() => { setFilter(id); setParams({ tab: "products" }); }}>{label}</button>)}</div><div className={s.toolbar}><label className={s.search}><Search size={17}/><input aria-label="Search products" placeholder="Search by product name" value={query} onChange={e => setQuery(e.target.value)}/></label><span>{filteredItems.length} products</span></div><div className={s.tableScroll}><table><thead><tr><th>Products</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead><tbody>{filteredItems.map(p => <tr key={p.id}><td><div className={s.productCell}>{p.image ? <img src={p.image} alt=""/> : <span className={s.productPlaceholder}><Package size={22}/></span>}<div><strong>{p.title}</strong><small>SKU: SPZ-{p.id}</small></div></div></td><td>{money(p.originalPriceVnd || p.price * 25000)}</td><td>{p.stock}</td><td><span className={`${s.badge} ${p.active ? s.completed : s.cancelled}`}>{p.active ? "Live" : "Hidden"}</span></td><td><button className={s.textButton} onClick={() => {
-      const nextActive = !p.active;
-      if (p.isBackend) {
-        sellerService.toggleUnlist(p.id, Number(shopId), !nextActive).catch(() => {});
-      }
-      setItems(items.map(x => x.id === p.id ? { ...x, active: nextActive } : x));
-      setNotice(nextActive ? `Product "${p.title}" is now Live.` : `Product "${p.title}" is now Hidden.`);
-    }}>{p.active ? "Hide product" : "Show product"}</button></td></tr>)}</tbody></table>{!filteredItems.length && <p className={s.empty}>No matching products found.</p>}</div></Card>}
-    {section === "marketing" && <><div className={s.marketingHero}><div><span>SHOPIZ SELLER GROWTH</span><h2>More offers.<br/>More new customers.</h2><p>Discover tools to help your shop grow every day.</p></div><Gift size={110} strokeWidth={.9}/></div>
-      {activeVouchers.length > 0 && <Card title="Active Store Campaigns & Vouchers"><div className={s.tableScroll}><table><thead><tr><th>Voucher Code</th><th>Reward</th><th>Min. Spend</th><th>Status</th><th>Expiry</th></tr></thead><tbody>{activeVouchers.map(v => <tr key={v.code}><td><strong>{v.code}</strong></td><td>{v.type === "percent" ? `${v.percent}% OFF` : `${money(v.amount)} OFF`}</td><td>{money(v.minimum)}</td><td><span className={`${s.badge} ${s.completed}`}>Ongoing</span></td><td>{v.expiresAt || "Active"}</td></tr>)}</tbody></table></div></Card>}
-      <div className={s.marketingGrid}>{[[Ticket, "Shop Vouchers", "Create offers that keep customers coming back.", "VOUCHER10"], [Megaphone, "11.11 Campaign", "Join the holiday shopping celebration.", "11.11"], [Gift, "Bundle Deals", "Encourage bigger baskets with product bundles.", "COMBO"]].map(([Icon, title, text, code]) => <Card key={title} title={title}><div className={s.marketingBody}><Icon size={30}/><p>{text}</p><button className={campaigns.includes(code) ? s.outline : s.primary} disabled={campaigns.includes(code)} onClick={() => { setCampaigns([...campaigns, code]); setNotice(`Activated ${title.toLowerCase()} in this demo session.`); }}>{campaigns.includes(code) ? <><Check size={16}/> Activated</> : <>Get started <ArrowRight size={15}/></>}</button></div></Card>)}</div></>}
-    {section === "finance" && <><div className={s.finance}><Wallet size={34}/><div><p>Available balance · Sample data</p><h2>{money(28450000)}</h2></div><span><ShieldCheck size={17}/> Secure payments</span></div><Card title="Income History"><div className={s.tableScroll}><table><thead><tr><th>Transaction ID</th><th>Description</th><th>Date</th><th>Amount</th><th>Status</th></tr></thead><tbody>{[0, 1, 2, 3].map(i => <tr key={i}><td>TXN202610{20 - i}</td><td>Completed order revenue</td><td>{20 - i}/10/2026</td><td className={s.positive}>+{money(1250000 + i * 450000)}</td><td><span className={`${s.badge} ${s.completed}`}>Settled</span></td></tr>)}</tbody></table></div></Card></>}
-    {(section === "shop" || section === "settings") && <Card title={section === "shop" ? "Shop Information" : "Shop Settings"}><form className={s.shopForm} onSubmit={e => { e.preventDefault(); setSavedName(shopName.trim()); setNotice("Changes saved for this demo session."); }}><div className={s.profileIntro}><span className={s.shopAvatar}>S</span><div><strong>{savedName}</strong><p><Star size={14}/> 4.9 · Preferred Seller</p></div></div><label>Shop name<input required maxLength={60} value={shopName} onChange={e => setShopName(e.target.value)}/></label><label>Shop description<textarea defaultValue="Sound made personal. Explore thoughtfully selected tech and accessories at SONORA." maxLength={500}/></label>{section === "settings" && <label className={s.checkbox}><input type="checkbox" defaultChecked/> Receive new order notifications</label>}<p className={s.muted}>Changes apply to the current demo session.</p><button className={s.primary} type="submit"><Check size={16}/> Save changes</button></form></Card>}
-    <footer className={s.footer}><span>© 2026 Shopiz. Growing with you, every day.</span><span><CircleHelp size={14}/> Seller Center · Demo</span></footer></main>
-    {notice && <div className={s.toast} role="status"><Check size={17}/>{notice}<button className={s.iconButton} aria-label="Dismiss notification" onClick={() => setNotice("")}><X size={16}/></button></div>}
-    {dialog && <div className={s.modalBackdrop} onClick={e => { if (e.target === e.currentTarget) setDialog(false); }}><div className={s.modal} ref={modal} role="dialog" aria-modal="true" aria-labelledby="product-dialog-title"><div className={s.cardHead}><h2 id="product-dialog-title">Add sample product</h2><button className={s.iconButton} aria-label="Close" onClick={() => setDialog(false)}><X size={20}/></button></div><form className={s.shopForm} onSubmit={e => { e.preventDefault(); const data = new FormData(e.currentTarget); setItems([{ id: `new-${Date.now()}`, title: data.get("name").trim(), price: Number(data.get("price")) / 25000, stock: Number(data.get("stock")), active: true }, ...items]); setDialog(false); setNotice("Sample product added for this session."); }}><label>Product name<input name="name" required pattern=".*\S.*" maxLength={120} placeholder="Enter product name"/></label><label>Price (₫)<input name="price" type="number" min="1000" step="1000" required placeholder="250000"/></label><label>Stock quantity<input name="stock" type="number" min="0" step="1" required defaultValue="10"/></label><button type="submit" className={s.primary}><Plus size={16}/> Add product</button></form></div></div>}
-  </div>;
+  const chart = (
+    <>
+      <div className={s.chartLegend}>
+        <span>
+          <i /> Doanh thu
+        </span>
+        <span>
+          <i /> Kỳ trước
+        </span>
+      </div>
+      <div
+        className={s.chart}
+        role="img"
+        aria-label={`Biểu đồ doanh thu ${period === "today" ? "hôm nay" : "7 ngày qua"}`}
+      >
+        <div className={s.chartLabels}>
+          <span>15m</span>
+          <span>10m</span>
+          <span>5m</span>
+          <span>0</span>
+        </div>
+        <svg viewBox="0 0 700 160" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="sellerArea" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--brand)" stopOpacity=".18" />
+              <stop offset="100%" stopColor="var(--brand)" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          {[10, 55, 100, 145].map((y) => (
+            <line
+              key={y}
+              x1="0"
+              y1={y}
+              x2="700"
+              y2={y}
+              stroke="var(--border)"
+              strokeDasharray="4 4"
+            />
+          ))}
+          <path
+            d="M0 140 C40 138 55 115 90 125 S145 112 175 119 S230 80 265 96 S330 65 350 82 S410 110 440 75 S505 60 530 70 S590 35 620 50 S670 30 700 35"
+            fill="none"
+            stroke="var(--disabled)"
+            strokeWidth="2"
+            strokeDasharray="5 5"
+          />
+          <path
+            d={
+              period === "today"
+                ? "M0 138 C35 140 55 125 85 130 S140 92 175 105 S230 70 265 89 S325 40 350 60 S410 93 440 58 S490 24 525 40 S575 60 610 30 S665 32 700 10 L700 160 L0 160 Z"
+                : "M0 145 C60 145 70 90 120 105 S190 50 240 85 S320 15 380 55 S460 70 510 30 S600 45 700 6 L700 160 L0 160 Z"
+            }
+            fill="url(#sellerArea)"
+            stroke="var(--brand)"
+            strokeWidth="2.6"
+            strokeLinejoin="round"
+          />
+        </svg>
+        <div className={s.chartTimes}>
+          {(period === "today"
+            ? ["00:00", "04:00", "08:00", "12:00", "16:00", "20:00", "23:59"]
+            : [
+                "14/10",
+                "15/10",
+                "16/10",
+                "17/10",
+                "18/10",
+                "19/10",
+                "20/10",
+              ]
+          ).map((t) => (
+            <span key={t}>{t}</span>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+
+  const orderTable = (list, compact = false) => (
+    <div className={s.tableScroll}>
+      <table>
+        <thead>
+          <tr>
+            <th>Sản phẩm / Mã đơn hàng</th>
+            <th>Người mua</th>
+            <th>Tổng thanh toán</th>
+            <th>Trạng thái</th>
+            {!compact && <th>Thao tác</th>}
+          </tr>
+        </thead>
+        <tbody>
+          {list.map((o) => (
+            <tr key={o.id}>
+              <td>
+                <div className={s.productCell}>
+                  <img src={o.product.image} alt="" />
+                  <div>
+                    <strong>{o.product.title.split(" · ")[0]}</strong>
+                    <small>
+                      #{o.id} · SL: {o.quantity}
+                    </small>
+                  </div>
+                </div>
+              </td>
+              <td>{o.buyer}</td>
+              <td className={s.amount}>
+                {money(o.total || o.product.price * 25000 * o.quantity)}
+              </td>
+              <td>
+                <span className={`${s.badge} ${s[o.status]}`}>
+                  {statuses[o.status]}
+                </span>
+              </td>
+              {!compact && (
+                <td>
+                  {o.status === "pending" ? (
+                    <button
+                      className={s.textButton}
+                      onClick={() => {
+                        if (o.isBackend) {
+                          sellerService
+                            .shipOrder(o.id)
+                            .then(() => {
+                              setOrders(
+                                orders.map((x) =>
+                                  x.id === o.id
+                                    ? { ...x, status: "shipping" }
+                                    : x,
+                                ),
+                              );
+                              setNotice(
+                                `Đơn hàng #${o.id} đã được chuẩn bị giao!`,
+                              );
+                            })
+                            .catch(() => {
+                              setOrders(
+                                orders.map((x) =>
+                                  x.id === o.id
+                                    ? { ...x, status: "shipping" }
+                                    : x,
+                                ),
+                              );
+                              setNotice(
+                                `Đơn hàng #${o.id} đã được chuẩn bị giao!`,
+                              );
+                            });
+                        } else {
+                          setOrders(
+                            orders.map((x) =>
+                              x.id === o.id ? { ...x, status: "shipping" } : x,
+                            ),
+                          );
+                          setNotice(`Đã xác nhận đơn hàng #${o.id}`);
+                        }
+                      }}
+                    >
+                      Chuẩn bị hàng
+                    </button>
+                  ) : o.isBackend &&
+                    (o.status === "shipping" || o.status === "completed") ? (
+                    <a
+                      href={sellerService.getAwbDownloadUrl(o.id)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={s.textButton}
+                      title="Tải phiếu giao hàng AWB (PDF)"
+                    >
+                      In phiếu AWB
+                    </a>
+                  ) : (
+                    <span className={s.muted}>—</span>
+                  )}
+                </td>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {!list.length && (
+        <div className={s.empty}>
+          <Package size={32} />
+          <p>Không tìm thấy đơn hàng phù hợp.</p>
+        </div>
+      )}
+    </div>
+  );
+
+  // Check if current tab is one of the implemented views
+  const isOrdersTab =
+    activeItem.id === "orders_all" || rawTab === "orders" || rawTab === "overview";
+  const isProductsTab =
+    activeItem.id === "products_all" || rawTab === "products";
+  const isMarketingTab =
+    activeItem.id === "marketing" || rawTab === "marketing";
+  const isAnalyticsTab =
+    activeItem.id === "analytics" || rawTab === "analytics";
+  const isFinanceTab =
+    activeItem.id === "income" || rawTab === "finance";
+  const isShopProfileTab =
+    activeItem.id === "shop_profile" || rawTab === "shop";
+  const isShopSettingsTab =
+    activeItem.id === "shop_settings" || rawTab === "settings";
+
+  const isImplemented =
+    isOrdersTab ||
+    isProductsTab ||
+    isMarketingTab ||
+    isAnalyticsTab ||
+    isFinanceTab ||
+    isShopProfileTab ||
+    isShopSettingsTab;
+
+  const activeShopName = resolveShopName(urlShopId || shopId) || savedName;
+
+  return (
+    <div className={s.seller}>
+      <SellerHeader
+        shopName={activeShopName}
+        breadcrumb={activeItem.label}
+        shopId={shopId}
+        onToggleMobileMenu={() => setMobile((m) => !m)}
+      />
+
+      <div style={{ display: "flex", width: "100%", minHeight: "calc(100vh - 56px)", overflowX: "hidden" }}>
+        <SellerSidebar
+          activeTab={activeItem.id}
+          shopId={shopId}
+          isOpenOnMobile={mobile}
+          onCloseMobile={() => setMobile(false)}
+          onSelectTab={() => setMobile(false)}
+        />
+
+        <main className={s.main} style={{ flex: 1, minWidth: 0, marginLeft: 0, padding: "16px 16px 40px", maxWidth: "100%", boxSizing: "border-box", overflowX: "hidden" }}>
+          {!isImplemented ? (
+            <SellerComingSoon
+              featureName={activeItem.label}
+              groupName={activeGroup.title}
+            />
+          ) : isOrdersTab ? (
+            <Card
+              title="Quản Lý Đơn Hàng"
+              action={
+                <button className={s.outline} onClick={exportOrders}>
+                  <ArrowDownToLine size={15} /> Xuất dữ liệu đơn hàng
+                </button>
+              }
+            >
+              <div className={s.tabs}>
+                {[["all", "Tất cả"], ...Object.entries(statuses)].map(
+                  ([id, label]) => (
+                    <button
+                      key={id}
+                      className={
+                        (params.get("status") || filter) === id
+                          ? s.tabActive
+                          : ""
+                      }
+                      onClick={() => {
+                        setFilter(id);
+                        setParams({ tab: "orders_all", ...(shopId ? { shop_id: shopId } : {}) });
+                      }}
+                    >
+                      {label}
+                      <span>
+                        {id === "all"
+                          ? orders.length
+                          : orders.filter((o) => o.status === id).length}
+                      </span>
+                    </button>
+                  ),
+                )}
+              </div>
+              <div className={s.toolbar}>
+                <label className={s.search}>
+                  <Search size={17} />
+                  <input
+                    aria-label="Search orders"
+                    placeholder="Tìm theo mã đơn hàng, tên người mua hoặc sản phẩm"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                  />
+                </label>
+                <span>{filteredOrders.length} Đơn hàng</span>
+              </div>
+              {orderTable(
+                params.get("status")
+                  ? filteredOrders.filter(
+                      (o) => o.status === params.get("status"),
+                    )
+                  : filteredOrders,
+              )}
+            </Card>
+          ) : isProductsTab ? (
+            <Card title={`Sản Phẩm Của Shop (${items.length})`}>
+              <div className={s.tabs}>
+                {[
+                  ["all", "Tất cả"],
+                  ["active", "Đang hoạt động"],
+                  ["hidden", "Đã ẩn"],
+                  ["stock", "Hết hàng"],
+                ].map(([id, label]) => (
+                  <button
+                    key={id}
+                    className={productFilter === id ? s.tabActive : ""}
+                    onClick={() => {
+                      setFilter(id);
+                      setParams({ tab: "products_all", ...(shopId ? { shop_id: shopId } : {}) });
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <div className={s.toolbar}>
+                <label className={s.search}>
+                  <Search size={17} />
+                  <input
+                    aria-label="Search products"
+                    placeholder="Tìm tên sản phẩm, SKU..."
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                  />
+                </label>
+                <span>{filteredItems.length} Sản phẩm</span>
+              </div>
+              <div className={s.tableScroll}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Sản phẩm</th>
+                      <th>Giá bán</th>
+                      <th>Kho hàng</th>
+                      <th>Trạng thái</th>
+                      <th>Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredItems.map((p) => (
+                      <tr key={p.id}>
+                        <td>
+                          <div className={s.productCell}>
+                            {p.image ? (
+                              <img src={p.image} alt="" />
+                            ) : (
+                              <span className={s.productPlaceholder}>
+                                <Package size={22} />
+                              </span>
+                            )}
+                            <div>
+                              <strong>{p.title}</strong>
+                              <small>SKU: SPZ-{p.id}</small>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          {money(p.originalPriceVnd || p.price * 25000)}
+                        </td>
+                        <td>{p.stock}</td>
+                        <td>
+                          <span
+                            className={`${s.badge} ${
+                              p.active ? s.completed : s.cancelled
+                            }`}
+                          >
+                            {p.active ? "Đang bán" : "Đã ẩn"}
+                          </span>
+                        </td>
+                        <td>
+                          <button
+                            className={s.textButton}
+                            onClick={() => {
+                              const nextActive = !p.active;
+                              if (p.isBackend) {
+                                sellerService
+                                  .toggleUnlist(
+                                    p.id,
+                                    Number(shopId),
+                                    !nextActive,
+                                  )
+                                  .catch(() => {});
+                              }
+                              setItems(
+                                items.map((x) =>
+                                  x.id === p.id
+                                    ? { ...x, active: nextActive }
+                                    : x,
+                                ),
+                              );
+                              setNotice(
+                                nextActive
+                                  ? `Sản phẩm "${p.title}" đang được hiển thị.`
+                                  : `Sản phẩm "${p.title}" đã được ẩn.`,
+                              );
+                            }}
+                          >
+                            {p.active ? "Ẩn sản phẩm" : "Hiện sản phẩm"}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {!filteredItems.length && (
+                  <p className={s.empty}>Không tìm thấy sản phẩm phù hợp.</p>
+                )}
+              </div>
+            </Card>
+          ) : isMarketingTab ? (
+            <>
+              <div className={s.marketingHero}>
+                <div>
+                  <span>KÊNH MARKETING SHOPEE</span>
+                  <h2>
+                    Tăng trưởng doanh thu.
+                    <br />
+                    Tiếp cận hàng triệu khách hàng.
+                  </h2>
+                  <p>Khám phá các công cụ thúc đẩy doanh số bán hàng của shop.</p>
+                </div>
+                <Gift size={110} strokeWidth={0.9} />
+              </div>
+              {activeVouchers.length > 0 && (
+                <Card title="Chương trình Khuyến mãi & Voucher của Shop">
+                  <div className={s.tableScroll}>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Mã Voucher</th>
+                          <th>Ưu đãi</th>
+                          <th>Đơn tối thiểu</th>
+                          <th>Trạng thái</th>
+                          <th>Thời hạn</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activeVouchers.map((v) => (
+                          <tr key={v.code}>
+                            <td>
+                              <strong>{v.code}</strong>
+                            </td>
+                            <td>
+                              {v.type === "percent"
+                                ? `Giảm ${v.percent}%`
+                                : `Giảm ${money(v.amount)}`}
+                            </td>
+                            <td>{money(v.minimum)}</td>
+                            <td>
+                              <span className={`${s.badge} ${s.completed}`}>
+                                Đang diễn ra
+                              </span>
+                            </td>
+                            <td>{v.expiresAt || "Đang hoạt động"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+              )}
+              <div className={s.marketingGrid}>
+                {[
+                  [
+                    Ticket,
+                    "Mã Giảm Giá Của Shop",
+                    "Tạo voucher thu hút người mua quay lại.",
+                    "VOUCHER10",
+                  ],
+                  [
+                    Megaphone,
+                    "Chiến Dịch Siêu Sale",
+                    "Tham gia các đợt bùng nổ đơn hàng cùng Shopee.",
+                    "11.11",
+                  ],
+                  [
+                    Gift,
+                    "Combo Khuyến Mãi",
+                    "Khuyến khích giỏ hàng giá trị lớn với gói ưu đãi.",
+                    "COMBO",
+                  ],
+                ].map(([Icon, title, text, code]) => (
+                  <Card key={title} title={title}>
+                    <div className={s.marketingBody}>
+                      <Icon size={30} />
+                      <p>{text}</p>
+                      <button
+                        className={
+                          campaigns.includes(code) ? s.outline : s.primary
+                        }
+                        disabled={campaigns.includes(code)}
+                        onClick={() => {
+                          setCampaigns([...campaigns, code]);
+                          setNotice(`Đã kích hoạt ${title} cho phiên làm việc này.`);
+                        }}
+                      >
+                        {campaigns.includes(code) ? (
+                          <>
+                            <Check size={16} /> Đã kích hoạt
+                          </>
+                        ) : (
+                          <>
+                            Bắt đầu <ArrowRight size={15} />
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </>
+          ) : isAnalyticsTab ? (
+            <Card
+              title="Phân Tích Bán Hàng"
+              action={
+                <div className={s.period}>
+                  <button
+                    className={period === "today" ? s.selected : ""}
+                    onClick={() => setPeriod("today")}
+                  >
+                    Hôm nay
+                  </button>
+                  <button
+                    className={period === "week" ? s.selected : ""}
+                    onClick={() => setPeriod("week")}
+                  >
+                    7 ngày qua
+                  </button>
+                </div>
+              }
+            >
+              <div className={s.stats}>
+                {[
+                  ["Doanh thu", "+18.6%", Wallet],
+                  ["Đơn hàng", "+12.4%", ShoppingBag],
+                  ["Lượt truy cập", "+8.2%", Users],
+                  ["Tỷ lệ chuyển đổi", "+2.1%", BarChart3],
+                ].map(([label, growth, Icon], i) => (
+                  <div key={label}>
+                    <div className={s.statTitle}>
+                      {label}
+                      <Icon size={15} />
+                    </div>
+                    <strong>{metrics[i]}</strong>
+                    <p>
+                      <span>
+                        <ArrowUpRight size={13} />
+                        {growth}
+                      </span>{" "}
+                      so với kỳ trước
+                    </p>
+                  </div>
+                ))}
+              </div>
+              {chart}
+              <div className={s.chartFoot}>
+                <span>Cập nhật lúc: 09:41 · 20/10/2026</span>
+                <button className={s.textButton} onClick={exportOrders}>
+                  Xuất dữ liệu bán hàng <ChevronRight size={14} />
+                </button>
+              </div>
+            </Card>
+          ) : isFinanceTab ? (
+            <>
+              <div className={s.finance}>
+                <Wallet size={34} />
+                <div>
+                  <p>Số dư ví người bán (ước tính)</p>
+                  <h2>{money(28450000)}</h2>
+                </div>
+                <span>
+                  <ShieldCheck size={17} /> Thanh toán an toàn qua Escrow
+                </span>
+              </div>
+              <Card title="Lịch Sử Doanh Thu Đã Quyết Toán">
+                <div className={s.tableScroll}>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Mã giao dịch</th>
+                        <th>Nội dung</th>
+                        <th>Ngày</th>
+                        <th>Số tiền</th>
+                        <th>Trạng thái</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[0, 1, 2, 3].map((i) => (
+                        <tr key={i}>
+                          <td>TXN202610{20 - i}</td>
+                          <td>Doanh thu đơn hàng đã giao thành công</td>
+                          <td>{20 - i}/10/2026</td>
+                          <td className={s.positive}>
+                            +{money(1250000 + i * 450000)}
+                          </td>
+                          <td>
+                            <span className={`${s.badge} ${s.completed}`}>
+                              Đã giải ngân
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </>
+          ) : isShopProfileTab || isShopSettingsTab ? (
+            <Card
+              title={
+                isShopProfileTab ? "Thông Tin Hồ Sơ Shop" : "Thiết Lập Shop"
+              }
+            >
+              <form
+                className={s.shopForm}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  setSavedName(shopName.trim());
+                  setNotice("Đã lưu thông tin Shop thành công!");
+                }}
+              >
+                <div className={s.profileIntro}>
+                  <span className={s.shopAvatar}>S</span>
+                  <div>
+                    <strong>{savedName}</strong>
+                    <p>
+                      <Star size={14} /> 4.9 · Shop Yêu Thích
+                    </p>
+                  </div>
+                </div>
+                <label>
+                  Tên Shop
+                  <input
+                    required
+                    maxLength={60}
+                    value={shopName}
+                    onChange={(e) => setShopName(e.target.value)}
+                  />
+                </label>
+                <label>
+                  Mô tả Shop
+                  <textarea
+                    defaultValue="Trải nghiệm mua sắm chính hãng với hàng ngàn ưu đãi hấp dẫn tại Kênh Người Bán."
+                    maxLength={500}
+                  />
+                </label>
+                {isShopSettingsTab && (
+                  <label className={s.checkbox}>
+                    <input type="checkbox" defaultChecked /> Nhận thông báo khi có
+                    đơn hàng mới
+                  </label>
+                )}
+                <p className={s.muted}>
+                  Thay đổi được đồng bộ cho phiên làm việc hiện tại.
+                </p>
+                <button className={s.primary} type="submit">
+                  <Check size={16} /> Lưu thay đổi
+                </button>
+              </form>
+            </Card>
+          ) : null}
+
+          <footer className={s.footer}>
+            <span>© 2026 Shopee Việt Nam. Tất cả quyền được bảo lưu.</span>
+            <span>
+              <CircleHelp size={14} /> Shopee Kênh Người Bán
+            </span>
+          </footer>
+        </main>
+      </div>
+
+      {notice && (
+        <div className={s.toast} role="status">
+          <Check size={17} />
+          {notice}
+          <button
+            className={s.iconButton}
+            aria-label="Dismiss notification"
+            onClick={() => setNotice("")}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      {dialog && (
+        <div
+          className={s.modalBackdrop}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setDialog(false);
+          }}
+        >
+          <div
+            className={s.modal}
+            ref={modal}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="product-dialog-title"
+          >
+            <div className={s.cardHead}>
+              <h2 id="product-dialog-title">Thêm sản phẩm mẫu</h2>
+              <button
+                className={s.iconButton}
+                aria-label="Close"
+                onClick={() => setDialog(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <form
+              className={s.shopForm}
+              onSubmit={(e) => {
+                e.preventDefault();
+                const data = new FormData(e.currentTarget);
+                setItems([
+                  {
+                    id: `new-${Date.now()}`,
+                    title: data.get("name").trim(),
+                    price: Number(data.get("price")) / 25000,
+                    stock: Number(data.get("stock")),
+                    active: true,
+                  },
+                  ...items,
+                ]);
+                setDialog(false);
+                setNotice("Đã thêm sản phẩm mẫu thành công.");
+              }}
+            >
+              <label>
+                Tên sản phẩm
+                <input
+                  name="name"
+                  required
+                  pattern=".*\S.*"
+                  maxLength={120}
+                  placeholder="Nhập tên sản phẩm"
+                />
+              </label>
+              <label>
+                Giá bán (₫)
+                <input
+                  name="price"
+                  type="number"
+                  min="1000"
+                  step="1000"
+                  required
+                  placeholder="250000"
+                />
+              </label>
+              <label>
+                Số lượng kho
+                <input
+                  name="stock"
+                  type="number"
+                  min="0"
+                  step="1"
+                  required
+                  defaultValue="10"
+                />
+              </label>
+              <button type="submit" className={s.primary}>
+                <Plus size={16} /> Thêm sản phẩm
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

@@ -9,6 +9,7 @@
     "preview": "vite preview --host 127.0.0.1",
     "check:ui": "node scripts/verify-ui.mjs",
     "check:seller": "node scripts/verify-seller.mjs",
+    "check:seller-sidebar": "node scripts/verify-seller-sidebar.mjs",
     "check:auth": "node scripts/verify-auth.mjs",
     "check:product": "node scripts/verify-product.mjs",
     "check:cart": "node scripts/verify-cart.mjs",
