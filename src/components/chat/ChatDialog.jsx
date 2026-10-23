@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { X, Send, Store, MessageCircle, Loader2 } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { money } from "../../data/catalog";
@@ -186,13 +187,21 @@ export default function ChatDialog({
               </p>
             </div>
           </div>
-          <button
-            className={s.closeBtn}
-            onClick={onClose}
-            aria-label="Close chat"
-          >
-            <X size={18} />
-          </button>
+          <div className={s.headerActions}>
+            <Link
+              to={`/shop/${shop?.id || shopId}`}
+              className={s.viewShopLink}
+            >
+              View Shop
+            </Link>
+            <button
+              className={s.closeBtn}
+              onClick={onClose}
+              aria-label="Close chat"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         {productContext && (

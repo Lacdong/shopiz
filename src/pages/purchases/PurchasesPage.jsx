@@ -28,6 +28,7 @@ import CheckoutDialog from "../checkout/CheckoutDialog";
 import dialogStyles from "../checkout/CheckoutPage.module.css";
 import s from "./PurchasesPage.module.css";
 import OrderActionDialog from "./OrderActionDialog";
+import ChatDialog from "../../components/chat/ChatDialog";
 
 export default function PurchasesPage() {
   const { addItem } = useCart();
@@ -43,6 +44,15 @@ export default function PurchasesPage() {
     ? params.get("status")
     : "all";
   const query = params.get("q") || "";
+
+  const contactSeller = (shop, order) => {
+    const productContext =
+      order?.items?.[0] ||
+      order?.lines?.[0]?.product ||
+      order?.product ||
+      null;
+    setPopup({ type: "chat", shop, productContext });
+  };
 
   function mapBackendOrder(o) {
     let status = "to-ship";
@@ -84,6 +94,10 @@ export default function PurchasesPage() {
   }
 
   const loadBackendOrders = () => {
+    const token =
+      localStorage.getItem("shopiz-auth-token") ||
+      sessionStorage.getItem("shopiz-auth-token");
+    if (!token) return;
     orderService
       .getOrders(buyerId)
       .then((serverOrders) => {
@@ -110,6 +124,9 @@ export default function PurchasesPage() {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
     else next.delete(key);
+    if (key === "q" && value) {
+      next.delete("status");
+    }
     setParams(next, { replace: key === "q" });
   }
 
@@ -322,7 +339,7 @@ export default function PurchasesPage() {
                       <button
                         className={s.chat}
                         onClick={() =>
-                          setPopup({ type: "chat", shop: group.shop })
+                          contactSeller(group.shop, order)
                         }
                       >
                         <MessageCircle size={12} />
@@ -411,7 +428,7 @@ export default function PurchasesPage() {
                           ? "Thank you for shopping with Shopiz"
                           : "Awaiting seller confirmation or shipping"}
                     </span>
-                    {order.status === "to-receive" || order.backendStatus === "SHIPPED" ? (
+                    {order.isBackend && (order.status === "to-receive" || order.backendStatus === "SHIPPED") ? (
                       <>
                         <button
                           className={s.primary}
@@ -421,7 +438,7 @@ export default function PurchasesPage() {
                         </button>
                         <button
                           onClick={() =>
-                            setPopup({ type: "chat", shop: groups[0].shop })
+                            contactSeller(groups[0].shop, order)
                           }
                         >
                           Contact Seller
@@ -445,7 +462,7 @@ export default function PurchasesPage() {
                         </button>
                         <button
                           onClick={() =>
-                            setPopup({ type: "chat", shop: groups[0].shop })
+                            contactSeller(groups[0].shop, order)
                           }
                         >
                           Contact Seller
@@ -471,7 +488,7 @@ export default function PurchasesPage() {
                         </button>
                         <button
                           onClick={() =>
-                            setPopup({ type: "chat", shop: groups[0].shop })
+                            contactSeller(groups[0].shop, order)
                           }
                         >
                           Contact Seller
@@ -484,7 +501,7 @@ export default function PurchasesPage() {
                         </button>
                         <button
                           onClick={() =>
-                            setPopup({ type: "chat", shop: groups[0].shop })
+                            contactSeller(groups[0].shop, order)
                           }
                         >
                           Contact Seller
@@ -525,61 +542,56 @@ export default function PurchasesPage() {
           onSubmit={submitAction}
         />
       )}
-      {popup && ["details", "chat"].includes(popup.type) && (
+      {popup && popup.type === "chat" && (
+        <ChatDialog
+          isOpen={true}
+          shop={popup.shop}
+          productContext={popup.productContext}
+          onClose={() => setPopup(null)}
+        />
+      )}
+      {popup && popup.type === "details" && (
         <CheckoutDialog
-          title={
-            popup.type === "details"
-              ? "Order Details"
-              : `Contact ${popup.shop?.name || "Seller"}`
-          }
+          title="Order Details"
           onClose={() => setPopup(null)}
         >
           <div className={dialogStyles.dialogBody}>
-            {popup.type === "details" ? (
-              <>
-                <p className={s.detailId}>{popup.order.id}</p>
-                <p className={s.demoNote}>
-                  {popup.order.isSample ? "Sample order" : "Demo order"} ·{" "}
-                  {statusLabel(popup.order)}
-                </p>
-                {popup.order.items.map((item, index) => (
-                  <p key={index} className={s.detailLine}>
-                    <span>
-                      {item.title} × {item.quantity}
-                    </span>
-                    <strong>{money(item.price * item.quantity)}</strong>
-                  </p>
-                ))}
-                <dl className={s.breakdown}>
-                  {[
-                    ["Merchandise Subtotal", popup.order.subtotal],
-                    ["Shipping", popup.order.shippingFee],
-                    ["Voucher Discount", -popup.order.discount],
-                    ["Order Total", popup.order.total],
-                  ].map(([label, value]) => (
-                    <div key={label}>
-                      <dt>{label}</dt>
-                      <dd>
-                        {value < 0 ? "−" : ""}
-                        {money(Math.abs(value))}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-                <p className={s.demoNote}>
-                  Payment:{" "}
-                  {popup.order.payment === "wallet"
-                    ? "Demo wallet"
-                    : "Cash on delivery"}
-                  . No real payment or shipment.
-                </p>
-              </>
-            ) : (
-              <p className={dialogStyles.muted}>
-                Seller messaging is not connected in this demo. You can browse
-                the shop’s products below.
+            <p className={s.detailId}>{popup.order.id}</p>
+            <p className={s.demoNote}>
+              {popup.order.isSample ? "Sample order" : "Demo order"} ·{" "}
+              {statusLabel(popup.order)}
+            </p>
+            {popup.order.items.map((item, index) => (
+              <p key={index} className={s.detailLine}>
+                <span>
+                  {item.title} × {item.quantity}
+                </span>
+                <strong>{money(item.price * item.quantity)}</strong>
               </p>
-            )}
+            ))}
+            <dl className={s.breakdown}>
+              {[
+                ["Merchandise Subtotal", popup.order.subtotal],
+                ["Shipping", popup.order.shippingFee],
+                ["Voucher Discount", -popup.order.discount],
+                ["Order Total", popup.order.total],
+              ].map(([label, value]) => (
+                <div key={label}>
+                  <dt>{label}</dt>
+                  <dd>
+                    {value < 0 ? "−" : ""}
+                    {money(Math.abs(value))}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            <p className={s.demoNote}>
+              Payment:{" "}
+              {popup.order.payment === "wallet"
+                ? "Demo wallet"
+                : "Cash on delivery"}
+              . No real payment or shipment.
+            </p>
           </div>
           <footer className={dialogStyles.dialogFooter}>
             <button
@@ -588,14 +600,6 @@ export default function PurchasesPage() {
             >
               Close
             </button>
-            {popup.type === "chat" && (
-              <Link
-                className={dialogStyles.primary}
-                to={`/shop/${popup.shop.id}`}
-              >
-                View Shop
-              </Link>
-            )}
           </footer>
         </CheckoutDialog>
       )}
