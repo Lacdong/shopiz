@@ -38,6 +38,7 @@ import catalogService from "../../services/catalogService";
 import SellerHeader from "./SellerHeader";
 import SellerSidebar, { findActiveItem } from "./SellerSidebar";
 import SellerComingSoon from "./SellerComingSoon";
+import AllOrdersPage from "./orders/AllOrdersPage";
 import s from "./SellerCenter.module.css";
 
 const money = (n) =>
@@ -581,59 +582,7 @@ export default function SellerCenter() {
               groupName={activeGroup.title}
             />
           ) : isOrdersTab ? (
-            <Card
-              title="Quản Lý Đơn Hàng"
-              action={
-                <button className={s.outline} onClick={exportOrders}>
-                  <ArrowDownToLine size={15} /> Xuất dữ liệu đơn hàng
-                </button>
-              }
-            >
-              <div className={s.tabs}>
-                {[["all", "Tất cả"], ...Object.entries(statuses)].map(
-                  ([id, label]) => (
-                    <button
-                      key={id}
-                      className={
-                        (params.get("status") || filter) === id
-                          ? s.tabActive
-                          : ""
-                      }
-                      onClick={() => {
-                        setFilter(id);
-                        setParams({ tab: "orders_all", ...(shopId ? { shop_id: shopId } : {}) });
-                      }}
-                    >
-                      {label}
-                      <span>
-                        {id === "all"
-                          ? orders.length
-                          : orders.filter((o) => o.status === id).length}
-                      </span>
-                    </button>
-                  ),
-                )}
-              </div>
-              <div className={s.toolbar}>
-                <label className={s.search}>
-                  <Search size={17} />
-                  <input
-                    aria-label="Search orders"
-                    placeholder="Tìm theo mã đơn hàng, tên người mua hoặc sản phẩm"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                  />
-                </label>
-                <span>{filteredOrders.length} Đơn hàng</span>
-              </div>
-              {orderTable(
-                params.get("status")
-                  ? filteredOrders.filter(
-                      (o) => o.status === params.get("status"),
-                    )
-                  : filteredOrders,
-              )}
-            </Card>
+            <AllOrdersPage shopId={Number(shopId) || 727720655} />
           ) : isProductsTab ? (
             <Card title={`Sản Phẩm Của Shop (${items.length})`}>
               <div className={s.tabs}>
