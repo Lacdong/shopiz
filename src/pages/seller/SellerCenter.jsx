@@ -40,6 +40,7 @@ import SellerSidebar, { findActiveItem } from "./SellerSidebar";
 import SellerComingSoon from "./SellerComingSoon";
 import AllOrdersPage from "./orders/AllOrdersPage";
 import ProductsPage from "./products/ProductsPage";
+import ReturnsPage from "./returns/ReturnsPage";
 import s from "./SellerCenter.module.css";
 
 const money = (n) =>
@@ -536,6 +537,8 @@ export default function SellerCenter() {
     activeItem.id === "orders_all" || rawTab === "orders" || rawTab === "overview";
   const isProductsTab =
     activeItem.id === "products_all" || rawTab === "products";
+  const isReturnsTab =
+    activeItem.id === "returns" || activeItem.id === "shop_disputes" || rawTab === "returns";
   const isMarketingTab =
     activeItem.id === "marketing" || rawTab === "marketing";
   const isAnalyticsTab =
@@ -550,6 +553,7 @@ export default function SellerCenter() {
   const isImplemented =
     isOrdersTab ||
     isProductsTab ||
+    isReturnsTab ||
     isMarketingTab ||
     isAnalyticsTab ||
     isFinanceTab ||
@@ -586,6 +590,8 @@ export default function SellerCenter() {
             <AllOrdersPage shopId={Number(shopId) || 727720655} />
           ) : isProductsTab ? (
             <ProductsPage shopId={Number(shopId) || 727720655} />
+          ) : isReturnsTab ? (
+            <ReturnsPage shopId={Number(shopId) || 727720655} />
           ) : isMarketingTab ? (
             <>
               <div className={s.marketingHero}>

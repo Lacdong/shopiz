@@ -12,6 +12,7 @@
     "check:seller-sidebar": "node scripts/verify-seller-sidebar.mjs",
     "check:all-orders": "node scripts/verify-all-orders.mjs",
     "check:products-page": "node scripts/verify-products-page.mjs",
+    "check:returns-page": "node scripts/verify-returns-page.mjs",
     "check:auth": "node scripts/verify-auth.mjs",
     "check:product": "node scripts/verify-product.mjs",
     "check:cart": "node scripts/verify-cart.mjs",
