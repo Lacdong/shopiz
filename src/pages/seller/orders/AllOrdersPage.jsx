@@ -194,17 +194,43 @@ export default function AllOrdersPage({ shopId = 727720655 }) {
   // Arrange shipment
   const handleArrangeShipment = async (orderSn) => {
     try {
-      await sellerService.shipOrder(orderSn);
+      const res = await sellerService.shipOrder(orderSn);
+      const newStatus = res?.order_status || "PROCESSED";
+      const trackingNo = res?.tracking_number;
       setActionNotice(`Đã sắp xếp giao hàng thành công cho đơn #${orderSn}!`);
-      // Update local status to READY_TO_SHIP or SHIPPED
+      // Update local status to PROCESSED ("Đang chuẩn bị") and populate tracking number
       setOrders((prev) =>
-        prev.map((o) => (o.order_sn === orderSn ? { ...o, order_status: "READY_TO_SHIP" } : o)),
+        prev.map((o) => {
+          if (o.order_sn !== orderSn) return o;
+          const currentPackages = o.packages || [];
+          const updatedPackages =
+            currentPackages.length > 0
+              ? currentPackages.map((pkg) => ({
+                  ...pkg,
+                  tracking_number: trackingNo || pkg.tracking_number,
+                  logistics_status: "LOGISTICS_REQUEST_CREATED",
+                  document_status: "READY",
+                }))
+              : trackingNo
+              ? [
+                  {
+                    package_number: `PKG-${orderSn}`,
+                    tracking_number: trackingNo,
+                    logistics_status: "LOGISTICS_REQUEST_CREATED",
+                    document_status: "READY",
+                  },
+                ]
+              : [];
+
+          return {
+            ...o,
+            order_status: newStatus,
+            packages: updatedPackages,
+          };
+        }),
       );
     } catch (err) {
-      setActionNotice(`Sắp xếp giao hàng cho đơn #${orderSn} hoàn tất.`);
-      setOrders((prev) =>
-        prev.map((o) => (o.order_sn === orderSn ? { ...o, order_status: "READY_TO_SHIP" } : o)),
-      );
+      setActionNotice(err.message || `Sắp xếp giao hàng cho đơn #${orderSn} thất bại.`);
     }
   };
 
@@ -407,7 +433,7 @@ export default function AllOrdersPage({ shopId = 727720655 }) {
                     </tr>
 
                     {/* Order items and data row */}
-                    <tr className={s.orderDataRow}>
+                    <tr className={s.orderDataRow} data-ordersn={order.order_sn}>
                       {/* Sản phẩm */}
                       <td className={s.productCol}>
                         {order.items && order.items.length > 0 ? (

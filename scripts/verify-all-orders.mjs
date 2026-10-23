@@ -140,6 +140,41 @@ try {
   await page.locator("button[class*='modalClose']").click();
   console.log("PASS Export history modal opens and closes cleanly");
 
+  // 12. Test Arrange Shipment ("Chuẩn bị hàng" -> "Đang chuẩn bị" PROCESSED)
+  const readyRow = page.locator("tr[class*='orderDataRow']:has(button[class*='btnPrimaryAction'])").first();
+  if (await readyRow.isVisible()) {
+    const targetSn = await readyRow.getAttribute("data-ordersn");
+    const targetRow = page.locator(`tr[data-ordersn='${targetSn}']`);
+    const initialBadge = await targetRow.locator("span[class*='statusBadge']").innerText();
+    console.log(`Initial status for order #${targetSn}: '${initialBadge.trim()}'`);
+
+    const shipBtn = targetRow.locator("button[class*='btnPrimaryAction']");
+    await shipBtn.click();
+
+    // Verify toast notification
+    const toast = page.locator("div[class*='toast']");
+    await toast.waitFor();
+    const toastText = await toast.innerText();
+    console.log(`Toast notification: '${toastText.trim()}'`);
+    assert.match(toastText, /Đã sắp xếp giao hàng thành công/);
+
+    // Verify status badge changed to "Đang chuẩn bị"
+    await page.waitForTimeout(300);
+    const updatedBadge = await targetRow.locator("span[class*='statusBadge']").innerText();
+    console.log(`Updated status badge: '${updatedBadge.trim()}'`);
+    assert.equal(updatedBadge.trim(), "Đang chuẩn bị", "Status must transition to 'Đang chuẩn bị' (PROCESSED)");
+
+    // Verify tracking number appears
+    const trackingNum = await targetRow.locator("span[class*='trackingNumber']").innerText();
+    console.log(`Generated tracking number: '${trackingNum.trim()}'`);
+    assert.match(trackingNum, /SPXVN\d+/, "Tracking number must be allocated");
+
+    // Verify action button changed to "In phiếu AWB"
+    const awbBtn = targetRow.locator("button[class*='btnAwbAction']");
+    assert.ok(await awbBtn.isVisible(), "Action button must update to 'In phiếu AWB'");
+    console.log("PASS Arrange shipment successfully transitioned order to 'Đang chuẩn bị' (PROCESSED)");
+  }
+
   assert.equal(errors.length, 0, `Page errors: ${errors.join(", ")}`);
   console.log("\n🎉 ALL 'TẤT CẢ' ORDERS SPECIFICATION TESTS PASSED (100%)!");
 } finally {
