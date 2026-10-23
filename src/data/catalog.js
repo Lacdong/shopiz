@@ -150,7 +150,7 @@ const entries = [
     "Home & Living",
   ],
 ];
-export const products = entries.map(
+export const mockProducts = entries.map(
   ([title, photo, price, original, category], index) => ({
     id: String(index + 1),
     title,
@@ -167,6 +167,7 @@ export const products = entries.map(
     mall: index % 3 === 0,
   }),
 );
+export const products = [...mockProducts];
 // Illustrative search trends for the marketplace simulator.
 export const topSearches = [
   {

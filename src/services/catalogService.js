@@ -200,6 +200,15 @@ export const catalogService = {
     const data = await api.get(`/simulator/shop/detail?shop_id=${shopId}`);
     return data.shop;
   },
+
+  async calculateShippingFee({ shopId, recipientCity, items = [] }) {
+    const data = await api.post("/simulator/logistics/calculate_fee", {
+      shop_id: shopId,
+      recipient_city: recipientCity,
+      items,
+    });
+    return data;
+  },
 };
 
 export default catalogService;

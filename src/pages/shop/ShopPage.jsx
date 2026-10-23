@@ -18,26 +18,26 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { products } from "../../data/catalog";
+import { products, mockProducts } from "../../data/catalog";
 import { findShop, mockShops } from "../../data/shops";
 import { mockVouchers } from "../../data/vouchers";
 import { money } from "../../data/catalog";
 import { ProductCard } from "../../components/Commerce";
 import PlaceholderPage from "../placeholder/PlaceholderPage";
+import catalogService, { mapBackendProduct } from "../../services/catalogService";
+import ChatDialog from "../../components/chat/ChatDialog";
 import s from "./ShopPage.module.css";
 const followingKey = "shopiz-followed-shops-v1";
 function readFollowing() {
   try {
     const stored = JSON.parse(localStorage.getItem(followingKey) || "[]");
-    return Array.isArray(stored)
-      ? stored.filter((id) => mockShops.some((shop) => shop.id === id))
-      : [];
+    return Array.isArray(stored) ? stored.filter(Boolean) : [];
   } catch {
     return [];
   }
 }
 function ProductSection({ title, items, to, description }) {
-  if (!items.length) return null;
+  if (!items || !items.length) return null;
   return (
     <section className={s.productSection}>
       <div className={s.sectionHeading}>
@@ -72,11 +72,20 @@ function Storefront({ shop }) {
     readFollowing().includes(shop.id),
   );
   const [notice, setNotice] = useState("");
-  const chat = useRef(null);
-  const catalog = products.filter((product) =>
-    shop.products.includes(product.id),
-  );
-  const categories = [...new Set(catalog.map((product) => product.category))];
+  const [chatOpen, setChatOpen] = useState(false);
+  const catalog =
+    Array.isArray(shop.catalogProducts) && shop.catalogProducts.length > 0
+      ? shop.catalogProducts
+      : mockProducts.filter((product) =>
+          Array.isArray(shop.products)
+            ? shop.products.some(
+                (p) => String(p?.id || p?.item_id || p) === String(product.id),
+              )
+            : false,
+        );
+  const categories = [
+    ...new Set(catalog.map((product) => product.category).filter(Boolean)),
+  ];
   const filtered = catalog.filter(
     (product) =>
       (!category || product.category === category) &&
@@ -99,7 +108,7 @@ function Storefront({ shop }) {
         : sort === "latest"
           ? Number(b.id) - Number(a.id)
           : sort === "sales"
-            ? b.sold - a.sold
+            ? (b.sold || 0) - (a.sold || 0)
             : 0,
   );
   const totalPages = Math.max(1, Math.ceil(filtered.length / 6));
@@ -108,7 +117,7 @@ function Storefront({ shop }) {
     Math.min(totalPages, Math.floor(Number(params.get("page"))) || 1),
   );
   const visible = filtered.slice((page - 1) * 6, page * 6);
-  const topProducts = [...catalog].sort((a, b) => b.sold - a.sold);
+  const topProducts = [...catalog].sort((a, b) => (b.sold || 0) - (a.sold || 0));
   const latest = [...catalog].reverse();
   const offers = mockVouchers.filter((v) => v.type !== "shipping").slice(0, 2);
   function update(values) {
@@ -171,7 +180,7 @@ function Storefront({ shop }) {
               {followed ? <Check size={14} /> : <Plus size={14} />}{" "}
               {followed ? "Following" : "Follow"}
             </button>
-            <button onClick={() => chat.current.showModal()}>
+            <button onClick={() => setChatOpen(true)}>
               <MessageCircle size={14} />
               Chat Now
             </button>
@@ -183,12 +192,12 @@ function Storefront({ shop }) {
             [
               Users,
               "Followers",
-              (shop.followers + (followed ? 1 : 0)).toLocaleString("en-US"),
+              (Number(shop.followers || 12800) + (followed ? 1 : 0)).toLocaleString("en-US"),
             ],
-            [Star, "Shop rating", `${shop.rating} / 5`],
-            [MessageCircle, "Response rate", shop.responseRate],
+            [Star, "Shop rating", `${shop.rating || "5.0"} / 5`],
+            [MessageCircle, "Response rate", shop.responseRate || "98%"],
             [Clock, "Response time", "Within a few hours"],
-            [Store, "Joined", shop.joined],
+            [Store, "Joined", shop.joined || "2 years ago"],
           ].map(([Icon, label, value]) => (
             <div key={label}>
               <dt>
@@ -275,7 +284,10 @@ function Storefront({ shop }) {
             <div className={s.heroArt}>
               <span className={s.heroCircle} />
               <img
-                src={catalog[0].image}
+                src={
+                  catalog[0]?.image ||
+                  "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=500&q=85"
+                }
                 alt={`Featured ${shop.brand} product`}
               />
               <span className={s.heroStamp}>
@@ -314,7 +326,14 @@ function Storefront({ shop }) {
                     to={`${shopUrl}?tab=products&category=${encodeURIComponent(name)}`}
                   >
                     <div>
-                      <img src={product.image} alt={name} loading="lazy" />
+                      <img
+                        src={
+                          product?.image ||
+                          "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=500&q=85"
+                        }
+                        alt={name}
+                        loading="lazy"
+                      />
                     </div>
                     <span>
                       {name}
@@ -565,37 +584,90 @@ function Storefront({ shop }) {
           </section>
         </div>
       )}
-      <dialog
-        ref={chat}
-        className={s.chatDialog}
-        aria-labelledby="shop-chat-title"
-        onClick={(e) => {
-          if (e.target === e.currentTarget) chat.current.close();
-        }}
-      >
-        <button
-          aria-label="Close shop chat"
-          onClick={() => chat.current.close()}
-        >
-          <X size={20} />
-        </button>
-        <MessageCircle size={32} strokeWidth={1.3} />
-        <h2 id="shop-chat-title">Chat with {shop.brand}</h2>
-        <p>
-          Seller messaging is not connected in this simulator. Explore the
-          shop’s products or visit the Help Center for more information.
-        </p>
-        <Link to="/help">
-          Visit Help Center
-          <ArrowRight size={14} />
-        </Link>
-      </dialog>
+      <ChatDialog
+        isOpen={chatOpen}
+        onClose={() => setChatOpen(false)}
+        shop={shop}
+      />
     </div>
   );
 }
 export default function ShopPage() {
   const { shopId } = useParams();
-  const shop = findShop(shopId);
+  const mock = findShop(shopId);
+  const [shop, setShop] = useState(mock);
+  const [loading, setLoading] = useState(!mock);
+
+  useEffect(() => {
+    let active = true;
+    const local = findShop(shopId);
+    if (local) {
+      setShop(local);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    catalogService
+      .getShopDetail(shopId)
+      .then((detail) => {
+        if (!active || !detail) return;
+        const mappedProducts = (detail.products || []).map((p) =>
+          mapBackendProduct({
+            ...p,
+            shop_id: detail.shop_id,
+            shop_name: detail.shop_name,
+            shop_rating: detail.rating,
+          }),
+        );
+
+        setShop({
+          id: String(detail.shop_id),
+          brand: (detail.shop_name || "Shop").split(" ")[0],
+          name: detail.shop_name || "Official Store",
+          tagline: detail.tagline || "Official Flagship Store",
+          offer: "Official Store Quality Guarantee",
+          products: mappedProducts.map((p) => p.id),
+          catalogProducts: mappedProducts,
+          followers: Number(detail.followers || 12800),
+          rating: String(detail.rating || "5.0"),
+          responseRate: detail.response_rate || "98%",
+          joined: detail.joined || "2 years ago",
+          heroTitle: "A little more\nin every day.",
+          heroText:
+            "Authentic merchandise with official warranty and fast shipping.",
+          story:
+            detail.story ||
+            "Welcome to our official store on Shopiz. Explore quality everyday essentials, trusted electronics, and lifestyle finds.",
+        });
+      })
+      .catch((err) => {
+        console.warn("Could not fetch remote shop details:", err);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [shopId]);
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          minHeight: "400px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        Loading shop details...
+      </div>
+    );
+  }
+
   return shop ? (
     <Storefront key={shop.id} shop={shop} />
   ) : (

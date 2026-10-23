@@ -23,6 +23,7 @@ import ProductReviews, { Stars } from "./ProductReviews";
 import { getProductDetails } from "../../data/productDetails";
 import { useCart } from "../../components/cart/CartProvider";
 import catalogService, { mapBackendProduct } from "../../services/catalogService";
+import ChatDialog from "../../components/chat/ChatDialog";
 import s from "./ProductPage.module.css";
 
 function ProductDetail({ product: p }) {
@@ -42,14 +43,17 @@ function ProductDetail({ product: p }) {
       ? p.category
       : p.category?.category_name || "General";
 
+  const isMockItem = Number(p.id) >= 1 && Number(p.id) <= 18 && p.price < 1000;
   const details = getProductDetails(p);
   const [variant, setVariant] = useState(details.variants[0] || "Standard");
   const [size, setSize] = useState(details.sizes[0] || "");
   const [quantity, setQuantity] = useState("1");
   const [destination, setDestination] = useState("Ho Chi Minh City");
-  const [delivery, setDelivery] = useState("standard");
+  const [delivery, setDelivery] = useState(isMockItem ? "standard" : "30001");
+  const [shippingChannels, setShippingChannels] = useState([]);
+  const [shippingLoading, setShippingLoading] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const [message, setMessage] = useState("");
-  const [mode, setMode] = useState("buy");
   const preview = useRef(null);
 
   // Model-specific pricing and stock if multi-variant
@@ -75,7 +79,79 @@ function ProductDetail({ product: p }) {
     1,
     Math.min(currentStock, Math.floor(Number(quantity) || 1)),
   );
-  const shipping = delivery === "express" ? 2.9 : 0;
+
+  // Dynamic shipping calculation for backend simulator products
+  useEffect(() => {
+    if (isMockItem) return;
+
+    let active = true;
+    setShippingLoading(true);
+
+    const items = [
+      {
+        item_id: p.itemId || p.id,
+        item_price: currentPrice,
+        quantity: count,
+      },
+    ];
+
+    catalogService
+      .calculateShippingFee({
+        shopId: p.shopId || p.seller?.id || 727720655,
+        recipientCity: destination,
+        items,
+      })
+      .then((res) => {
+        if (!active) return;
+        const channels = res?.channels || [];
+        setShippingChannels(channels);
+        const currentChannel = channels.find(
+          (c) => String(c.channel_id || c.channelId) === String(delivery),
+        );
+        if (!currentChannel || !currentChannel.enabled) {
+          const firstEnabled = channels.find((c) => c.enabled);
+          if (firstEnabled) {
+            setDelivery(String(firstEnabled.channel_id || firstEnabled.channelId));
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not calculate dynamic shipping fee:", err);
+      })
+      .finally(() => {
+        if (active) setShippingLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [isMockItem, p.shopId, p.seller?.id, p.itemId, p.id, destination, count, currentPrice]);
+
+  const activeChannel =
+    shippingChannels.find(
+      (c) => String(c.channel_id || c.channelId) === String(delivery),
+    ) || shippingChannels[0];
+
+  const shippingFee = isMockItem
+    ? delivery === "express"
+      ? 2.9
+      : 0
+    : activeChannel
+      ? Number(
+          activeChannel.buyer_paid_shipping_fee ??
+            activeChannel.buyerPaidShippingFee ??
+            0,
+        )
+      : 0;
+
+  const estimatedDays = isMockItem
+    ? `${delivery === "express" ? "1–2" : "3–5"} business days`
+    : activeChannel
+      ? activeChannel.estimated_delivery_days ||
+        activeChannel.estimatedDeliveryDays ||
+        "1–3 business days"
+      : "1–3 business days";
+
   const related = products
     .filter((x) => String(x.id) !== String(p.id))
     .sort(
@@ -84,9 +160,8 @@ function ProductDetail({ product: p }) {
         Number((b.category || "") === catTitle),
     )
     .slice(0, 6);
-  function showPreview(next) {
+  function showPreview() {
     setQuantity(String(count));
-    setMode(next);
     preview.current.showModal();
   }
   function addToCart() {
@@ -98,6 +173,8 @@ function ProductDetail({ product: p }) {
       size,
       quantity: count,
       price: currentPrice,
+      shippingFee,
+      carrierName: activeChannel?.channel_name || activeChannel?.channelName || "SPX Express",
     });
     setCartNotice({
       id: Date.now(),
@@ -199,14 +276,44 @@ function ProductDetail({ product: p }) {
                     aria-label="Shipping method"
                     value={delivery}
                     onChange={(e) => setDelivery(e.target.value)}
+                    disabled={shippingLoading && !shippingChannels.length}
                   >
-                    <option value="standard">Standard · Free</option>
-                    <option value="express">Express · {money(2.9)}</option>
+                    {isMockItem ? (
+                      <>
+                        <option value="standard">Standard · Free</option>
+                        <option value="express">Express · {money(2.9)}</option>
+                      </>
+                    ) : shippingChannels.length > 0 ? (
+                      shippingChannels.map((c) => {
+                        const cid = String(c.channel_id || c.channelId);
+                        const cname = c.channel_name || c.channelName;
+                        const fee = Number(
+                          c.buyer_paid_shipping_fee ?? c.buyerPaidShippingFee ?? 0,
+                        );
+                        const feeStr = fee === 0 ? "Free" : money(fee);
+                        const isDis = !c.enabled;
+                        const disReason = c.disabled_reason || c.disabledReason;
+                        return (
+                          <option key={cid} value={cid} disabled={isDis}>
+                            {cname} · {feeStr} {isDis && disReason ? `(${disReason})` : ""}
+                          </option>
+                        );
+                      })
+                    ) : (
+                      <>
+                        <option value="30001">SPX Express · Free</option>
+                        <option value="30002">SPX Instant · {money(25000)}</option>
+                        <option value="30003">SPX Economy · Free</option>
+                      </>
+                    )}
                   </select>
                 </label>
                 <small>
-                  Estimated delivery: {delivery === "express" ? "1–2" : "3–5"}{" "}
-                  business days
+                  {shippingLoading ? (
+                    "Calculating shipping fee..."
+                  ) : (
+                    <>Estimated delivery: {estimatedDays}</>
+                  )}
                 </small>
               </dd>
             </div>
@@ -295,7 +402,7 @@ function ProductDetail({ product: p }) {
               <ShoppingCart size={19} />
               Add to Cart
             </button>
-            <button className={s.buyNow} onClick={() => showPreview("buy")}>
+            <button className={s.buyNow} onClick={showPreview}>
               Buy Now
             </button>
           </div>
@@ -329,7 +436,7 @@ function ProductDetail({ product: p }) {
             <h2>{details.seller?.name || p.shopName || "Official Store"}</h2>
             <p>Online recently</p>
             <div>
-              <button onClick={() => showPreview("chat")}>
+              <button onClick={() => setChatOpen(true)}>
                 <MessageCircle size={13} />
                 Chat Now
               </button>
@@ -438,50 +545,52 @@ function ProductDetail({ product: p }) {
         >
           <X size={20} />
         </button>
-        <h2 id="preview-heading">
-          {mode === "chat" ? "Chat with the shop" : "Review your selection"}
-        </h2>
-        {mode === "chat" ? (
-          <>
-            <p>{details.seller?.name || p.shopName || "Official Store"}</p>
-            <p className={s.demoNote}>
-              Seller messaging is not connected in this simulator.
+        <h2 id="preview-heading">Review your selection</h2>
+        <div className={s.orderItem}>
+          <img src={p.image} alt={p.title} />
+          <div>
+            <h3>{p.title}</h3>
+            <p>
+              {variant}
+              {size ? ` · ${size}` : ""} · Quantity: {count}
             </p>
-          </>
-        ) : (
-          <>
-            <div className={s.orderItem}>
-              <img src={p.image} alt={p.title} />
-              <div>
-                <h3>{p.title}</h3>
-                <p>
-                  {variant}
-                  {size ? ` · ${size}` : ""} · Quantity: {count}
-                </p>
-                <strong>{money(currentPrice * count)}</strong>
-              </div>
-            </div>
-            <dl className={s.orderTotals}>
-              <div>
-                <dt>Delivery to</dt>
-                <dd>{destination}</dd>
-              </div>
-              <div>
-                <dt>Shipping</dt>
-                <dd>{money(shipping)}</dd>
-              </div>
-              <div>
-                <dt>Total</dt>
-                <dd>{money(currentPrice * count + shipping)}</dd>
-              </div>
-            </dl>
-            <p className={s.demoNote}>
-              <PackageCheck size={16} />
-              This is a selection preview. Checkout is not available.
-            </p>
-          </>
-        )}
+            <strong>{money(currentPrice * count)}</strong>
+          </div>
+        </div>
+        <dl className={s.orderTotals}>
+          <div>
+            <dt>Delivery to</dt>
+            <dd>{destination}</dd>
+          </div>
+          <div>
+            <dt>Carrier</dt>
+            <dd>{activeChannel?.channel_name || activeChannel?.channelName || "SPX Express"}</dd>
+          </div>
+          <div>
+            <dt>Shipping</dt>
+            <dd>{money(shippingFee)}</dd>
+          </div>
+          <div>
+            <dt>Total</dt>
+            <dd>{money(currentPrice * count + shippingFee)}</dd>
+          </div>
+        </dl>
+        <p className={s.demoNote}>
+          <PackageCheck size={16} />
+          This is a selection preview. Checkout is not available.
+        </p>
       </dialog>
+      <ChatDialog
+        isOpen={chatOpen}
+        onClose={() => setChatOpen(false)}
+        shop={details.seller || { id: p.shopId, name: p.shopName }}
+        productContext={{
+          id: p.id,
+          title: p.title,
+          image: p.image,
+          price: currentPrice,
+        }}
+      />
     </div>
   );
 }
