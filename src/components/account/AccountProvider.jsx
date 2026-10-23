@@ -141,9 +141,9 @@ export function AccountProvider({ children }) {
             name: a.recipient_name,
             phone: a.recipient_phone,
             street: a.address_line,
-            ward: a.ward || "",
-            district: a.district || "",
-            city: a.city || "",
+            ward: a.ward?.trim() || "Ben Nghe",
+            district: a.district || "District 1",
+            city: a.city || "Ho Chi Minh City",
             label: a.state || (a.is_default ? "Default" : "Home"),
             isDefault: Boolean(a.is_default),
           }));

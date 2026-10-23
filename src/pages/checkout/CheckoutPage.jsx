@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -20,6 +20,7 @@ import { useAccount } from "../../components/account/AccountProvider";
 import { getProductDetails } from "../../data/productDetails";
 import { money } from "../../data/catalog";
 import { voucherStatus } from "../../data/vouchers";
+import catalogService from "../../services/catalogService";
 import checkoutService from "../../services/checkoutService";
 import { getNumericBuyerId } from "../../services/authService";
 import VoucherDialog from "../cart/VoucherDialog";
@@ -78,6 +79,7 @@ export default function CheckoutPage() {
   const [editor, setEditor] = useState(null);
   const [voucherOpen, setVoucherOpen] = useState(false);
   const [shipping, setShipping] = useState({});
+  const [shopShippingMethods, setShopShippingMethods] = useState({});
   const [draftShipping, setDraftShipping] = useState("standard");
   const [payment, setPayment] = useState("cod");
   const [draftPayment, setDraftPayment] = useState("cod");
@@ -89,16 +91,95 @@ export default function CheckoutPage() {
   const selected = lines.filter((line) => line.selected);
   const address =
     addresses.find((item) => item.id === addressId) || addresses[0];
-  const groups = selected.reduce((list, line) => {
-    const shop = getProductDetails(line.product).seller;
-    const group = list.find((group) => group.shop.id === shop.id);
-    if (group) group.lines.push(line);
-    else list.push({ shop, lines: [line] });
-    return list;
-  }, []);
-  const methodFor = (id) =>
-    shippingMethods.find((method) => method.id === shipping[id]) ||
-    shippingMethods[0];
+
+  const groups = useMemo(() => {
+    return selected.reduce((list, line) => {
+      const shop = getProductDetails(line.product).seller;
+      const group = list.find((group) => group.shop.id === shop.id);
+      if (group) group.lines.push(line);
+      else list.push({ shop, lines: [line] });
+      return list;
+    }, []);
+  }, [selected]);
+
+  // Dynamically calculate shipping rates for backend products based on recipient city
+  useEffect(() => {
+    let active = true;
+    groups.forEach((group) => {
+      const hasBackendProduct = group.lines.some(
+        (l) =>
+          l.product.itemId ||
+          Number(l.product.id) > 20 ||
+          Number(l.product.price) >= 1000,
+      );
+      if (!hasBackendProduct) return;
+
+      const backendShopId =
+        typeof group.shop.id === "number"
+          ? group.shop.id
+          : group.shop.id === "shop-002"
+            ? 839910244
+            : 727720655;
+
+      catalogService
+        .calculateShippingFee({
+          shopId: backendShopId,
+          recipientCity: address?.city || "Ho Chi Minh City",
+          items: group.lines.map((l) => ({
+            item_id:
+              Number(l.product.itemId || l.product.id) > 100
+                ? Number(l.product.itemId || l.product.id)
+                : 10001,
+            item_price: l.product.price,
+            quantity: l.quantity,
+          })),
+        })
+        .then((res) => {
+          if (!active) return;
+          const channels = res?.channels || [];
+          if (channels.length > 0) {
+            const formatted = channels
+              .filter((c) => c.enabled !== false)
+              .map((c) => ({
+                id: String(
+                  c.channel_id ||
+                    c.channelId ||
+                    c.carrier_name.toLowerCase().replace(/\s+/g, "-"),
+                ),
+                name: c.carrier_name || c.service_type,
+                fee:
+                  c.buyer_paid_fee !== undefined
+                    ? c.buyer_paid_fee
+                    : c.actual_fee,
+                estimate:
+                  c.estimated_days || `${c.service_type || "Standard"} delivery`,
+                carrierName: c.carrier_name,
+                channelId: c.channel_id,
+              }));
+            if (formatted.length > 0) {
+              setShopShippingMethods((prev) => ({
+                ...prev,
+                [group.shop.id]: formatted,
+              }));
+            }
+          }
+        })
+        .catch(() => {});
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [groups, address?.city]);
+
+  const methodsForShop = (shopId) =>
+    shopShippingMethods[shopId] || shippingMethods;
+
+  const methodFor = (shopId) => {
+    const list = methodsForShop(shopId);
+    return list.find((method) => method.id === shipping[shopId]) || list[0];
+  };
+
   const shippingFee =
     groups.reduce(
       (sum, group) => sum + Math.round(methodFor(group.shop.id).fee * 100),
@@ -197,13 +278,15 @@ export default function CheckoutPage() {
             : group.shop.id === "shop-002"
               ? 839910244
               : 727720655;
+        const currentMethod = methodFor(group.shop.id);
         return {
           shop_id: backendShopId,
-          channel_id: 30001,
+          channel_id: currentMethod.channelId || 30001,
           shipping_carrier:
-            methodFor(group.shop.id).id === "express"
+            currentMethod.carrierName ||
+            (currentMethod.id === "express"
               ? "Express Delivery"
-              : "Shopee Xpress",
+              : "Shopee Xpress"),
           message_to_seller: notes[group.shop.id] || "",
           voucher_code: discountStatus.eligible ? appliedVoucher.code : undefined,
           items: group.lines.map((l) => ({
@@ -589,7 +672,7 @@ export default function CheckoutPage() {
         >
           <div className={s.dialogBody}>
             <p className={s.muted}>{editor.shop.name}</p>
-            {shippingMethods.map((method) => (
+            {methodsForShop(editor.shop.id).map((method) => (
               <label
                 key={method.id}
                 className={`${s.methodChoice} ${draftShipping === method.id ? s.selectedChoice : ""}`}
