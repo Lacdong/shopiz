@@ -119,7 +119,9 @@ function Storefront({ shop }) {
   const visible = filtered.slice((page - 1) * 6, page * 6);
   const topProducts = [...catalog].sort((a, b) => (b.sold || 0) - (a.sold || 0));
   const latest = [...catalog].reverse();
-  const offers = mockVouchers.filter((v) => v.type !== "shipping").slice(0, 2);
+  const offers = (shop.offers || shop.vouchers || []).filter(
+    (v) => v.type !== "shipping",
+  );
   function update(values) {
     const next = new URLSearchParams(params);
     for (const [key, value] of Object.entries(values)) {
@@ -350,43 +352,45 @@ function Storefront({ shop }) {
             to={`${shopUrl}?tab=top`}
             description="The favorites our sample catalog keeps coming back to"
           />
-          <section className={s.offers}>
-            <div className={s.sectionHeading}>
-              <div>
-                <h2>A LITTLE EXTRA, ON US</h2>
-                <p>Shopiz marketplace offers for your selected finds.</p>
+          {offers.length > 0 && (
+            <section className={s.offers}>
+              <div className={s.sectionHeading}>
+                <div>
+                  <h2>SHOP VOUCHERS & CAMPAIGNS</h2>
+                  <p>Exclusive promotional savings from {shop.name}.</p>
+                </div>
+                <Link to="/cart">
+                  View in cart
+                  <ChevronRight size={13} />
+                </Link>
               </div>
-              <Link to="/cart">
-                View in cart
-                <ChevronRight size={13} />
-              </Link>
-            </div>
-            <div>
-              {offers.map((offer) => (
-                <article key={offer.code}>
-                  <span>
-                    {offer.type === "percent"
-                      ? `${offer.percent}% OFF`
-                      : money(offer.amount) + " OFF"}
-                  </span>
-                  <div>
-                    <strong>{offer.code}</strong>
-                    <p>
-                      Min. spend {money(offer.minimum)}
-                      {offer.maxDiscount
-                        ? ` · Up to ${money(offer.maxDiscount)} off`
-                        : ""}
-                    </p>
-                    <small>Valid through {offer.expiresAt} · Demo offer</small>
-                  </div>
-                  <Link to="/cart">
-                    Use in cart
-                    <ChevronRight size={12} />
-                  </Link>
-                </article>
-              ))}
-            </div>
-          </section>
+              <div>
+                {offers.map((offer) => (
+                  <article key={offer.code}>
+                    <span>
+                      {offer.type === "percent"
+                        ? `${offer.percent}% OFF`
+                        : money(offer.amount) + " OFF"}
+                    </span>
+                    <div>
+                      <strong>{offer.code}</strong>
+                      <p>
+                        Min. spend {money(offer.minimum)}
+                        {offer.maxDiscount
+                          ? ` · Up to ${money(offer.maxDiscount)} off`
+                          : ""}
+                      </p>
+                      <small>Valid through {offer.expiresAt || "limited time"}</small>
+                    </div>
+                    <Link to="/cart">
+                      Use in cart
+                      <ChevronRight size={12} />
+                    </Link>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
           <div className={s.benefits}>
             {[
               [
@@ -632,7 +636,18 @@ export default function ShopPage() {
           followers: Number(detail.followers || 12800),
           rating: String(detail.rating || "5.0"),
           responseRate: detail.response_rate || "98%",
-          joined: detail.joined || "2 years ago",
+          responseTime: detail.response_time || "Within a few hours",
+          joined: detail.joined || "Recently",
+          offers: (detail.vouchers || []).map((v) => ({
+            code: v.code,
+            type: v.type,
+            percent: v.percent,
+            amount: v.amount,
+            minimum: v.minimum,
+            maxDiscount: v.maxDiscount,
+            expiresAt: v.expiresAt,
+          })),
+          hasCampaign: Boolean(detail.has_campaign || (detail.vouchers && detail.vouchers.length > 0)),
           heroTitle: "A little more\nin every day.",
           heroText:
             "Authentic merchandise with official warranty and fast shipping.",

@@ -148,6 +148,11 @@ try {
   await shopChat.waitFor();
   await shopChat.getByRole("button", { name: "Close chat" }).click();
 
+  // Verify campaign vouchers section is rendered for active campaign shop
+  const campaignHeading = page.getByRole("heading", { name: "SHOP VOUCHERS & CAMPAIGNS" });
+  await campaignHeading.waitFor();
+  console.log("Verified campaign vouchers section rendered for shop 727720655!");
+
   // -------------------------------------------------------------------------
   // 4. LEGACY MOCK SHOP COMPATIBILITY (/shop/sonora)
   // -------------------------------------------------------------------------
@@ -157,6 +162,11 @@ try {
   const sonoraTitle = await page.locator("h1").textContent();
   console.log("Sonora shop title:", sonoraTitle);
   check(sonoraTitle.includes("SONORA"), "Sonora title mismatch");
+
+  // Verify shop without campaign does not show voucher section
+  const sonoraCampaign = page.getByRole("heading", { name: "SHOP VOUCHERS & CAMPAIGNS" });
+  check((await sonoraCampaign.count()) === 0, "Sonora should not show vouchers when not holding a campaign");
+  console.log("Verified shop with no campaigns hides the voucher section!");
 
   check(errors.length === 0, `Encountered ${errors.length} page errors: ${errors.join(", ")}`);
   console.log("\n🎉 ALL SHIPPING, LIVE CHAT & SHOP STOREFRONT TESTS PASSED WITH 0 ERRORS!");
