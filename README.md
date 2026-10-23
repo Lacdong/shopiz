@@ -1,6 +1,6 @@
 # Shopiz
 
-Independent SmartOmni marketplace simulator built with React 19, JavaScript/JSX, Vite 6, React Router 7, CSS Modules, Lucide React and Axios. Fully integrated with the **Shopee Open API v2 Mock Simulator backend** (`http://127.0.0.1:8080`) supporting live buyer authentication, category hierarchy, catalog sync, multi-shop batch checkout, delivery confirmation, returns/refunds, reviews, cloud media uploads, and Seller Center analytics with seamless offline fallback.
+Independent SmartOmni marketplace simulator built with React 19, JavaScript/JSX, Vite 6, React Router 7, CSS Modules, Lucide React and Axios. Fully integrated with the **Shopee Open API v2 Mock Simulator backend** (`http://127.0.0.1:8080`) supporting live buyer authentication, category hierarchy, catalog sync, dynamic carrier shipping calculation, live shop chat, multi-shop batch checkout, delivery confirmation, returns/refunds, reviews, cloud media uploads, and an enterprise multi-store Seller Center console with offline test fallback.
 
 ## Run
 
@@ -10,6 +10,11 @@ npm run dev
 npm run build
 npm run preview
 npm run check:integration
+npm run check:shop-select
+npm run check:seller
+npm run check:shipping-chat
+npm run check:checkout
+npm run check:purchases
 ```
 
 ## Backend Integration Architecture
@@ -17,11 +22,12 @@ npm run check:integration
 - `vite.config.js`: reverse-proxy routes `/api/*` and `/uploads/*` directly to `http://127.0.0.1:8080`.
 - `src/services/api.js`: centralized Axios client configured with `/api/v2` base URL, session token interceptors, and standard Shopee envelope unwrap (`{ error, message, response }`).
 - `src/services/authService.js`: live login, registration, password recovery, and buyer profile synchronization.
-- `src/services/addressService.js`: buyer shipping address book CRUD and default address management.
-- `src/services/catalogService.js`: live category tree, product search, multi-tier variation attributes, and shop details.
-- `src/services/checkoutService.js`: carrier channels, basket voucher eligibility validation, and atomic multi-shop batch checkout.
+- `src/services/addressService.js`: buyer shipping address book CRUD, multi-address selection in checkout, and default address management with PostgreSQL sync.
+- `src/services/catalogService.js`: live category tree, product search, multi-tier variation attributes, dynamic shipping calculation (`POST /simulator/logistics/calculate_fee`), and shop storefront profiles (`GET /simulator/shop/detail`).
+- `src/services/chatService.js`: interactive live messaging with shop sellers, simulating responsive merchant replies, message history, and product/order context pinning.
+- `src/services/checkoutService.js`: dynamic carrier channels (`SPX Express`, `SPX Instant`, `SPX Economy`), basket voucher eligibility validation, and atomic multi-shop batch checkout.
 - `src/services/orderService.js`: live purchases synchronization, buyer delivery confirmation (escrow release), cancellation, 5-star product reviews, and return/refund claims.
-- `src/services/sellerService.js`: Seller Center live business metrics (revenue, orders, conversion rate), stock updates, and product management.
+- `src/services/sellerService.js`: multi-shop listing (`GET /simulator/shops`), live orders retrieval, order shipment arrangement (`POST /simulator/order/ship`), printable Air Waybill generation/PDF download, inventory stock management, and Seller Center live business metrics.
 - `src/services/mediaService.js`: cloud photo/video upload directly to Google Drive (with local storage fallback).
 
 ## Implementation
@@ -105,42 +111,35 @@ Responsive layouts target 1440, 1280, 1024, 768 and 375 pixels. Recommendations 
 
 ## Checkout
 
-- `/checkout` follows `references/marketplace/checkout.png` using Shopiz’s monochrome theme. Only selected cart items appear, grouped by their seller.
-- Page files and mock address/shipping/payment data live in `src/pages/checkout/`. Delivery address selection/editing validates required fields and phone format; address edits and seller notes last only for the current checkout visit.
-- Shipping is selected per shop: standard delivery is free; express delivery costs $2.90 per shop. Eligible shipping vouchers reduce the actual shipping total. Merchandise vouchers retain their existing thresholds and caps.
-- Cash on delivery and Demo wallet are simulated choices. Place demo order displays a receipt, clears the applied voucher and removes only the ordered lines from the cart. It prevents duplicate submissions and stores up to 20 mock order summaries under `shopiz-demo-orders-v1`, excluding delivery addresses, phone numbers and seller notes. No payment, shipment, seller notification or backend order is created.
-- Empty selection routes back to the cart. `npm run check:checkout` verifies layout at five sizes, address validation, shipping/voucher totals, payment choices, duplicate submission protection and preservation of unselected products without screenshots.
+- `/checkout` follows `references/marketplace/checkout.png` using Shopiz’s monochrome theme. Cart items appear grouped by their seller.
+- **Multiple Saved Addresses & Backend Sync**: Connected to `useAccount()` and `addressService`. Displays all saved addresses from PostgreSQL `buyer_addresses`. Buyers can choose any saved address, edit an address, or add a new delivery address directly during checkout with automatic background synchronization.
+- **Dynamic Shipping Quotes**: Automatically checks cart items against backend product IDs. Calls `catalogService.calculateShippingFee` with cart item dimensions and recipient destination city (`Ho Chi Minh City`, `Hanoi`, `Da Nang`, etc.) to return live carrier options (`SPX Express`, `SPX Instant`, `SPX Economy`). Recalculates shipping fees and totals immediately when switching addresses or delivery options. Fallback mock methods ($0 Standard, $2.90 Express) are seamlessly maintained for simulated offline carts.
+- **Multi-Shop Atomic Batch Checkout**: Places orders atomically across multiple shops via `checkoutService.batchCheckout`, preserving individual seller notes, carrier selection, and voucher codes.
+- `npm run check:checkout` verifies layout at five sizes, address validation/editing, dynamic shipping, voucher recalculations, payment choices, duplicate submission protection and cart preservation without screenshots.
 
 ## My Purchases
 
-- Completed orders show Review, Contact Seller and Buy Again; cancelled orders show Buy Again, View Cancellation Details and Contact Seller. All remaining statuses show disabled Pending, Contact Seller and Cancel Order. The order ID opens the existing Order Details popup.
-- Reviews save a star rating and optional comment locally. Cancellation requires a reason and updates the order status and cancellation details across reloads; it does not issue a real refund or notify a seller.
+- `/account/purchases` follows the supplied `user-purchase_.png` and `shopee-user-purchase_.png` references: account sidebar, status tabs, order search, seller/product rows, order totals and action buttons.
+- Newly placed orders appear first, map to **To Ship**, survive reloads and show their original product variations, quantities and checkout totals.
+- **Interactive Live Seller Chat**: "Contact Seller" opens the live [`ChatDialog`](file:///Users/nguyetminh/Dev/shopee-docs/shopee-markdown/shopiz/src/components/chat/ChatDialog.jsx) pre-populated with seller details and order items context, supporting instant merchant replies and a direct "View Shop" link.
+- **Delivery Confirmation & Escrow Release**: "Confirm Delivery" button for shipped orders transitions status to `COMPLETED` and releases escrow payment on the backend simulator.
+- `npm run check:purchases` checks the popup-to-history flow, header links, five responsive layouts, status/search/reload behavior, detail totals, live seller chat dialog, Buy Again, and seller links without screenshots.
 
-- `/account/purchases` follows the supplied `user-purchase_.png` and `shopee-user-purchase_.png` references: account sidebar, status tabs, order search, seller/product rows, order totals and action buttons. The interface uses English and Shopiz’s monochrome styling.
-- Checkout now opens a success popup with **View My Purchases**. The header account menu opens the same page. Newly placed orders appear first, map to **To Ship**, survive reloads and show their original product variations, quantities and checkout totals. Three labelled sample orders illustrate Completed and Cancelled states.
-- Status and search use URL parameters. Search matches shop, product and order ID. Order Details shows the merchandise/shipping/voucher breakdown; Buy Again uses current cart stock rules. Seller links open storefronts; messaging shows an availability notice.
-- Shared order storage lives in `src/data/orders.js`. Like the existing demo cart, order history is browser-local and shared across guest/demo account sessions; it is not a backend account history. Storage failures retain orders for the current visit only. Sample history is separate from stored checkout orders.
-- `npm run check:purchases` checks the popup-to-history flow, header links, five responsive layouts, status/search/reload behavior, detail totals, Buy Again, seller links and malformed-storage recovery without screenshots.
-
-## My Account — Profile and Addresses
-
-- `/account/profile` and `/account/addresses` follow the supplied account references with English copy and monochrome styling. Shared navigation lives in `src/components/account/AccountSidebar.jsx`; profile/address pages live in `src/pages/account/`.
-- Profile supports name, masked email/phone with edit dialogs, gender, valid date of birth and JPEG/PNG avatar upload up to 1 MB. Save updates the header name/avatar and account sidebar. Profile contact changes do not alter bundled demo login credentials.
-- Address book supports add/edit, type, one default address, deletion of non-default entries and at most 20 entries. Data is saved per demo user (or guest) under `shopiz-account-v1:<user-id>`; storage failures retain changes for the visit. Checkout continues to use its visit-only address selection/editor.
-- `npm run check:account` covers five responsive sizes, validation, uploads, persistence, header updates, address actions, account isolation and malformed storage without screenshots.
-
-## Shop storefronts
+## Shop Storefronts & Live Chat
 
 - `src/pages/shop/ShopPage.jsx` and its CSS Module follow `references/marketplace/view-shop.png`: seller profile and statistics, navigation tabs, recommended products, original editorial banners, collection tiles, marketplace offers, shopping benefits and category product groups.
-- `/shop/sonora`, `/shop/atelier` and `/shop/north-form` use the shared fictional shop catalog in `src/data/shops.js`. Mall collections, product seller metadata and storefronts share seller IDs and inventories.
-- Home, All Products, New Arrivals, Top Sales and About Shop tabs are available. Product tabs support shop-scoped keyword search, categories, sorting and six-item pagination through URL parameters. Back/reload preserves the selected query/filter state.
-- Following is a browser-local preference under `shopiz-followed-shops-v1`, independent for each shop. No subscription or notification is sent. Seller messaging opens an availability notice.
-- Product detail View Shop, search-related-shop links and cart Visit Shop/Shop more links open the corresponding storefront. Product cards link back to existing product detail pages. Unknown shop IDs show an explicit not-found page.
-- `npm run check:shop` checks three storefronts at all five target sizes, follow persistence, tabs/search/filters/sorting/pagination and seller links without screenshots. Accepts `SHOPIZ_URL` (default port 5173).
+- Supports both simulated shops (`/shop/sonora`, `/shop/atelier`) and live backend stores (`/shop/727720655`, `/shop/839910244`, `/shop/910283751`).
+- **Dynamic Shop Metrics & Campaign Vouchers**: Fetches live shop statistics (followers, rating, response rate, response time, joined date duration) from `catalogService.getShopDetail`. The voucher and campaign section dynamically renders active store vouchers (`VCHP77T`, `PCT15`) when a campaign is active, and cleanly hides when no active campaign is running.
+- **Header Live Chat**: "Chat Now" in the shop header opens [`ChatDialog`](file:///Users/nguyetminh/Dev/shopee-docs/shopee-markdown/shopiz/src/components/chat/ChatDialog.jsx) to interact directly with the store owner.
+- `npm run check:shipping-chat` verifies dynamic shipping rate calculation, live shop chat, backend shop storefront profile with active campaign vouchers, and legacy shop compatibility.
 
-## Seller Center
+## Multi-Shop Seller Center & Control Console
 
-- `/seller` opens a dedicated English seller interface inspired by Shopee, with Shopiz branding and the shared monochrome palette and responsive navigation.
-- Overview includes sample sales metrics with today/week switching, a revenue chart, task shortcuts, recent orders and shop health. Menu sections include orders, products, marketing, analytics, finance, shop profile and settings.
-- Search/filter orders, confirm pending sample orders, export sample orders as CSV, add/hide sample products, filter out-of-stock items, activate sample campaigns and edit the shop name. These changes last for the current visit; no backend, actual shipment or campaign is triggered.
+- `/seller/select-shop` (alias `/seller/select`): dedicated multi-store selection portal rendered by `ShopSelectPage.jsx`. Lists all stores from backend PostgreSQL (`SmartOmni Official Flagship`, `Hanoi Streetwear Co.`, `Saigon Modern Living`, and simulated `SONORA`) with active product counts, order counts, and Mall badges.
+- `/seller`: dedicated English seller interface inspired by Shopee, with Shopiz branding, monochrome palette, and responsive navigation.
+- **Header & Sidebar Switch Shop**: One-click "Switch Shop" shortcuts in both the header and sidebar allow instant switching between stores.
+- **Live Order Management & Shipment**: Fetches live backend orders for the active shop. "Confirm" / "Arrange Shipment" transitions pending orders to `SHIPPED` and generates tracking numbers. Shipped orders provide a direct **"Print AWB"** button downloading printable Shopee PDF Air Waybills.
+- **Product Inventory Management**: Displays live store catalog items with database stock levels. "Hide / Show" button toggles product visibility between `NORMAL` and `UNLIST` in PostgreSQL via `sellerService.toggleUnlist`.
+- **Marketing Center**: Displays active store vouchers and campaign discounts directly from the database.
+- `npm run check:shop-select` verifies responsive layouts, store listing, card selection, navigation, and header switcher.
 - `npm run check:seller` verifies responsive layouts, order actions, CSV download, product actions, marketing, shop editing and navigation. Set `SHOPIZ_URL` to the local preview URL when needed.
