@@ -1,0 +1,135 @@
+.paginationWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 4px 4px 4px;
+  border-top: 1px solid #f0f0f0;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 13px;
+  color: #595959;
+}
+
+.info {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.info strong {
+  color: #222222;
+  font-weight: 600;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.pageSizeWrap {
+  display: flex;
+  align-items: center;
+}
+
+.pageSizeSelect {
+  height: 32px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  padding: 0 8px;
+  font-size: 12px;
+  color: #333333;
+  background-color: #ffffff;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.pageSizeSelect:focus {
+  border-color: #ee4d2d;
+}
+
+.pageNav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.arrowBtn {
+  width: 32px;
+  height: 32px;
+  background-color: #ffffff;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #595959;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.arrowBtn:hover:not(:disabled) {
+  border-color: #ee4d2d;
+  color: #ee4d2d;
+}
+
+.arrowBtn:disabled {
+  background-color: #f5f5f5;
+  border-color: #e8e8e8;
+  color: #bfbfbf;
+  cursor: not-allowed;
+}
+
+.pageBtn {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 6px;
+  background-color: #ffffff;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #333333;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pageBtn:hover:not(.pageActive) {
+  border-color: #ee4d2d;
+  color: #ee4d2d;
+}
+
+.pageActive {
+  background-color: #ee4d2d !important;
+  border-color: #ee4d2d !important;
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+.dots {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 32px;
+  color: #8c8c8c;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .paginationWrapper {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .controls {
+    margin-left: 0;
+    width: 100%;
+    justify-content: space-between;
+  }
+}

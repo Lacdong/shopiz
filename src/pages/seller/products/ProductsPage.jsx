@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import api from "../../../services/api";
 import sellerService from "../../../services/sellerService";
+import SellerPagination from "../SellerPagination";
 import s from "./ProductsPage.module.css";
 
 const money = (n) =>
@@ -76,6 +77,15 @@ export default function ProductsPage({ shopId = 727720655 }) {
   const [viewMode, setViewMode] = useState("list");
   const [expandedModels, setExpandedModels] = useState({});
   const [activeChip, setActiveChip] = useState("");
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // Reset page when switching tabs
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeStatusTab, activeSubTab]);
 
   // Modals & Notices
   const [notice, setNotice] = useState("");
@@ -142,6 +152,7 @@ export default function ProductsPage({ shopId = 727720655 }) {
   // Filter application
   const handleApplyFilter = (e) => {
     e?.preventDefault();
+    setCurrentPage(1);
     setAppliedFilters({
       query: searchQuery.trim(),
       category: selectedCategory,
@@ -150,6 +161,7 @@ export default function ProductsPage({ shopId = 727720655 }) {
   };
 
   const handleResetFilter = () => {
+    setCurrentPage(1);
     setSearchQuery("");
     setSelectedCategory("ALL");
     setSelectedRole("ALL");
@@ -214,12 +226,20 @@ export default function ProductsPage({ shopId = 727720655 }) {
       });
   }, [products, activeStatusTab, activeSubTab, appliedFilters, sortBy]);
 
-  // Bulk selection
+  // Paginated slice for current page
+  const paginatedProducts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredProducts.slice(start, start + pageSize);
+  }, [filteredProducts, currentPage, pageSize]);
+
+  // Bulk selection for current page
   const handleToggleSelectAll = () => {
-    if (selectedIds.length === filteredProducts.length) {
-      setSelectedIds([]);
+    const pageItemIds = paginatedProducts.map((p) => p.item_id);
+    const allPageSelected = pageItemIds.length > 0 && pageItemIds.every((id) => selectedIds.includes(id));
+    if (allPageSelected) {
+      setSelectedIds((prev) => prev.filter((id) => !pageItemIds.includes(id)));
     } else {
-      setSelectedIds(filteredProducts.map((p) => p.item_id));
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...pageItemIds])));
     }
   };
 
@@ -476,8 +496,8 @@ export default function ProductsPage({ shopId = 727720655 }) {
                   <input
                     type="checkbox"
                     checked={
-                      filteredProducts.length > 0 &&
-                      selectedIds.length === filteredProducts.length
+                      paginatedProducts.length > 0 &&
+                      paginatedProducts.every((p) => selectedIds.includes(p.item_id))
                     }
                     onChange={handleToggleSelectAll}
                     aria-label="Chọn tất cả sản phẩm"
@@ -492,7 +512,7 @@ export default function ProductsPage({ shopId = 727720655 }) {
               </tr>
             </thead>
             <tbody>
-              {filteredProducts.map((p) => {
+              {paginatedProducts.map((p) => {
                 const isSelected = selectedIds.includes(p.item_id);
                 const hasModels = p.has_model && p.models && p.models.length > 0;
                 const totalStock = hasModels
@@ -676,6 +696,15 @@ export default function ProductsPage({ shopId = 727720655 }) {
             </div>
           )}
         </div>
+
+        {/* 7. Pagination */}
+        <SellerPagination
+          currentPage={currentPage}
+          totalItems={filteredProducts.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       {/* Stock Edit Modal */}

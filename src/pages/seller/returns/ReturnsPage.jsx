@@ -19,6 +19,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import api from "../../../services/api";
+import SellerPagination from "../SellerPagination";
 import s from "./ReturnsPage.module.css";
 
 const money = (n) =>
@@ -80,6 +81,15 @@ export default function ReturnsPage({ shopId = 727720655 }) {
   const [copiedSn, setCopiedSn] = useState("");
   const [toastNotice, setToastNotice] = useState("");
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // Reset page when priority or action filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedPriority, selectedAction]);
+
   // Dispute Modal
   const [disputeModal, setDisputeModal] = useState(null); // return object
   const [disputeReason, setDisputeReason] = useState("");
@@ -106,6 +116,7 @@ export default function ReturnsPage({ shopId = 727720655 }) {
   // Apply filters
   const handleSearch = (e) => {
     e?.preventDefault();
+    setCurrentPage(1);
     setAppliedFilters({
       query: searchQuery.trim(),
       operation: operationFilter,
@@ -113,6 +124,7 @@ export default function ReturnsPage({ shopId = 727720655 }) {
   };
 
   const handleReset = () => {
+    setCurrentPage(1);
     setSearchQuery("");
     setOperationFilter("ALL");
     setSelectedPriority("all");
@@ -167,6 +179,12 @@ export default function ReturnsPage({ shopId = 727720655 }) {
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
   }, [returns, selectedPriority, selectedAction, appliedFilters, sortBy]);
+
+  // Paginated slice for current page
+  const paginatedReturns = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredReturns.slice(start, start + pageSize);
+  }, [filteredReturns, currentPage, pageSize]);
 
   // Copy order SN
   const handleCopy = (text) => {
@@ -393,7 +411,7 @@ export default function ReturnsPage({ shopId = 727720655 }) {
             </tr>
           </thead>
           <tbody>
-            {filteredReturns.map((r) => {
+            {paginatedReturns.map((r) => {
               const statusMeta = STATUS_MAP[r.status] || {
                 label: r.status,
                 color: "#595959",
@@ -592,6 +610,15 @@ export default function ReturnsPage({ shopId = 727720655 }) {
           </div>
         )}
       </div>
+
+      {/* 6. Pagination */}
+      <SellerPagination
+        currentPage={currentPage}
+        totalItems={filteredReturns.length}
+        pageSize={pageSize}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={setPageSize}
+      />
 
       {/* Dispute Modal */}
       {disputeModal && (

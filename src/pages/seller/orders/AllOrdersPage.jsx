@@ -14,6 +14,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import sellerService from "../../../services/sellerService";
+import SellerPagination from "../SellerPagination";
 import s from "./AllOrdersPage.module.css";
 
 const money = (n) =>
@@ -75,6 +76,15 @@ export default function AllOrdersPage({ shopId = 727720655 }) {
   const [actionNotice, setActionNotice] = useState("");
   const [historyModal, setHistoryModal] = useState(false);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // Reset to page 1 whenever activeTabId changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTabId]);
+
   // Fetch orders from simulator backend
   useEffect(() => {
     setLoading(true);
@@ -103,6 +113,7 @@ export default function AllOrdersPage({ shopId = 727720655 }) {
 
   // Tab switching
   const handleSelectTab = (tabId) => {
+    setCurrentPage(1);
     const next = new URLSearchParams(params);
     next.set("order_status", tabId);
     setParams(next);
@@ -111,6 +122,7 @@ export default function AllOrdersPage({ shopId = 727720655 }) {
   // Filter application
   const handleApplyFilter = (e) => {
     e?.preventDefault();
+    setCurrentPage(1);
     setAppliedFilters({
       searchType,
       query: searchQuery.trim(),
@@ -119,6 +131,7 @@ export default function AllOrdersPage({ shopId = 727720655 }) {
   };
 
   const handleResetFilter = () => {
+    setCurrentPage(1);
     setSearchQuery("");
     setCarrierFilter("ALL");
     setAppliedFilters({
@@ -160,6 +173,12 @@ export default function AllOrdersPage({ shopId = 727720655 }) {
       return true;
     });
   }, [orders, activeTabId, appliedFilters]);
+
+  // Paginated slice for current page
+  const paginatedOrders = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredOrders.slice(start, start + pageSize);
+  }, [filteredOrders, currentPage, pageSize]);
 
   // Tab counts
   const tabCounts = useMemo(() => {
@@ -359,7 +378,7 @@ export default function AllOrdersPage({ shopId = 727720655 }) {
               </tr>
             </thead>
             <tbody>
-              {filteredOrders.map((order) => {
+              {paginatedOrders.map((order) => {
                 const statusMeta = STATUS_DISPLAY_MAP[order.order_status] || {
                   text: order.order_status,
                   color: "#595959",
@@ -512,6 +531,15 @@ export default function AllOrdersPage({ shopId = 727720655 }) {
             </div>
           )}
         </div>
+
+        {/* 7. Pagination */}
+        <SellerPagination
+          currentPage={currentPage}
+          totalItems={filteredOrders.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       {/* Action Toast Notice */}
