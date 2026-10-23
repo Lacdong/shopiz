@@ -8,6 +8,13 @@
 .navLink.active{background:var(--brand);color:var(--on-dark)}
 .navLink.active b{background:#fff;color:var(--brand)}
 .logo,.logo>span>span,.todos strong,.chartLegend i,.marketingBody{color:var(--brand)}
+
+.switchShopBtn{display:flex;align-items:center;gap:6px;background:#fef0ed;color:var(--accent);border:1px solid #ffd0c7;padding:6px 12px;border-radius:4px;font-size:12px;font-weight:600;text-decoration:none;transition:background .15s}
+.switchShopBtn:hover{background:#fcdcd5}
+@media(max-width:700px){.switchShopBtn{display:none}}
+.sidebarSwitchBtn{margin-left:auto;font-size:11px;color:var(--accent);background:#fef0ed;border:1px solid #ffd0c7;padding:3px 8px;border-radius:4px;text-decoration:none;font-weight:600;transition:background .15s}
+.sidebarSwitchBtn:hover{background:#fcdcd5}
+
 .primary:hover{background:var(--hover)}
 .banner,.marketingHero,.finance,.learnCard{background:var(--surface);border-color:var(--border)}
 .banner strong,.marketingHero h2,.finance h2,.learnCard>strong{color:var(--text)}

@@ -20,6 +20,7 @@
     "check:account": "node scripts/verify-account.mjs",
     "check:backend-product": "node scripts/verify-backend-product.mjs",
     "check:shipping-chat": "node scripts/verify-shipping-chat-shop.mjs",
+    "check:shop-select": "node scripts/verify-shop-select.mjs",
     "check:integration": "node scripts/verify-integration.mjs"
   },
   "dependencies": {

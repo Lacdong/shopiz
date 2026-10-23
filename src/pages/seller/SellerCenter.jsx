@@ -29,19 +29,52 @@ export default function SellerCenter() {
   const [notifications, setNotifications] = useState(false);
   const [dialog, setDialog] = useState(false);
   const [campaigns, setCampaigns] = useState([]);
-  const [shopName, setShopName] = useState("SONORA Official Store");
+  const urlShopId = params.get("shop_id");
+  const [shopId, setShopId] = useState(() => {
+    return (
+      urlShopId ||
+      localStorage.getItem("shopiz-active-seller-shop-id") ||
+      "sonora"
+    );
+  });
+  const [shopName, setShopName] = useState(() => {
+    return (
+      localStorage.getItem("shopiz-active-seller-shop-name") ||
+      (shopId === "sonora"
+        ? "SONORA Official Store"
+        : shopId === "839910244"
+          ? "Hanoi Streetwear Co."
+          : shopId === "910283751"
+            ? "Saigon Modern Living"
+            : "SmartOmni Official Flagship")
+    );
+  });
   const [savedName, setSavedName] = useState(shopName);
   const [liveAnalytics, setLiveAnalytics] = useState(null);
   const modal = useRef(null);
 
   useEffect(() => {
+    if (urlShopId && urlShopId !== shopId) {
+      setShopId(urlShopId);
+      localStorage.setItem("shopiz-active-seller-shop-id", urlShopId);
+    }
+  }, [urlShopId]);
+
+  useEffect(() => {
+    if (shopId === "sonora") {
+      setLiveAnalytics(null);
+      setSavedName("SONORA Official Store");
+      setShopName("SONORA Official Store");
+      return;
+    }
+    const numericShopId = Number(shopId) || 727720655;
     sellerService
-      .getAnalytics(727720655, period)
+      .getAnalytics(numericShopId, period)
       .then((res) => {
         if (res?.metrics) setLiveAnalytics(res);
       })
       .catch(() => {});
-  }, [period]);
+  }, [shopId, period]);
 
   useEffect(() => { document.title = `${headings[section]} · Shopiz Seller Center`; setQuery(""); setFilter("all"); }, [section]);
   useEffect(() => { if (!notice) return; const timer = setTimeout(() => setNotice(""), 4500); return () => clearTimeout(timer); }, [notice]);
@@ -89,10 +122,10 @@ export default function SellerCenter() {
   const orderTable = (list, compact = false) => <div className={s.tableScroll}><table><thead><tr><th>Product / Order ID</th><th>Buyer</th><th>Total</th><th>Status</th>{!compact && <th>Actions</th>}</tr></thead><tbody>{list.map(o => <tr key={o.id}><td><div className={s.productCell}><img src={o.product.image} alt=""/><div><strong>{o.product.title.split(" · ")[0]}</strong><small>#{o.id} · Qty: {o.quantity}</small></div></div></td><td>{o.buyer}</td><td className={s.amount}>{money(o.product.price * 25000 * o.quantity)}</td><td><span className={`${s.badge} ${s[o.status]}`}>{statuses[o.status]}</span></td>{!compact && <td>{o.status === "pending" ? <button className={s.textButton} onClick={() => { setOrders(orders.map(x => x.id === o.id ? { ...x, status: "shipping" } : x)); setNotice(`Confirmed sample order #${o.id}`); }}>Confirm</button> : <span className={s.muted}>—</span>}</td>}</tr>)}</tbody></table>{!list.length && <div className={s.empty}><Package size={32}/><p>No matching orders found.</p></div>}</div>;
 
   return <div className={s.seller}>
-    <header className={s.header}><div className={s.brandArea}><button className={`${s.iconButton} ${s.mobileToggle}`} aria-label="Open menu" aria-expanded={mobile} onClick={() => setMobile(!mobile)}><Menu size={22}/></button><Link to="/" className={s.logo}><ShoppingBag size={29} strokeWidth={1.7}/><span>shopiz<span>.</span></span></Link><span className={s.headerDivider}/><span className={s.centerName}>Seller Center</span></div><div className={s.headerRight}><Link to="/" className={s.marketLink}>Go to Shopiz <ExternalLink size={13}/></Link><div className={s.bellWrap}><button className={s.iconButton} aria-label="Notifications" aria-expanded={notifications} onClick={() => setNotifications(!notifications)}><Bell size={20}/><b className={s.notificationDot}/></button>{notifications && <div className={s.notificationPanel}><strong>Shop notifications</strong><p>3 sample orders are waiting for confirmation.</p><button className={s.textButton} onClick={() => { go("orders"); setNotifications(false); }}>View orders <ArrowRight size={14}/></button></div>}</div><span className={s.headerDivider}/><button className={s.account} onClick={() => go("shop")}><span className={s.avatar}>S</span><span>{savedName}</span><ChevronDown size={14}/></button></div></header>
+    <header className={s.header}><div className={s.brandArea}><button className={`${s.iconButton} ${s.mobileToggle}`} aria-label="Open menu" aria-expanded={mobile} onClick={() => setMobile(!mobile)}><Menu size={22}/></button><Link to="/" className={s.logo}><ShoppingBag size={29} strokeWidth={1.7}/><span>shopiz<span>.</span></span></Link><span className={s.headerDivider}/><span className={s.centerName}>Seller Center</span></div><div className={s.headerRight}><Link to="/seller/select-shop" className={s.switchShopBtn}><Store size={14}/> Switch Shop</Link><Link to="/" className={s.marketLink}>Go to Shopiz <ExternalLink size={13}/></Link><div className={s.bellWrap}><button className={s.iconButton} aria-label="Notifications" aria-expanded={notifications} onClick={() => setNotifications(!notifications)}><Bell size={20}/><b className={s.notificationDot}/></button>{notifications && <div className={s.notificationPanel}><strong>Shop notifications</strong><p>3 sample orders are waiting for confirmation.</p><button className={s.textButton} onClick={() => { go("orders"); setNotifications(false); }}>View orders <ArrowRight size={14}/></button></div>}</div><span className={s.headerDivider}/><button className={s.account} onClick={() => go("shop")}><span className={s.avatar}>{savedName.charAt(0)}</span><span>{savedName}</span><ChevronDown size={14}/></button></div></header>
     {mobile && <button className={s.backdrop} aria-label="Close menu" onClick={() => setMobile(false)}/>}
-    <aside className={`${s.sidebar} ${mobile ? s.sidebarOpen : ""}`}><div className={s.shopCard}><span className={s.shopAvatar}>S<span><Check size={9}/></span></span><div><strong>{savedName}</strong><small><span/> Preferred Seller</small></div></div><nav aria-label="Seller navigation">{navigation.map(([title, links]) => <div className={s.navGroup} key={title}><p>{title}</p>{links.map(([id, label, Icon, count]) => <Link key={id} to={id === "overview" ? "/seller" : `/seller?tab=${id}`} className={`${s.navLink} ${section === id ? s.active : ""}`} aria-current={section === id ? "page" : undefined} onClick={() => setMobile(false)}><Icon size={19}/><span>{label}</span>{count && <b>{count}</b>}</Link>)}</div>)}</nav><div className={s.learnCard}><BookOpen size={21}/><strong>Shopiz Academy</strong><p>A little knowledge,<br/>a better business every day.</p><button onClick={() => { go("marketing"); }}>Explore now <ArrowUpRight size={14}/></button></div><div className={s.sidebarFoot}><ShieldCheck size={15}/> Your partner in business</div></aside>
-    <main className={s.main}><div className={s.breadcrumb}>Seller Center <ChevronRight size={13}/><span>{headings[section]}</span></div><div className={s.pageHeading}><div><h1>{section === "overview" ? "Welcome back, SONORA" : headings[section]}</h1><p>{section === "overview" ? "Here’s to another great day of selling." : "Everything you need to manage your shop, in one place."}</p></div><div className={s.headingActions}><span className={s.demo}>Sample data</span>{section === "products" ? <button className={s.primary} onClick={() => setDialog(true)}><Plus size={16}/> Add product</button> : <Link className={s.outline} to="/shop/sonora"><Store size={15}/> View Shop <ArrowUpRight size={14}/></Link>}</div></div>
+    <aside className={`${s.sidebar} ${mobile ? s.sidebarOpen : ""}`}><div className={s.shopCard}><span className={s.shopAvatar}>{savedName.charAt(0)}<span><Check size={9}/></span></span><div><strong>{savedName}</strong><small><span/> Preferred Seller</small></div><Link to="/seller/select-shop" className={s.sidebarSwitchBtn} title="Switch Shop">Switch</Link></div><nav aria-label="Seller navigation">{navigation.map(([title, links]) => <div className={s.navGroup} key={title}><p>{title}</p>{links.map(([id, label, Icon, count]) => <Link key={id} to={id === "overview" ? "/seller" : `/seller?tab=${id}`} className={`${s.navLink} ${section === id ? s.active : ""}`} aria-current={section === id ? "page" : undefined} onClick={() => setMobile(false)}><Icon size={19}/><span>{label}</span>{count && <b>{count}</b>}</Link>)}</div>)}</nav><div className={s.learnCard}><BookOpen size={21}/><strong>Shopiz Academy</strong><p>A little knowledge,<br/>a better business every day.</p><button onClick={() => { go("marketing"); }}>Explore now <ArrowUpRight size={14}/></button></div><div className={s.sidebarFoot}><ShieldCheck size={15}/> Your partner in business</div></aside>
+    <main className={s.main}><div className={s.breadcrumb}>Seller Center <ChevronRight size={13}/><span>{headings[section]}</span></div><div className={s.pageHeading}><div><h1>{section === "overview" ? `Welcome back, ${savedName.replace(" Official Store", "").replace(" Official Flagship", "")}` : headings[section]}</h1><p>{section === "overview" ? "Here’s to another great day of selling." : "Everything you need to manage your shop, in one place."}</p></div><div className={s.headingActions}><span className={s.demo}>Sample data</span>{section === "products" ? <button className={s.primary} onClick={() => setDialog(true)}><Plus size={16}/> Add product</button> : <Link className={s.outline} to={`/shop/${shopId === "sonora" ? "sonora" : shopId}`}><Store size={15}/> View Shop <ArrowUpRight size={14}/></Link>}</div></div>
     {(section === "overview" || section === "analytics") && <>
       {section === "overview" && <div className={s.banner}><span className={s.bannerIcon}><Megaphone size={21}/></span><div><strong>Ready to grow your holiday sales?</strong><p>Join the 11.11 campaign and reach new customers.</p></div><button onClick={() => go("marketing")}>Explore now <ArrowRight size={15}/></button><span className={s.bannerArt}>11<span>.</span>11<small>MEGA SALE</small></span></div>}
       {section === "overview" && <Card title="To-do List" action={<span className={s.subtle}>Keep your business on track</span>}><div className={s.todos}>{[["12", "To Confirm", "pending"], ["08", "To Ship", "shipping"], ["02", "Cancellation Requests", "cancelled"], ["03", "Out of Stock", "products"]].map(([n, label, tab]) => <button key={label} onClick={() => { if (tab === "products") setParams({ tab: "products", stock: "empty" }); else { setParams({ tab: "orders", status: tab }); } }}><strong>{n}</strong><span>{label}</span></button>)}</div></Card>}
