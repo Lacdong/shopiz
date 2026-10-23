@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useCart } from "../../components/cart/CartProvider";
 import { useAuth } from "../../components/auth/AuthProvider";
+import { useAccount } from "../../components/account/AccountProvider";
 import { getProductDetails } from "../../data/productDetails";
 import { money } from "../../data/catalog";
 import { voucherStatus } from "../../data/vouchers";
@@ -45,13 +46,35 @@ export default function CheckoutPage() {
     completeCheckout,
   } = useCart();
   const { user } = useAuth();
-  const [addresses, setAddresses] = useState(() =>
-    sampleAddresses.map((address) => ({
+  const account = useAccount();
+  const [addresses, setAddresses] = useState(() => {
+    if (account?.addresses && account.addresses.length > 0) {
+      return account.addresses;
+    }
+    return sampleAddresses.map((address) => ({
       ...address,
       ...(user ? { name: user.name, phone: user.phone } : {}),
-    })),
-  );
-  const [addressId, setAddressId] = useState("home");
+    }));
+  });
+  const [addressId, setAddressId] = useState(() => {
+    const defaultAddr = account?.addresses?.find((a) => a.isDefault);
+    return defaultAddr ? defaultAddr.id : "home";
+  });
+
+  // Keep addresses updated if account addresses load asynchronously from backend
+  useEffect(() => {
+    if (account?.addresses && account.addresses.length > 0) {
+      setAddresses(account.addresses);
+      setAddressId((currentId) => {
+        if (!currentId || !account.addresses.some((a) => a.id === currentId)) {
+          const defaultAddr =
+            account.addresses.find((a) => a.isDefault) || account.addresses[0];
+          return defaultAddr ? defaultAddr.id : currentId;
+        }
+        return currentId;
+      });
+    }
+  }, [account?.addresses]);
   const [editor, setEditor] = useState(null);
   const [voucherOpen, setVoucherOpen] = useState(false);
   const [shipping, setShipping] = useState({});
@@ -102,6 +125,9 @@ export default function CheckoutPage() {
         : [...current, next],
     );
     setAddressId(next.id);
+    if (account?.saveAddress) {
+      account.saveAddress(next);
+    }
     setEditor(null);
     setError("");
   }
