@@ -7,11 +7,8 @@ import {
   ChevronUp,
   LayoutList,
   LayoutGrid,
-  Sparkles,
   Package,
   Star,
-  Settings,
-  Layers,
   Edit2,
   Eye,
   EyeOff,
@@ -77,6 +74,35 @@ export default function ProductsPage({ shopId = 727720655, onCreateProduct = () 
   const [viewMode, setViewMode] = useState("list");
   const [expandedModels, setExpandedModels] = useState({});
   const [activeChip, setActiveChip] = useState("");
+
+  const matchingCategoryIds = useMemo(() => {
+    if (appliedFilters.category === "ALL") return null;
+    const selectedId = String(appliedFilters.category);
+    const included = new Set([selectedId]);
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const category of categories) {
+        if (included.has(String(category.parent_category_id)) && !included.has(String(category.category_id))) {
+          included.add(String(category.category_id));
+          changed = true;
+        }
+      }
+    }
+    return included;
+  }, [categories, appliedFilters.category]);
+
+  const categoryDepth = (category) => {
+    let depth = 0;
+    let parentId = String(category.parent_category_id);
+    while (parentId !== "0") {
+      const parent = categories.find((entry) => String(entry.category_id) === parentId);
+      if (!parent) break;
+      depth += 1;
+      parentId = String(parent.parent_category_id);
+    }
+    return depth;
+  };
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -194,7 +220,7 @@ export default function ProductsPage({ shopId = 727720655, onCreateProduct = () 
         }
 
         // 3. Category filter
-        if (appliedFilters.category !== "ALL" && p.category_name !== appliedFilters.category) {
+        if (matchingCategoryIds && !matchingCategoryIds.has(String(p.category_id))) {
           return false;
         }
 
@@ -223,7 +249,7 @@ export default function ProductsPage({ shopId = 727720655, onCreateProduct = () 
         }
         return b.item_id - a.item_id;
       });
-  }, [products, activeStatusTab, activeSubTab, appliedFilters, sortBy]);
+  }, [products, activeStatusTab, activeSubTab, appliedFilters, matchingCategoryIds, sortBy]);
 
   // Paginated slice for current page
   const paginatedProducts = useMemo(() => {
@@ -304,12 +330,6 @@ export default function ProductsPage({ shopId = 727720655, onCreateProduct = () 
       <div className={s.headerRow}>
         <h1 className={s.pageTitle}>Sản phẩm</h1>
         <div className={s.headerActions}>
-          <div className={s.dropdownBtn}>
-            <Settings size={15} /> Cài đặt sản phẩm <ChevronDown size={14} />
-          </div>
-          <div className={s.dropdownBtn}>
-            <Layers size={15} /> Công cụ xử lý hàng loạt <ChevronDown size={14} />
-          </div>
           <button
             type="button"
             className={s.btnAddProduct}
@@ -390,8 +410,8 @@ export default function ProductsPage({ shopId = 727720655, onCreateProduct = () 
             >
               <option value="ALL">Tất cả ngành hàng</option>
               {categories.map((c) => (
-                <option key={c.category_id} value={c.category_name}>
-                  {c.category_name}
+                <option key={c.category_id} value={String(c.category_id)}>
+                  {`${"— ".repeat(categoryDepth(c))}${c.category_name}`}
                 </option>
               ))}
             </select>
@@ -476,18 +496,12 @@ export default function ProductsPage({ shopId = 727720655, onCreateProduct = () 
               </button>
             </div>
 
-            <button
-              type="button"
-              className={s.btnAiTool}
-              onClick={() => setNotice("Công cụ Tối ưu AI đang được chuẩn bị cho bản phát hành kế tiếp.")}
-            >
-              <Sparkles size={14} /> Công cụ Tối ưu AI
-            </button>
           </div>
         </div>
 
         {/* 6. Product Table */}
-        <div className={s.tableContainer}>
+        <div className={viewMode === "list" ? s.tableContainer : s.productGridContainer}>
+          {viewMode === "list" ? (
           <table className={s.productsTable}>
             <thead>
               <tr>
@@ -684,6 +698,32 @@ export default function ProductsPage({ shopId = 727720655, onCreateProduct = () 
               })}
             </tbody>
           </table>
+          ) : (
+            <div className={s.productGrid}>
+              {paginatedProducts.map((product) => {
+                const image = product.images?.image_url_list?.[0];
+                const stock = product.has_model && product.models?.length
+                  ? product.models.reduce((total, model) => total + Number(model.seller_stock || 0), 0)
+                  : Number(product.seller_stock || 0);
+                return (
+                  <article className={s.productCard} key={product.item_id}>
+                    {image ? <img className={s.productCardImage} src={image} alt="" /> : <div className={s.productCardImageFallback}><Package size={32} /></div>}
+                    <div className={s.productCardBody}>
+                      <span className={s.productCardName}>{product.item_name}</span>
+                      <small>ID: {product.item_id} · {product.category_name}</small>
+                      <strong>{money(product.original_price)}</strong>
+                      <span>{stock === 0 ? "Hết hàng" : `Kho hàng: ${stock}`}</span>
+                      <div className={s.productCardRating}><Star size={13} fill="#faad14" color="#faad14" /> 5.0</div>
+                      <div className={s.productCardActions}>
+                        <button type="button" className={s.actionLink} onClick={() => onEditProduct(product)}>Cập nhật</button>
+                        <button type="button" className={s.actionLink} onClick={() => handleToggleUnlist(product)}>{product.item_status === "NORMAL" ? "Ẩn" : "Hiện"}</button>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
 
           {!loading && filteredProducts.length === 0 && (
             <div className={s.emptyState}>
