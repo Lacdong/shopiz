@@ -53,7 +53,7 @@ const QUICK_FILTER_CHIPS = [
   "Gained Voucher",
 ];
 
-export default function ProductsPage({ shopId = 727720655, onCreateProduct = () => {} }) {
+export default function ProductsPage({ shopId = 727720655, onCreateProduct = () => {}, onEditProduct = () => {} }) {
   const [params, setParams] = useSearchParams();
   const activeStatusTab = params.get("prod_status") || "active";
   const activeSubTab = params.get("prod_sub") || "all";
@@ -593,10 +593,7 @@ export default function ProductsPage({ shopId = 727720655, onCreateProduct = () 
                           <button
                             type="button"
                             className={s.actionLink}
-                            onClick={() => {
-                              setStockModal({ item: p, model: null });
-                              setNewStockVal(String(totalStock));
-                            }}
+                            onClick={() => onEditProduct(p)}
                           >
                             Cập nhật
                           </button>

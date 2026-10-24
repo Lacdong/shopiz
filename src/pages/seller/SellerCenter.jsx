@@ -507,7 +507,12 @@ export default function SellerCenter() {
     activeItem.id === "orders_all" || rawTab === "orders" || rawTab === "overview";
   const isProductsTab =
     activeItem.id === "products_all" || rawTab === "products";
-  const isCreatingProduct = isProductsTab && params.get("product_mode") === "create";
+  const isCreateProductTab = activeItem.id === "products_new";
+  const productMode = params.get("product_mode");
+  const editingItemId = params.get("item_id");
+  const isCreatingProduct = (isProductsTab && productMode === "create") || isCreateProductTab;
+  const isEditingProduct = isProductsTab && productMode === "edit" && Boolean(editingItemId);
+  const isProductWorkflow = isCreatingProduct || isEditingProduct;
   const isReturnsTab =
     activeItem.id === "returns" || activeItem.id === "shop_disputes" || rawTab === "returns";
   const isMarketingTab =
@@ -524,6 +529,7 @@ export default function SellerCenter() {
   const isImplemented =
     isOrdersTab ||
     isProductsTab ||
+    isCreateProductTab ||
     isReturnsTab ||
     isMarketingTab ||
     isAnalyticsTab ||
@@ -532,15 +538,18 @@ export default function SellerCenter() {
     isShopSettingsTab;
 
   const activeShopName = resolveShopName(urlShopId || shopId) || savedName;
-  const openProductWorkflow = () => {
+  const openProductWorkflow = (product) => {
     const next = new URLSearchParams(params);
     next.set("tab", "products_all");
-    next.set("product_mode", "create");
+    next.set("product_mode", product ? "edit" : "create");
+    if (product) next.set("item_id", String(product.item_id));
+    else next.delete("item_id");
     setParams(next);
   };
   const closeProductWorkflow = (status) => {
     const next = new URLSearchParams(params);
     next.delete("product_mode");
+    next.delete("item_id");
     next.set("tab", "products_all");
     if (status) next.set("prod_status", status === "UNLIST" ? "unlisted" : "active");
     setParams(next, { replace: true });
@@ -550,7 +559,7 @@ export default function SellerCenter() {
     <div className={s.seller}>
       <SellerHeader
         shopName={activeShopName}
-        breadcrumb={isCreatingProduct ? "Sản phẩm > Thêm 1 sản phẩm mới" : activeItem.label}
+        breadcrumb={isProductWorkflow ? `Sản phẩm > ${isEditingProduct ? "Cập nhật sản phẩm" : "Thêm 1 sản phẩm mới"}` : activeItem.label}
         shopId={shopId}
         onToggleMobileMenu={() => setMobile((m) => !m)}
       />
@@ -570,16 +579,17 @@ export default function SellerCenter() {
               featureName={activeItem.label}
               groupName={activeGroup.title}
             />
-          ) : isCreatingProduct ? (
+          ) : isProductWorkflow ? (
             <AddProductPage
               shopId={Number(shopId) || 727720655}
+              itemId={isEditingProduct ? editingItemId : undefined}
               onCancel={() => closeProductWorkflow()}
               onSaved={(status) => closeProductWorkflow(status)}
             />
           ) : isOrdersTab ? (
             <AllOrdersPage shopId={Number(shopId) || 727720655} />
           ) : isProductsTab ? (
-            <ProductsPage shopId={Number(shopId) || 727720655} onCreateProduct={openProductWorkflow} />
+            <ProductsPage shopId={Number(shopId) || 727720655} onCreateProduct={openProductWorkflow} onEditProduct={openProductWorkflow} />
           ) : isReturnsTab ? (
             <ReturnsPage shopId={Number(shopId) || 727720655} />
           ) : isMarketingTab ? (

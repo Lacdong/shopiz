@@ -54,6 +54,15 @@ export const sellerService = {
     return data;
   },
 
+  async getProductDetail(itemId) {
+    const data = await api.get(`/simulator/product/detail?item_id=${encodeURIComponent(itemId)}`);
+    return data.product;
+  },
+
+  async updateProduct(payload) {
+    return api.post("/simulator/product/update", payload);
+  },
+
   async getProductCreationConfig(shopId) {
     return api.get(`/simulator/product-creation/config?shop_id=${encodeURIComponent(shopId)}`);
   },

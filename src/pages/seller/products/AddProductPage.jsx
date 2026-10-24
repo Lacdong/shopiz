@@ -37,15 +37,16 @@ function variationCombinations(groups) {
   }))), [{ name: [], tierIndex: [] }]);
 }
 
-export default function AddProductPage({ shopId, onCancel, onSaved }) {
+export default function AddProductPage({ shopId, itemId, onCancel, onSaved }) {
   const [form, setForm] = useState(blankForm);
-  const [step, setStep] = useState("entry");
+  const [step, setStep] = useState(itemId ? "editor" : "entry");
   const [activeSection, setActiveSection] = useState("basic");
   const [categories, setCategories] = useState([]);
   const [config, setConfig] = useState(null);
   const [categoryLevels, setCategoryLevels] = useState([]);
   const [variationGroups, setVariationGroups] = useState([]);
   const [modelValues, setModelValues] = useState({});
+  const [productStatus, setProductStatus] = useState("NORMAL");
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -58,11 +59,33 @@ export default function AddProductPage({ shopId, onCancel, onSaved }) {
     let alive = true;
     Promise.all([
       catalogService.getCategories(),
-      sellerService.getProductCreationConfig(shopId)
-    ]).then(([categoryData, productConfig]) => {
+      sellerService.getProductCreationConfig(shopId),
+      itemId ? sellerService.getProductDetail(itemId) : Promise.resolve(null)
+    ]).then(([categoryData, productConfig, product]) => {
       if (!alive) return;
       setCategories(categoryData);
       setConfig(productConfig);
+      if (product) {
+        setProductStatus(product.item_status || "NORMAL");
+        const images = product.images?.image_url_list || [];
+        const tiers = product.tier_variation || [];
+        const models = [...(product.models || [])].sort((a, b) => Number(a.model_id) - Number(b.model_id));
+        const mappedModels = Object.fromEntries(models.map((model, index) => [index, {
+          price: String(model.original_price ?? ""), stock: String(model.seller_stock ?? "0"), sku: model.model_sku || ""
+        }]));
+        setForm({ ...blankForm(), itemName: product.item_name || "", gtin: product.gtin || "", description: product.description || "",
+          imageRatio: product.image_ratio || "1:1", images: images.map((url, index) => ({ url, fileId: `saved-${index}`, name: `Ảnh sản phẩm ${index + 1}` })),
+          videoUrl: product.video_url || "", categoryId: String(product.category?.category_id || ""),
+          attributes: Object.fromEntries((product.attribute_list || []).map((entry) => [entry.attribute_id, entry.attribute_value_list || []])),
+          originalPrice: String(product.original_price || ""), stock: String(models.reduce((sum, model) => sum + Number(model.seller_stock || 0), 0)),
+          itemSku: product.item_sku || "", weightGrams: String(Math.round(Number(product.weight || 0) * 1000)),
+          length: String(product.dimensions?.package_length || ""), width: String(product.dimensions?.package_width || ""), height: String(product.dimensions?.package_height || ""),
+          shippingOptionIds: (product.shipping_options || []).map((option) => option.option_id), isPreorder: Boolean(product.is_preorder),
+          preorderDaysToShip: String(product.preorder_days_to_ship || 5), condition: product.product_condition || "NEW", termsAccepted: true });
+        setVariationGroups(tiers.map((tier) => ({ name: tier.name, valuesText: (tier.option_list || []).map((entry) => entry.option).join(", ") })));
+        setModelValues(mappedModels);
+      }
+      setCategoryLevels(categoryPath(categoryData, product?.category?.category_id).map((category) => String(category.category_id)));
       setLoading(false);
     }).catch((error) => {
       if (!alive) return;
@@ -70,7 +93,7 @@ export default function AddProductPage({ shopId, onCancel, onSaved }) {
       setLoading(false);
     });
     return () => { alive = false; };
-  }, [shopId]);
+  }, [shopId, itemId]);
 
   const update = (key, value) => setForm((current) => ({ ...current, [key]: value }));
   const selectedCategory = categories.find((category) => String(category.category_id) === String(form.categoryId));
@@ -212,7 +235,7 @@ export default function AddProductPage({ shopId, onCancel, onSaved }) {
       next.preorderDaysToShip = "Thời gian chuẩn bị hàng đặt trước phải từ 5 đến 15 ngày.";
     }
     if (!form.termsAccepted) next.termsAccepted = "Vui lòng đồng ý với Điều khoản và Điều kiện.";
-    if (config?.is_vacation && status === "NORMAL") next.status = "Shop đang trong chế độ nghỉ lễ. Sản phẩm chỉ có thể lưu ở trạng thái ẩn.";
+    if (!itemId && config?.is_vacation && status === "NORMAL") next.status = "Shop đang trong chế độ nghỉ lễ. Sản phẩm chỉ có thể lưu ở trạng thái ẩn.";
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -262,7 +285,7 @@ export default function AddProductPage({ shopId, onCancel, onSaved }) {
       }))
     }));
     try {
-      const result = await sellerService.createProduct({
+      const payload = {
         product_workflow: true,
         shop_id: Number(shopId),
         category_id: Number(form.categoryId),
@@ -292,9 +315,12 @@ export default function AddProductPage({ shopId, onCancel, onSaved }) {
           option_list: group.valuesText.split(",").map((option) => option.trim()).filter(Boolean).map((option) => ({ option }))
         })) : [],
         models
-      });
+      };
+      const result = itemId
+        ? await sellerService.updateProduct({ ...payload, item_id: Number(itemId), images: form.images })
+        : await sellerService.createProduct(payload);
       setSuccess(`Đã lưu sản phẩm ${result.item_id}.`);
-      window.setTimeout(() => onSaved(status), 650);
+      window.setTimeout(() => onSaved(itemId ? undefined : status), 650);
     } catch (error) {
       setNotice(error.message || "Không thể lưu sản phẩm. Thông tin bạn nhập vẫn được giữ lại.");
     } finally {
@@ -393,7 +419,7 @@ export default function AddProductPage({ shopId, onCancel, onSaved }) {
   if (!config) return <div className={s.page}><p className={s.alert}>{notice}</p><button className={s.secondaryButton} type="button" onClick={onCancel}>Quay lại</button></div>;
 
   return <div className={s.page}>
-    <div className={s.titleRow}><button type="button" className={s.backButton} onClick={handleCancel}><ArrowLeft size={18} /></button><div><h1>Thêm 1 sản phẩm mới</h1><p>Nhập thông tin sản phẩm để bắt đầu tạo sản phẩm mới trong Kênh Người Bán.</p></div></div>
+    <div className={s.titleRow}><button type="button" className={s.backButton} onClick={handleCancel}><ArrowLeft size={18} /></button><div><h1>{itemId ? "Cập nhật sản phẩm" : "Thêm 1 sản phẩm mới"}</h1><p>{itemId ? "Chỉnh sửa thông tin sản phẩm trong Kênh Người Bán." : "Nhập thông tin sản phẩm để bắt đầu tạo sản phẩm mới trong Kênh Người Bán."}</p></div></div>
     {step === "entry" ? <>
       <section className={s.card}><h2>Thêm thông tin sản phẩm</h2>{imageManager()}<div className={s.field}><label className={s.label}>Tên sản phẩm <span className={s.required}>*</span></label><input maxLength={120} value={form.itemName} onChange={(event) => update("itemName", event.target.value)} placeholder="Tên thương hiệu + Loại sản phẩm + Đặc điểm nổi bật (Chất liệu, Màu sắc, Kích thước...)" /><span className={s.counter}>{form.itemName.length}/120</span>{errors.itemName && <span className={s.fieldError}>{errors.itemName}</span>}</div><div className={s.field}><label className={s.label}>Mã sản phẩm</label><div className={s.gtinRow}><select aria-label="Loại mã sản phẩm" disabled><option>GTIN</option></select><input value={form.gtin} onChange={(event) => update("gtin", event.target.value)} placeholder="Nhập Mã sản phẩm toàn cầu (Universal Product Code)" /></div></div></section>
       <div className={s.entryFooter}><button className={s.secondaryButton} type="button" onClick={handleCancel}>Hủy</button><button className={s.primaryButton} type="button" onClick={handleContinue}>Tiếp theo</button></div>
@@ -402,7 +428,7 @@ export default function AddProductPage({ shopId, onCancel, onSaved }) {
       <div className={s.sectionViewport} data-testid="section-viewport" ref={sectionViewportRef} onScroll={syncActiveSection}>
         {SECTIONS.map(([id]) => <div className={s.sectionAnchor} id={`section-${id}`} key={id}>{renderSection(id)}</div>)}
       </div>
-      <footer className={s.stickyFooter}><div className={s.referenceNotice}><Info size={17} /><span>Thông tin được cung cấp hoặc điền sẵn bởi nền tảng chỉ mang tính tham khảo. Vui lòng đảm bảo tính chính xác của các chi tiết bạn gửi.</span></div><label className={s.terms}><input type="checkbox" checked={form.termsAccepted} onChange={(event) => update("termsAccepted", event.target.checked)} /> Tôi đồng ý với Điều khoản và Điều kiện.</label>{errors.termsAccepted && <span className={s.fieldError}>{errors.termsAccepted}</span>}{errors.status && <span className={s.fieldError}>{errors.status}</span>}{notice && <p className={s.alert} role="alert">{notice}</p>}{success && <p className={s.success} role="status">{success}</p>}<div className={s.footerActions}><button className={s.secondaryButton} type="button" onClick={handleCancel} disabled={saving}>Hủy</button><div>{!config.is_vacation && <button className={s.secondaryButton} type="button" onClick={() => save("NORMAL")} disabled={saving}>{saving ? "Đang lưu..." : "Đăng sản phẩm"}</button>}<button className={s.primaryButton} type="button" onClick={() => save("UNLIST")} disabled={saving}>{saving ? "Đang lưu..." : "Lưu & Ẩn"}</button></div></div></footer>
+      <footer className={s.stickyFooter}><div className={s.referenceNotice}><Info size={17} /><span>Thông tin được cung cấp hoặc điền sẵn bởi nền tảng chỉ mang tính tham khảo. Vui lòng đảm bảo tính chính xác của các chi tiết bạn gửi.</span></div><label className={s.terms}><input type="checkbox" checked={form.termsAccepted} onChange={(event) => update("termsAccepted", event.target.checked)} /> Tôi đồng ý với Điều khoản và Điều kiện.</label>{errors.termsAccepted && <span className={s.fieldError}>{errors.termsAccepted}</span>}{errors.status && <span className={s.fieldError}>{errors.status}</span>}{notice && <p className={s.alert} role="alert">{notice}</p>}{success && <p className={s.success} role="status">{success}</p>}<div className={s.footerActions}><button className={s.secondaryButton} type="button" onClick={handleCancel} disabled={saving}>Hủy</button><div>{itemId ? <button className={s.primaryButton} type="button" onClick={() => save(productStatus || "NORMAL")} disabled={saving}>{saving ? "Đang lưu..." : "Lưu thay đổi"}</button> : <>{!config.is_vacation && <button className={s.secondaryButton} type="button" onClick={() => save("NORMAL")} disabled={saving}>{saving ? "Đang lưu..." : "Đăng sản phẩm"}</button>}<button className={s.primaryButton} type="button" onClick={() => save("UNLIST")} disabled={saving}>{saving ? "Đang lưu..." : "Lưu & Ẩn"}</button></>}</div></div></footer>
     </>}
     {notice && step === "entry" && <p className={s.alert} role="alert">{notice}</p>}
   </div>;
