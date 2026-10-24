@@ -34,6 +34,25 @@ export const sellerService = {
     return `/api/v2/simulator/order/download_awb?order_sn=${encodeURIComponent(orderSn)}`;
   },
 
+  async getReviewSummary(shopId, lastVisitAt) {
+    const query = new URLSearchParams({ shop_id: String(shopId) });
+    if (lastVisitAt) query.set("last_visit_at", String(lastVisitAt));
+    return api.get(`/simulator/reviews/summary?${query.toString()}`);
+  },
+
+  async getReviews(shopId, { pageSize = 20, cursor = 0, status = "ALL", ratings = [], keyword = "", dateFrom = "", dateTo = "" } = {}) {
+    const query = new URLSearchParams({ shop_id: String(shopId), page_size: String(pageSize), cursor: String(cursor), status });
+    if (ratings.length) query.set("rating_star_list", ratings.join(","));
+    if (keyword) query.set("keyword", keyword);
+    if (dateFrom) query.set("date_from", dateFrom);
+    if (dateTo) query.set("date_to", dateTo);
+    return api.get(`/simulator/reviews?${query.toString()}`);
+  },
+
+  async replyToReview(shopId, commentId, reply) {
+    return api.post("/simulator/review/reply", { shop_id: shopId, comment_id: commentId, reply });
+  },
+
   async getAnalytics(shopId, period = "today") {
     const data = await api.get(
       `/simulator/seller/analytics?shop_id=${shopId}&period=${period}`,

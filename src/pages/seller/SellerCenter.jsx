@@ -41,6 +41,7 @@ import AllOrdersPage from "./orders/AllOrdersPage";
 import ProductsPage from "./products/ProductsPage";
 import AddProductPage from "./products/AddProductPage";
 import ReturnsPage from "./returns/ReturnsPage";
+import ReviewsPage from "./reviews/ReviewsPage";
 import s from "./SellerCenter.module.css";
 
 const money = (n) =>
@@ -515,6 +516,7 @@ export default function SellerCenter() {
   const isProductWorkflow = isCreatingProduct || isEditingProduct;
   const isReturnsTab =
     activeItem.id === "returns" || activeItem.id === "shop_disputes" || rawTab === "returns";
+  const isReviewsTab = activeItem.id === "reviews";
   const isMarketingTab =
     activeItem.id === "marketing" || rawTab === "marketing";
   const isAnalyticsTab =
@@ -531,6 +533,7 @@ export default function SellerCenter() {
     isProductsTab ||
     isCreateProductTab ||
     isReturnsTab ||
+    isReviewsTab ||
     isMarketingTab ||
     isAnalyticsTab ||
     isFinanceTab ||
@@ -592,6 +595,8 @@ export default function SellerCenter() {
             <ProductsPage shopId={Number(shopId) || 727720655} onCreateProduct={openProductWorkflow} onEditProduct={openProductWorkflow} />
           ) : isReturnsTab ? (
             <ReturnsPage shopId={Number(shopId) || 727720655} />
+          ) : isReviewsTab ? (
+            <ReviewsPage shopId={Number(shopId) || 727720655} />
           ) : isMarketingTab ? (
             <>
               <div className={s.marketingHero}>
