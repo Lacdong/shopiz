@@ -100,14 +100,14 @@ try {
   await page.getByLabel("Giá trị nhóm phân loại").fill("Đen, Trắng,");
   assert.equal(await page.getByLabel("Giá trị nhóm phân loại").inputValue(), "Đen, Trắng,", "Comma remains editable as a value separator");
   await page.getByLabel("Giá trị nhóm phân loại").fill("Đen, Trắng");
-  for (const [name, values] of [["Kích thước", "S, M"], ["Chất liệu", "Cotton, Linen"], ["Số lượng", "10, 20"]]) {
+  for (const [name, values] of [["Số lượng", "10, 20"]]) {
     await page.getByRole("button", { name: "Thêm nhóm phân loại" }).click();
     const names = page.getByLabel("Tên nhóm phân loại");
     const valuesInputs = page.getByLabel("Giá trị nhóm phân loại");
     await names.nth(await names.count() - 1).fill(name);
     await valuesInputs.nth(await valuesInputs.count() - 1).fill(values);
   }
-  assert.equal(await page.getByLabel("Tên nhóm phân loại").count(), 4, "Up to four variation groups can be entered");
+  assert.equal(await page.getByLabel("Tên nhóm phân loại").count(), 2, "At most two variation groups can be entered");
   await page.getByRole("tab", { name: "Vận chuyển" }).click();
   await page.getByLabel("Cân nặng sau khi đóng gói").fill("900");
   await page.getByRole("tab", { name: "Thông tin khác" }).click();
@@ -142,9 +142,9 @@ try {
   assert.equal(submittedPayload.category_id, 11, "Category ID is submitted instead of the display path");
   assert.deepEqual(submittedPayload.shipping_option_ids, ["pickup_point", "same_day_express"], "Selected shipping methods are submitted");
   assert.equal(submittedPayload.image_ratio, "3:4", "Image ratio is submitted");
-  assert.equal(submittedPayload.models.length, 16, "Four variation groups generate their model combinations");
+  assert.equal(submittedPayload.models.length, 4, "Two variation groups generate their model combinations");
   assert.equal(submittedPayload.preorder_days_to_ship, null, "Non-preorder payload does not submit preparation days");
-  assert.equal(submittedPayload.tier_variation.length, 4, "Four variation groups are sent to Layer B");
+  assert.equal(submittedPayload.tier_variation.length, 2, "Two variation groups are sent to Layer B");
 
   saveFails = false;
   const beforeRetry = createRequests;
