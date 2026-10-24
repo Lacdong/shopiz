@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, ArrowLeft, ArrowUp, ImagePlus, Info, LoaderCircle, Plus, Trash2, Video, X } from "lucide-react";
 import catalogService from "../../../services/catalogService";
 import mediaService from "../../../services/mediaService";
@@ -16,7 +16,7 @@ const blankForm = () => ({
   itemName: "", gtin: "", description: "", imageRatio: "1:1", images: [], videoUrl: "",
   categoryId: "", attributes: {}, originalPrice: "", stock: "0", itemSku: "",
   weightGrams: "", length: "", width: "", height: "", shippingOptionIds: [],
-  isPreorder: false, condition: "NEW", termsAccepted: false
+  isPreorder: false, preorderDaysToShip: "5", condition: "NEW", termsAccepted: false
 });
 
 function categoryPath(categories, categoryId) {
@@ -31,8 +31,8 @@ function categoryPath(categories, categoryId) {
 }
 
 function variationCombinations(groups) {
-  if (!groups.length || groups.some((group) => !group.name.trim() || !group.options.length)) return [];
-  return groups.reduce((rows, group) => rows.flatMap((row) => group.options.map((option, index) => ({
+  if (!groups.length || groups.some((group) => !group.name.trim() || !group.valuesText.split(",").map((value) => value.trim()).filter(Boolean).length)) return [];
+  return groups.reduce((rows, group) => rows.flatMap((row) => group.valuesText.split(",").map((value) => value.trim()).filter(Boolean).map((option, index) => ({
     name: [...row.name, option], tierIndex: [...row.tierIndex, index]
   }))), [{ name: [], tierIndex: [] }]);
 }
@@ -52,6 +52,7 @@ export default function AddProductPage({ shopId, onCancel, onSaved }) {
   const [errors, setErrors] = useState({});
   const [notice, setNotice] = useState("");
   const [success, setSuccess] = useState("");
+  const sectionViewportRef = useRef(null);
 
   useEffect(() => {
     let alive = true;
@@ -77,6 +78,34 @@ export default function AddProductPage({ shopId, onCancel, onSaved }) {
   const activeAttributes = selectedCategory?.attributes || [];
   const combinations = useMemo(() => variationCombinations(variationGroups), [variationGroups]);
   const shippingOptions = config?.shipping_options || [];
+
+  const selectSection = (sectionId) => {
+    setActiveSection(sectionId);
+    sectionViewportRef.current?.querySelector(`#section-${sectionId}`)?.scrollIntoView({ block: "start", behavior: "smooth" });
+  };
+
+  const syncActiveSection = () => {
+    const viewport = sectionViewportRef.current;
+    if (!viewport) return;
+    const viewportTop = viewport.getBoundingClientRect().top;
+    let closest = SECTIONS[0][0];
+    let nearestDistance = Number.POSITIVE_INFINITY;
+    for (const [id] of SECTIONS) {
+      const section = viewport.querySelector(`#section-${id}`);
+      if (!section) continue;
+      const distance = Math.abs(section.getBoundingClientRect().top - viewportTop - 12);
+      if (distance < nearestDistance) { nearestDistance = distance; closest = id; }
+    }
+    setActiveSection(closest);
+  };
+
+  useEffect(() => {
+    if (step !== "editor") return undefined;
+    const viewport = sectionViewportRef.current;
+    if (!viewport) return undefined;
+    viewport.addEventListener("scroll", syncActiveSection, { passive: true });
+    return () => viewport.removeEventListener("scroll", syncActiveSection);
+  }, [step]);
 
   const categorySelects = () => {
     const selects = [];
@@ -170,11 +199,17 @@ export default function AddProductPage({ shopId, onCancel, onSaved }) {
     }
     if (!form.description.trim()) next.description = "Vui lòng nhập mô tả sản phẩm.";
     if (!Number(form.originalPrice) || Number(form.originalPrice) <= 0) next.originalPrice = "Giá sản phẩm phải lớn hơn 0.";
+    if (variationGroups.some((group) => !group.name.trim() || !group.valuesText.split(",").map((value) => value.trim()).filter(Boolean).length)) {
+      next.variationGroups = "Vui lòng nhập tên nhóm và ít nhất một giá trị cho mỗi nhóm phân loại.";
+    }
     if (!form.weightGrams || Number(form.weightGrams) <= 0) next.weightGrams = "Vui lòng nhập cân nặng sau khi đóng gói.";
     if (!form.shippingOptionIds.length) next.shippingOptionIds = "Chọn ít nhất một phương thức vận chuyển.";
     const selectedOptions = shippingOptions.filter((option) => form.shippingOptionIds.includes(option.option_id));
-    if (selectedOptions.some((option) => Number(form.weightGrams) > option.maximum_weight_gram)) {
+    if (selectedOptions.some((option) => option.maximum_weight_gram != null && Number(form.weightGrams) > option.maximum_weight_gram)) {
       next.weightGrams = "Cân nặng vượt quá giới hạn của phương thức vận chuyển đã chọn.";
+    }
+    if (form.isPreorder && (!Number.isInteger(Number(form.preorderDaysToShip)) || Number(form.preorderDaysToShip) < 5 || Number(form.preorderDaysToShip) > 15)) {
+      next.preorderDaysToShip = "Thời gian chuẩn bị hàng đặt trước phải từ 5 đến 15 ngày.";
     }
     if (!form.termsAccepted) next.termsAccepted = "Vui lòng đồng ý với Điều khoản và Điều kiện.";
     if (config?.is_vacation && status === "NORMAL") next.status = "Shop đang trong chế độ nghỉ lễ. Sản phẩm chỉ có thể lưu ở trạng thái ẩn.";
@@ -203,7 +238,7 @@ export default function AddProductPage({ shopId, onCancel, onSaved }) {
       const firstSection = !form.itemName.trim() || !form.images.length || !form.categoryId ? "basic"
         : missingRequiredAttribute ? "details"
           : !form.description.trim() ? "description"
-            : !Number(form.originalPrice) || Number(form.originalPrice) <= 0 ? "sales" : "shipping";
+            : !Number(form.originalPrice) || Number(form.originalPrice) <= 0 || variationGroups.some((group) => !group.name.trim() || !group.valuesText.split(",").map((value) => value.trim()).filter(Boolean).length) ? "sales" : "shipping";
       setActiveSection(firstSection);
       return;
     }
@@ -247,13 +282,14 @@ export default function AddProductPage({ shopId, onCancel, onSaved }) {
         image_ratio: form.imageRatio,
         product_condition: form.condition,
         is_preorder: form.isPreorder,
+        preorder_days_to_ship: form.isPreorder ? Number(form.preorderDaysToShip) : null,
         shipping_option_ids: form.shippingOptionIds,
         item_status: status,
         attribute_list: attributeList,
         image_url_list: form.images.map((image) => image.url),
         tier_variation: variationGroups.length ? variationGroups.map((group) => ({
           name: group.name,
-          option_list: group.options.map((option) => ({ option }))
+          option_list: group.valuesText.split(",").map((option) => option.trim()).filter(Boolean).map((option) => ({ option }))
         })) : [],
         models
       });
@@ -321,8 +357,8 @@ export default function AddProductPage({ shopId, onCancel, onSaved }) {
     );
   };
 
-  const renderSection = () => {
-    if (activeSection === "basic") return <>
+  const renderSection = (sectionId) => {
+    if (sectionId === "basic") return <>
       <section className={s.card}><h2>Thông tin cơ bản</h2>{imageManager()}
         <div className={s.field}><label className={s.label}>Video sản phẩm</label>
           <div className={s.videoRow}>{form.videoUrl ? <><Video size={20} /><span className={s.truncate}>{form.videoUrl}</span><button type="button" onClick={() => update("videoUrl", "")} aria-label="Xóa video"><Trash2 size={16} /></button></> : <label className={s.videoUpload}><Video size={20} /> Thêm video<input type="file" accept="video/mp4" onChange={(event) => uploadVideo(event.target.files?.[0])} disabled={uploading} /></label>}</div>
@@ -333,24 +369,24 @@ export default function AddProductPage({ shopId, onCancel, onSaved }) {
         <div className={s.field}><label className={s.label}>Mã sản phẩm</label><div className={s.gtinRow}><select aria-label="Loại mã sản phẩm" value="GTIN" disabled><option>GTIN</option></select><input value={form.gtin} onChange={(event) => update("gtin", event.target.value)} placeholder="Nhập Mã sản phẩm toàn cầu (Universal Product Code)" /></div></div>
       </section>
     </>;
-    if (activeSection === "details") return <section className={s.card}><h2>Thông tin chi tiết</h2>
+    if (sectionId === "details") return <section className={s.card}><h2>Thông tin chi tiết</h2>
       {activeAttributes.length ? <div className={s.attributeGrid}>{activeAttributes.map(renderAttribute)}</div> : <p className={s.helper}>{form.categoryId ? "Ngành hàng này chưa có thuộc tính chi tiết." : "Vui lòng chọn ngành hàng để xem thuộc tính."}</p>}
       <p className={s.helper}>Hoàn thành: {activeAttributes.filter((attribute) => !attribute.is_mandatory || form.attributes[attribute.attribute_id]?.length).length} / {activeAttributes.length}</p>
     </section>;
-    if (activeSection === "description") return <section className={s.card}><h2>Mô tả</h2><div className={s.field}><label className={s.label}>Mô tả sản phẩm <span className={s.required}>*</span></label><textarea aria-label="Mô tả sản phẩm" rows={12} value={form.description} onChange={(event) => update("description", event.target.value)} placeholder="Vui lòng nhập nội dung mô tả sản phẩm hoặc thêm hình ảnh" /><span className={s.counter}>{form.description.length} ký tự</span>{errors.description && <span className={s.fieldError}>{errors.description}</span>}</div></section>;
-    if (activeSection === "sales") return <section className={s.card}><h2>Thông tin bán hàng</h2>
-      <div className={s.field}><label className={s.label}>Phân loại hàng</label><div className={s.variationGroups}>{variationGroups.map((group, groupIndex) => <div className={s.variationGroup} key={groupIndex}><input aria-label="Tên nhóm phân loại" placeholder="Tên nhóm (ví dụ: Màu sắc)" value={group.name} onChange={(event) => setVariationGroups((current) => current.map((entry, index) => index === groupIndex ? { ...entry, name: event.target.value } : entry))} /><input aria-label="Giá trị nhóm phân loại" placeholder="Nhập các giá trị, cách nhau bằng dấu phẩy" value={group.options.join(", ")} onChange={(event) => setVariationGroups((current) => current.map((entry, index) => index === groupIndex ? { ...entry, options: event.target.value.split(",").map((option) => option.trim()).filter(Boolean) } : entry))} /><button type="button" onClick={() => setVariationGroups((current) => current.filter((_, index) => index !== groupIndex))} aria-label="Xóa nhóm"><X size={16} /></button></div>)}
-        {variationGroups.length < 2 && <button className={s.outlineButton} type="button" onClick={() => setVariationGroups((current) => [...current, { name: "", options: [] }])}><Plus size={16} /> Thêm nhóm phân loại</button>}</div></div>
+    if (sectionId === "description") return <section className={s.card}><h2>Mô tả</h2><div className={s.field}><label className={s.label}>Mô tả sản phẩm <span className={s.required}>*</span></label><textarea aria-label="Mô tả sản phẩm" rows={12} value={form.description} onChange={(event) => update("description", event.target.value)} placeholder="Vui lòng nhập nội dung mô tả sản phẩm hoặc thêm hình ảnh" /><span className={s.counter}>{form.description.length} ký tự</span>{errors.description && <span className={s.fieldError}>{errors.description}</span>}</div></section>;
+    if (sectionId === "sales") return <section className={s.card}><h2>Thông tin bán hàng</h2>
+      <div className={s.field}><label className={s.label}>Phân loại hàng</label><div className={s.variationGroups}>{variationGroups.map((group, groupIndex) => <div className={s.variationGroup} key={groupIndex}><input aria-label="Tên nhóm phân loại" placeholder="Tên nhóm (ví dụ: Màu sắc)" value={group.name} onChange={(event) => setVariationGroups((current) => current.map((entry, index) => index === groupIndex ? { ...entry, name: event.target.value } : entry))} /><input aria-label="Giá trị nhóm phân loại" placeholder="Nhập các giá trị, cách nhau bằng dấu phẩy" value={group.valuesText} onChange={(event) => setVariationGroups((current) => current.map((entry, index) => index === groupIndex ? { ...entry, valuesText: event.target.value } : entry))} /><button type="button" onClick={() => setVariationGroups((current) => current.filter((_, index) => index !== groupIndex))} aria-label="Xóa nhóm"><X size={16} /></button></div>)}
+        {variationGroups.length < 4 && <button className={s.outlineButton} type="button" onClick={() => setVariationGroups((current) => [...current, { name: "", valuesText: "" }])}><Plus size={16} /> Thêm nhóm phân loại</button>}</div><p className={s.helper}>Có thể thêm tối đa 4 nhóm phân loại trong mô phỏng này.</p>{errors.variationGroups && <span className={s.fieldError}>{errors.variationGroups}</span>}</div>
       <div className={s.fieldGrid}><div className={s.field}><label className={s.label}>Giá <span className={s.required}>*</span></label><div className={s.moneyInput}><span>₫</span><input aria-label="Giá" type="number" min="1" step="1" value={form.originalPrice} onChange={(event) => update("originalPrice", event.target.value)} /></div>{errors.originalPrice && <span className={s.fieldError}>{errors.originalPrice}</span>}</div><div className={s.field}><label className={s.label}>Kho hàng <span className={s.required}>*</span></label><input aria-label="Kho hàng" type="number" min="0" step="1" value={form.stock} onChange={(event) => update("stock", event.target.value)} /></div></div>
       {combinations.length > 0 && <div className={s.models}><h3>Danh sách phân loại</h3>{combinations.map((combination, index) => <div className={s.modelRow} key={combination.tierIndex.join("-")}><strong>{combination.name.join(" / ")}</strong><input aria-label={`Giá ${combination.name.join(" / ")}`} type="number" min="1" placeholder="Giá (₫)" value={modelValues[index]?.price ?? ""} onChange={(event) => setModelValues((current) => ({ ...current, [index]: { ...current[index], price: event.target.value } }))} /><input aria-label={`Kho ${combination.name.join(" / ")}`} type="number" min="0" placeholder="Kho hàng" value={modelValues[index]?.stock ?? ""} onChange={(event) => setModelValues((current) => ({ ...current, [index]: { ...current[index], stock: event.target.value } }))} /></div>)}</div>}
       <div className={s.field}><label className={s.label}>Mua nhiều giảm giá</label><p className={s.helper}>Tính năng này chưa được hỗ trợ cho sản phẩm trong hệ thống.</p></div>
     </section>;
-    if (activeSection === "shipping") return <section className={s.card}><h2>Vận chuyển</h2>
+    if (sectionId === "shipping") return <section className={s.card}><h2>Vận chuyển</h2>
       <div className={s.fieldGrid}><div className={s.field}><label className={s.label}>Cân nặng (Sau khi đóng gói) <span className={s.required}>*</span></label><div className={s.unitInput}><input aria-label="Cân nặng sau khi đóng gói" type="number" min="1" value={form.weightGrams} onChange={(event) => update("weightGrams", event.target.value)} /><span>gr</span></div>{errors.weightGrams && <span className={s.fieldError}>{errors.weightGrams}</span>}</div><div className={s.field}><label className={s.label}>Kích thước đóng gói (cm)</label><div className={s.dimensionRow}>{[["R", "length"], ["D", "width"], ["C", "height"]].map(([label, key]) => <label key={key}>{label}<input type="number" min="0" value={form[key]} onChange={(event) => update(key, event.target.value)} /></label>)}</div></div></div>
-      <div className={s.field}><label className={s.label}>Phí vận chuyển <span className={s.required}>*</span></label><h3>Lấy hàng chủ động</h3>{shippingOptions.map((option) => <label className={s.shippingOption} key={option.option_id}><input type="checkbox" checked={form.shippingOptionIds.includes(option.option_id)} onChange={(event) => update("shippingOptionIds", event.target.checked ? [...form.shippingOptionIds, option.option_id] : form.shippingOptionIds.filter((id) => id !== option.option_id))} /><span><strong>{option.option_name}</strong><small>Tối đa {option.maximum_weight_gram}g · {option.partner_label}</small></span><span className={s.switchState}>{form.shippingOptionIds.includes(option.option_id) ? "Đang bật" : "Đang tắt"}</span></label>)}{errors.shippingOptionIds && <span className={s.fieldError}>{errors.shippingOptionIds}</span>}</div>
-      <div className={s.field}><label className={s.label}>Hàng Đặt Trước</label><div className={s.radioRow}><label><input type="radio" checked={!form.isPreorder} onChange={() => update("isPreorder", false)} /> Không</label><label><input type="radio" checked={form.isPreorder} onChange={() => update("isPreorder", true)} /> Đồng ý</label></div><p className={s.helper}>Thời gian chuẩn bị hàng theo cấu hình xử lý đơn của shop.</p></div>
+      <div className={s.field}><label className={s.label}>Phí vận chuyển <span className={s.required}>*</span></label>{[...new Set(shippingOptions.map((option) => option.option_group))].map((group) => <div key={group}><h3>{group}</h3>{shippingOptions.filter((option) => option.option_group === group).map((option) => <label className={s.shippingOption} key={option.option_id}><input type="checkbox" checked={form.shippingOptionIds.includes(option.option_id)} onChange={(event) => update("shippingOptionIds", event.target.checked ? [...form.shippingOptionIds, option.option_id] : form.shippingOptionIds.filter((id) => id !== option.option_id))} /><span><strong>{option.option_name}</strong><small>{option.maximum_weight_gram ? `Tối đa ${option.maximum_weight_gram}g · ` : ""}{option.partner_label}</small></span><span className={s.switchState}>{form.shippingOptionIds.includes(option.option_id) ? "Đang bật" : "Đang tắt"}</span></label>)}</div>)}{errors.shippingOptionIds && <span className={s.fieldError}>{errors.shippingOptionIds}</span>}</div>
+      <div className={s.field}><label className={s.label}>Hàng đặt trước</label><div className={s.radioRow}><label><input type="radio" checked={!form.isPreorder} onChange={() => update("isPreorder", false)} /> Không</label><label><input type="radio" checked={form.isPreorder} onChange={() => update("isPreorder", true)} /> Có</label></div>{form.isPreorder ? <><p className={s.helper}>Tôi cần {form.preorderDaysToShip || "X"} ngày chuẩn bị hàng. Bạn có thể chọn từ 5 đến 15 ngày. Shopee đề xuất chọn thời gian sớm nhất trong khả năng vận hành của bạn nhằm tăng tỉ lệ chuyển đổi!</p><div className={s.field}><label className={s.label} htmlFor="preorder-days">Số ngày chuẩn bị hàng</label><input id="preorder-days" aria-label="Số ngày chuẩn bị hàng" type="number" min="5" max="15" step="1" value={form.preorderDaysToShip} onChange={(event) => update("preorderDaysToShip", event.target.value)} /></div>{errors.preorderDaysToShip && <span className={s.fieldError}>{errors.preorderDaysToShip}</span>}</> : <p className={s.helper}>Tôi sẽ gửi hàng trong 2 ngày (không bao gồm các ngày nghỉ lễ, Tết và những ngày đơn vị vận chuyển không làm việc)</p>}</div>
     </section>;
-    return <section className={s.card}><h2>Thông tin khác</h2><div className={s.field}><label className={s.label}>Tình trạng</label><select aria-label="Tình trạng" value={form.condition} onChange={(event) => update("condition", event.target.value)}>{(config?.product_conditions || []).map((condition) => <option key={condition.value} value={condition.value}>{condition.label}</option>)}</select></div><div className={s.field}><label className={s.label}>SKU sản phẩm</label><input aria-label="SKU sản phẩm" value={form.itemSku} onChange={(event) => update("itemSku", event.target.value)} placeholder="Nhập SKU sản phẩm" /></div></section>;
+    if (sectionId === "other") return <section className={s.card}><h2>Thông tin khác</h2><div className={s.field}><label className={s.label}>Tình trạng</label><select aria-label="Tình trạng" value={form.condition} onChange={(event) => update("condition", event.target.value)}>{(config?.product_conditions || []).map((condition) => <option key={condition.value} value={condition.value}>{condition.label}</option>)}</select></div><div className={s.field}><label className={s.label}>SKU sản phẩm</label><input aria-label="SKU sản phẩm" value={form.itemSku} onChange={(event) => update("itemSku", event.target.value)} placeholder="Nhập SKU sản phẩm" /></div></section>;
   };
 
   if (loading) return <div className={s.loading}><LoaderCircle className={s.spin} /> Đang tải cấu hình sản phẩm...</div>;
@@ -362,8 +398,10 @@ export default function AddProductPage({ shopId, onCancel, onSaved }) {
       <section className={s.card}><h2>Thêm thông tin sản phẩm</h2>{imageManager()}<div className={s.field}><label className={s.label}>Tên sản phẩm <span className={s.required}>*</span></label><input maxLength={120} value={form.itemName} onChange={(event) => update("itemName", event.target.value)} placeholder="Tên thương hiệu + Loại sản phẩm + Đặc điểm nổi bật (Chất liệu, Màu sắc, Kích thước...)" /><span className={s.counter}>{form.itemName.length}/120</span>{errors.itemName && <span className={s.fieldError}>{errors.itemName}</span>}</div><div className={s.field}><label className={s.label}>Mã sản phẩm</label><div className={s.gtinRow}><select aria-label="Loại mã sản phẩm" disabled><option>GTIN</option></select><input value={form.gtin} onChange={(event) => update("gtin", event.target.value)} placeholder="Nhập Mã sản phẩm toàn cầu (Universal Product Code)" /></div></div></section>
       <div className={s.entryFooter}><button className={s.secondaryButton} type="button" onClick={handleCancel}>Hủy</button><button className={s.primaryButton} type="button" onClick={handleContinue}>Tiếp theo</button></div>
     </> : <>
-      <div className={s.tabs} role="tablist">{SECTIONS.map(([id, label]) => <button key={id} role="tab" aria-selected={activeSection === id} className={activeSection === id ? s.activeTab : ""} onClick={() => setActiveSection(id)}>{label}</button>)}</div>
-      {renderSection()}
+      <div className={s.tabs} role="tablist">{SECTIONS.map(([id, label]) => <button key={id} type="button" role="tab" aria-selected={activeSection === id} className={activeSection === id ? s.activeTab : ""} onClick={() => selectSection(id)}>{label}</button>)}</div>
+      <div className={s.sectionViewport} data-testid="section-viewport" ref={sectionViewportRef} onScroll={syncActiveSection}>
+        {SECTIONS.map(([id]) => <div className={s.sectionAnchor} id={`section-${id}`} key={id}>{renderSection(id)}</div>)}
+      </div>
       <footer className={s.stickyFooter}><div className={s.referenceNotice}><Info size={17} /><span>Thông tin được cung cấp hoặc điền sẵn bởi nền tảng chỉ mang tính tham khảo. Vui lòng đảm bảo tính chính xác của các chi tiết bạn gửi.</span></div><label className={s.terms}><input type="checkbox" checked={form.termsAccepted} onChange={(event) => update("termsAccepted", event.target.checked)} /> Tôi đồng ý với Điều khoản và Điều kiện.</label>{errors.termsAccepted && <span className={s.fieldError}>{errors.termsAccepted}</span>}{errors.status && <span className={s.fieldError}>{errors.status}</span>}{notice && <p className={s.alert} role="alert">{notice}</p>}{success && <p className={s.success} role="status">{success}</p>}<div className={s.footerActions}><button className={s.secondaryButton} type="button" onClick={handleCancel} disabled={saving}>Hủy</button><div>{!config.is_vacation && <button className={s.secondaryButton} type="button" onClick={() => save("NORMAL")} disabled={saving}>{saving ? "Đang lưu..." : "Đăng sản phẩm"}</button>}<button className={s.primaryButton} type="button" onClick={() => save("UNLIST")} disabled={saving}>{saving ? "Đang lưu..." : "Lưu & Ẩn"}</button></div></div></footer>
     </>}
     {notice && step === "entry" && <p className={s.alert} role="alert">{notice}</p>}

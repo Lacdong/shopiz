@@ -31,7 +31,11 @@ try {
       is_vacation: holiday,
       shipping_options: [
         { option_id: "pickup_point", option_name: "Điểm nhận hàng", option_group: "Lấy hàng chủ động", partner_label: "ĐỐI TÁC SHOPEE", maximum_weight_gram: 10000 },
-        { option_id: "viettel_smartbox", option_name: "Tủ nhận hàng - Viettel Smartbox", option_group: "Lấy hàng chủ động", partner_label: "ĐỐI TÁC SHOPEE", maximum_weight_gram: 10000 }
+        { option_id: "viettel_smartbox", option_name: "Tủ nhận hàng - Viettel Smartbox", option_group: "Lấy hàng chủ động", partner_label: "ĐỐI TÁC SHOPEE", maximum_weight_gram: 10000 },
+        { option_id: "same_day_express", option_name: "Hỏa Tốc", option_group: "2. Hỏa Tốc", partner_label: "ĐỐI TÁC SHOPEE", maximum_weight_gram: null },
+        { option_id: "same_day_delivery", option_name: "Trong Ngày", option_group: "3. Trong Ngày", partner_label: "ĐỐI TÁC SHOPEE", maximum_weight_gram: null },
+        { option_id: "fast_delivery", option_name: "Nhanh", option_group: "4. Nhanh", partner_label: "ĐỐI TÁC SHOPEE", maximum_weight_gram: null },
+        { option_id: "bulky_goods", option_name: "Hàng Cồng Kềnh", option_group: "5. Hàng Cồng Kềnh", partner_label: "ĐỐI TÁC SHOPEE", maximum_weight_gram: null }
       ],
       product_conditions: [{ value: "NEW", label: "Mới" }]
     } }
@@ -63,6 +67,11 @@ try {
   await page.locator("img[alt='product.jpg']").waitFor();
   await page.getByRole("button", { name: "Tiếp theo" }).click();
   await page.getByRole("tab", { name: "Thông tin cơ bản" }).waitFor();
+  assert.equal(await page.getByLabel("Tên sản phẩm", { exact: true }).count(), 1, "All section panels remain mounted in one scrollable editor");
+  await page.getByTestId("section-viewport").evaluate((element) => { element.scrollTop = element.scrollHeight; });
+  await page.waitForFunction(() => document.querySelector('[role="tab"][aria-selected="true"]')?.textContent?.includes("Thông tin khác"));
+  assert.equal(await page.getByRole("tab", { name: "Thông tin khác" }).getAttribute("aria-selected"), "true", "Scrolling the panel updates the active horizontal navigation tab");
+  await page.getByRole("tab", { name: "Thông tin cơ bản" }).click();
 
   await page.getByRole("checkbox", { name: "Hình ảnh tỷ lệ 3:4" }).check();
   await page.getByLabel("Cấp ngành hàng 1").selectOption("10");
@@ -88,19 +97,39 @@ try {
   await page.getByRole("button", { name: "Thêm nhóm phân loại" }).click();
   await page.getByLabel("Tên nhóm phân loại").fill("Màu sắc");
   await page.getByLabel("Giá trị nhóm phân loại").fill("Đen, Trắng");
+  await page.getByLabel("Giá trị nhóm phân loại").fill("Đen, Trắng,");
+  assert.equal(await page.getByLabel("Giá trị nhóm phân loại").inputValue(), "Đen, Trắng,", "Comma remains editable as a value separator");
+  await page.getByLabel("Giá trị nhóm phân loại").fill("Đen, Trắng");
+  for (const [name, values] of [["Kích thước", "S, M"], ["Chất liệu", "Cotton, Linen"], ["Số lượng", "10, 20"]]) {
+    await page.getByRole("button", { name: "Thêm nhóm phân loại" }).click();
+    const names = page.getByLabel("Tên nhóm phân loại");
+    const valuesInputs = page.getByLabel("Giá trị nhóm phân loại");
+    await names.nth(await names.count() - 1).fill(name);
+    await valuesInputs.nth(await valuesInputs.count() - 1).fill(values);
+  }
+  assert.equal(await page.getByLabel("Tên nhóm phân loại").count(), 4, "Up to four variation groups can be entered");
   await page.getByRole("tab", { name: "Vận chuyển" }).click();
   await page.getByLabel("Cân nặng sau khi đóng gói").fill("900");
   await page.getByRole("tab", { name: "Thông tin khác" }).click();
   await page.getByLabel("SKU sản phẩm").fill("SHOPIZ-TEST-1");
+  await page.getByRole("tab", { name: "Vận chuyển" }).click();
+  await page.getByText("Tôi sẽ gửi hàng trong 2 ngày (không bao gồm các ngày nghỉ lễ, Tết và những ngày đơn vị vận chuyển không làm việc)").waitFor();
+  await page.getByLabel("Có", { exact: true }).check();
+  await page.getByLabel("Số ngày chuẩn bị hàng").fill("7");
+  await page.getByText("Tôi cần 7 ngày chuẩn bị hàng. Bạn có thể chọn từ 5 đến 15 ngày.").waitFor();
+  await page.getByLabel("Không", { exact: true }).check();
+  await page.getByRole("checkbox", { name: /Hỏa Tốc/ }).check();
   await page.getByRole("checkbox", { name: /Tôi đồng ý/ }).check();
   if (process.env.PRODUCT_EDITOR_SCREENSHOT) {
     await page.getByRole("tab", { name: "Vận chuyển" }).click();
     await page.screenshot({ path: process.env.PRODUCT_EDITOR_SCREENSHOT, fullPage: true });
   }
 
+  await page.getByRole("checkbox", { name: /Hỏa Tốc/ }).uncheck();
   await page.getByRole("button", { name: "Đăng sản phẩm" }).click();
   await page.getByText("Chọn ít nhất một phương thức vận chuyển.").waitFor();
   await page.getByRole("checkbox", { name: /Điểm nhận hàng/ }).check();
+  await page.getByRole("checkbox", { name: /Hỏa Tốc/ }).check();
   await page.getByRole("tab", { name: "Thông tin bán hàng" }).click();
   await page.getByRole("button", { name: "Đăng sản phẩm" }).click();
   const savingButton = page.getByRole("button", { name: "Đang lưu..." }).first();
@@ -111,9 +140,11 @@ try {
   assert.equal(await page.getByLabel("Tên sản phẩm", { exact: true }).inputValue(), "Tai nghe thử nghiệm", "Save errors preserve form values");
   assert.equal(submittedPayload.item_status, "NORMAL", "Active-shop listing action submits NORMAL status");
   assert.equal(submittedPayload.category_id, 11, "Category ID is submitted instead of the display path");
-  assert.deepEqual(submittedPayload.shipping_option_ids, ["pickup_point"], "Selected shipping method is submitted");
+  assert.deepEqual(submittedPayload.shipping_option_ids, ["pickup_point", "same_day_express"], "Selected shipping methods are submitted");
   assert.equal(submittedPayload.image_ratio, "3:4", "Image ratio is submitted");
-  assert.equal(submittedPayload.models.length, 2, "Variation options generate two model rows");
+  assert.equal(submittedPayload.models.length, 16, "Four variation groups generate their model combinations");
+  assert.equal(submittedPayload.preorder_days_to_ship, null, "Non-preorder payload does not submit preparation days");
+  assert.equal(submittedPayload.tier_variation.length, 4, "Four variation groups are sent to Layer B");
 
   saveFails = false;
   const beforeRetry = createRequests;
