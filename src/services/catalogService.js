@@ -196,6 +196,24 @@ export const catalogService = {
     return data.product;
   },
 
+  async getItemExtraInfo(shopId, itemIds) {
+    const params = new URLSearchParams({ shop_id: String(shopId), item_id_list: itemIds.join(",") });
+    const data = await api.get(`/simulator/product/extra_info?${params}`);
+    return data.item_list || [];
+  },
+
+  async recordProductView(itemId) {
+    return api.post("/simulator/product/view", { item_id: itemId });
+  },
+
+  async getProductLike(itemId, buyerId) {
+    return api.get(`/simulator/product/like?item_id=${itemId}&buyer_user_id=${buyerId}`);
+  },
+
+  async toggleProductLike(itemId, buyerId) {
+    return api.post("/simulator/product/like", { item_id: itemId, buyer_user_id: buyerId });
+  },
+
   async getShopDetail(shopId) {
     const data = await api.get(`/simulator/shop/detail?shop_id=${shopId}`);
     return data.shop;

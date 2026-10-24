@@ -22,7 +22,6 @@ export const SIDEBAR_GROUPS = [
       { id: "products_all", label: "Tất Cả Sản Phẩm", aliases: ["products"] },
       { id: "products_new", label: "Thêm Sản Phẩm" },
       { id: "products_standards", label: "Sản phẩm tiêu chuẩn trên Shopee" },
-      { id: "products_ai", label: "Công cụ Tối ưu AI" },
     ],
   },
   {

@@ -56,6 +56,7 @@ export default function ProductsPage({ shopId = 727720655, onCreateProduct = () 
   const activeSubTab = params.get("prod_sub") || "all";
 
   const [products, setProducts] = useState([]);
+  const [productMetrics, setProductMetrics] = useState({});
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState([]);
@@ -123,8 +124,18 @@ export default function ProductsPage({ shopId = 727720655, onCreateProduct = () 
     setLoading(true);
     api
       .get(`/simulator/products?shop_id=${shopId}`)
-      .then((res) => {
-        setProducts(res.products || []);
+      .then(async (res) => {
+        const rows = res.products || [];
+        setProducts(rows);
+        const batches = [];
+        for (let i = 0; i < rows.length; i += 50) batches.push(rows.slice(i, i + 50));
+        try {
+          const results = await Promise.all(batches.map((batch) => api.get(`/simulator/product/extra_info?shop_id=${shopId}&item_id_list=${batch.map((p) => p.item_id).join(",")}`)));
+          const metrics = Object.fromEntries(results.flatMap((result) => (result.item_list || []).map((m) => [String(m.item_id), m])));
+          setProductMetrics(metrics);
+        } catch {
+          setProductMetrics({});
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -589,15 +600,15 @@ export default function ProductsPage({ shopId = 727720655, onCreateProduct = () 
 
                       {/* Hiệu suất */}
                       <td className={s.perfCell}>
-                        <span className={s.salesStat}>
-                          <TrendingUp size={12} /> Doanh số 7
-                        </span>
+                        {productMetrics[String(p.item_id)] ? <span className={s.salesStat}>
+                          <TrendingUp size={12} /> Doanh số {productMetrics[String(p.item_id)].sale} · Lượt xem {productMetrics[String(p.item_id)].views} · Yêu thích {productMetrics[String(p.item_id)].likes}
+                        </span> : <span className={s.salesStat}>—</span>}
                       </td>
 
                       {/* Đánh giá */}
                       <td className={s.ratingCell}>
                         <span className={s.ratingVal}>
-                          <Star size={13} fill="#faad14" color="#faad14" /> 5.0
+                          {productMetrics[String(p.item_id)] ? <><Star size={13} fill="#faad14" color="#faad14" /> {Number(productMetrics[String(p.item_id)].rating_star).toFixed(1)} ({productMetrics[String(p.item_id)].comment_count})</> : "—"}
                         </span>
                       </td>
 
@@ -713,7 +724,7 @@ export default function ProductsPage({ shopId = 727720655, onCreateProduct = () 
                       <small>ID: {product.item_id} · {product.category_name}</small>
                       <strong>{money(product.original_price)}</strong>
                       <span>{stock === 0 ? "Hết hàng" : `Kho hàng: ${stock}`}</span>
-                      <div className={s.productCardRating}><Star size={13} fill="#faad14" color="#faad14" /> 5.0</div>
+                      <div className={s.productCardRating}>{productMetrics[String(p.item_id)] ? <><Star size={13} fill="#faad14" color="#faad14" /> {Number(productMetrics[String(p.item_id)].rating_star).toFixed(1)} ({productMetrics[String(p.item_id)].comment_count}) · {productMetrics[String(p.item_id)].sale} sold · {productMetrics[String(p.item_id)].views} views · {productMetrics[String(p.item_id)].likes} likes</> : "—"}</div>
                       <div className={s.productCardActions}>
                         <button type="button" className={s.actionLink} onClick={() => onEditProduct(product)}>Cập nhật</button>
                         <button type="button" className={s.actionLink} onClick={() => handleToggleUnlist(product)}>{product.item_status === "NORMAL" ? "Ẩn" : "Hiện"}</button>

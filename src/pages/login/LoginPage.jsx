@@ -53,7 +53,7 @@ export default function LoginPage() {
         <p className={f.successText} role="status">
           Welcome, {user?.name}. You’re logged in with a demo account.
         </p>
-        <Link className={f.submit} to="/">
+        <Link className={f.submit} to={location.state?.returnTo || "/"}>
           Continue shopping
         </Link>
         <button className={s.startOver} onClick={() => setSuccess(false)}>

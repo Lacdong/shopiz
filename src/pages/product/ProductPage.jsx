@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ShoppingCart,
   ShieldCheck,
@@ -22,12 +22,19 @@ import ProductGallery from "./ProductGallery";
 import ProductReviews, { Stars } from "./ProductReviews";
 import { getProductDetails } from "../../data/productDetails";
 import { useCart } from "../../components/cart/CartProvider";
+import { useAuth } from "../../components/auth/AuthProvider";
 import catalogService, { mapBackendProduct } from "../../services/catalogService";
 import ChatDialog from "../../components/chat/ChatDialog";
 import s from "./ProductPage.module.css";
 
 function ProductDetail({ product: p }) {
   const { addItem } = useCart();
+  const { user, buyerId } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [likeState, setLikeState] = useState({ liked: false, likes: 0 });
+  const itemId = p.itemId || p.id;
+  const backendItem = Boolean(p.itemId);
   const [cartNotice, setCartNotice] = useState(null);
   useEffect(() => {
     if (!cartNotice) return;
@@ -55,6 +62,32 @@ function ProductDetail({ product: p }) {
   const [chatOpen, setChatOpen] = useState(false);
   const [message, setMessage] = useState("");
   const preview = useRef(null);
+
+  useEffect(() => {
+    if (!backendItem || !user || !buyerId) return;
+    let active = true;
+    catalogService.getProductLike(itemId, buyerId).then((data) => {
+      if (active) setLikeState({ liked: Boolean(data.liked), likes: Number(data.likes || 0) });
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [backendItem, itemId, buyerId, user]);
+
+  async function toggleLike() {
+    if (!user || !buyerId) {
+      navigate("/login", { state: { returnTo: `${location.pathname}${location.search}${location.hash}` } });
+      return;
+    }
+    if (!backendItem) {
+      setMessage("Favorites are available for simulator products after sign-in.");
+      return;
+    }
+    try {
+      const data = await catalogService.toggleProductLike(itemId, buyerId);
+      setLikeState({ liked: Boolean(data.liked), likes: Number(data.likes || 0) });
+    } catch {
+      setMessage("Could not update favorites. Please try again.");
+    }
+  }
 
   // Model-specific pricing and stock if multi-variant
   const selectedModel =
@@ -211,6 +244,9 @@ function ProductDetail({ product: p }) {
           product={p}
           gallery={details.gallery}
           onMessage={setMessage}
+          liked={likeState.liked}
+          likeCount={likeState.likes}
+          onToggleLike={toggleLike}
         />
         <div className={s.purchase}>
           <h1>
@@ -596,6 +632,7 @@ function ProductDetail({ product: p }) {
 }
 export default function ProductPage() {
   const { id } = useParams();
+  const lastVisited = useRef(null);
   const localProduct = products.find((p) => String(p.id) === String(id));
   const [product, setProduct] = useState(localProduct || null);
   const [loading, setLoading] = useState(!localProduct);
@@ -615,6 +652,10 @@ export default function ProductPage() {
         if (isMounted && detail) {
           const mapped = mapBackendProduct(detail);
           setProduct(mapped);
+          if (lastVisited.current !== String(id)) {
+            lastVisited.current = String(id);
+            catalogService.recordProductView(id).catch(() => {});
+          }
         }
       })
       .catch((err) => {

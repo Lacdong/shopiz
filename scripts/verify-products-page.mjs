@@ -40,11 +40,12 @@ try {
   await page.getByRole("heading", { name: "Sản phẩm", exact: true }).waitFor();
   console.log("PASS Page title 'Sản phẩm' rendered");
 
-  // 2. Verify header controls
-  await page.getByText("Cài đặt sản phẩm").waitFor();
-  await page.getByText("Công cụ xử lý hàng loạt").waitFor();
+  // 2. Verify the simplified header controls
   await page.getByRole("button", { name: /\+ Thêm 1 sản phẩm mới/ }).waitFor();
-  console.log("PASS Header controls and '+ Thêm 1 sản phẩm mới' rendered");
+  assert.equal(await page.getByText("Cài đặt sản phẩm").count(), 0, "Product settings control should be removed");
+  assert.equal(await page.getByText("Công cụ xử lý hàng loạt").count(), 0, "Bulk tools control should be removed");
+  assert.equal(await page.getByText("Công cụ tối ưu AI").count(), 0, "AI optimization control should be removed");
+  console.log("PASS simplified header controls and product creation action");
 
   // 3. Verify all 5 main status tabs in exact order with dynamic count badges
   const statusTabs = page.locator("div[class*='statusTabsRow'] button[role='tab']");
@@ -148,12 +149,15 @@ try {
   await chip.click();
   console.log("PASS Quick filter chip toggle verified");
 
-  // 11. Test Quick Stock Edit Modal
-  const editStockBtn = page.getByRole("button", { name: "Cập nhật" }).first();
-  await editStockBtn.click();
-  await page.getByRole("heading", { name: "Cập nhật kho hàng" }).waitFor();
-  await page.getByRole("button", { name: "Hủy" }).click();
-  console.log("PASS Stock update modal opens and closes cleanly");
+  // 11. Product update opens the shared Add Product editor
+  const editProductBtn = page.getByRole("button", { name: "Cập nhật" }).first();
+  await editProductBtn.click();
+  await page.getByRole("heading", { name: "Cập nhật sản phẩm" }).waitFor();
+  await page.getByRole("tab", { name: "Thông tin cơ bản" }).waitFor();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.locator("button[class*='backButton']").click();
+  await page.getByRole("heading", { name: "Sản phẩm", exact: true }).waitFor();
+  console.log("PASS Product update opens and returns from the shared editor");
 
   assert.equal(errors.length, 0, `Page errors: ${errors.join(", ")}`);
   console.log("\n🎉 ALL PRODUCT MANAGEMENT SPECIFICATION TESTS PASSED (100%)!");

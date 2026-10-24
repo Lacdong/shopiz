@@ -17,6 +17,7 @@
     "check:seller-pagination": "node scripts/verify-seller-pagination.mjs",
     "check:auth": "node scripts/verify-auth.mjs",
     "check:product": "node scripts/verify-product.mjs",
+    "check:extra-info": "node scripts/verify-extra-info.mjs",
     "check:cart": "node scripts/verify-cart.mjs",
     "check:vouchers": "node scripts/verify-vouchers.mjs",
     "check:search": "node scripts/verify-search.mjs",

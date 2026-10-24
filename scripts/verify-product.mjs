@@ -50,12 +50,14 @@ try {
     "Escape did not close gallery",
   );
   await page.getByRole("button", { name: "Save to favorites" }).click();
-  check(
-    (await page
-      .getByRole("button", { name: "Saved to favorites" })
-      .getAttribute("aria-pressed")) === "true",
-    "Favorite toggle failed",
-  );
+  await page.waitForURL(`${base}/login`);
+  await page.getByLabel("Phone number / Email / Username", { exact: true }).fill("demo@shopiz.com");
+  await page.getByLabel("Password", { exact: true }).fill("Shopiz@123");
+  await page.getByRole("button", { name: "LOG IN", exact: true }).click();
+  await page.getByRole("link", { name: "Continue shopping" }).click();
+  await page.waitForURL(`${base}/product/1`);
+  await page.getByRole("button", { name: "Save to favorites" }).click();
+  await page.getByRole("status").filter({ hasText: "Favorites are available for simulator products" }).waitFor();
   await page
     .getByRole("group", { name: "Color", exact: true })
     .getByRole("button", { name: "Cloud" })

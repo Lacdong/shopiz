@@ -8,9 +8,8 @@ import {
   ZoomIn,
 } from "lucide-react";
 import s from "./ProductPage.module.css";
-export default function ProductGallery({ product, gallery, onMessage }) {
+export default function ProductGallery({ product, gallery, onMessage, liked = false, likeCount = 0, onToggleLike }) {
   const [active, setActive] = useState(0);
-  const [liked, setLiked] = useState(false);
   const dialog = useRef(null);
   const safeGallery =
     Array.isArray(gallery) && gallery.length > 0
@@ -94,9 +93,9 @@ export default function ProductGallery({ product, gallery, onMessage }) {
           Share
         </button>
         <span />
-        <button aria-pressed={liked} onClick={() => setLiked(!liked)}>
+        <button aria-pressed={liked} onClick={onToggleLike}>
           <Heart size={17} fill={liked ? "currentColor" : "none"} />
-          {liked ? "Saved to favorites" : "Save to favorites"}
+          {liked ? "Saved to favorites" : "Save to favorites"}{likeCount ? ` · ${likeCount}` : ""}
         </button>
       </div>
       <dialog
