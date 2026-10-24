@@ -53,7 +53,7 @@ const QUICK_FILTER_CHIPS = [
   "Gained Voucher",
 ];
 
-export default function ProductsPage({ shopId = 727720655 }) {
+export default function ProductsPage({ shopId = 727720655, onCreateProduct = () => {} }) {
   const [params, setParams] = useSearchParams();
   const activeStatusTab = params.get("prod_status") || "active";
   const activeSubTab = params.get("prod_sub") || "all";
@@ -89,7 +89,6 @@ export default function ProductsPage({ shopId = 727720655 }) {
 
   // Modals & Notices
   const [notice, setNotice] = useState("");
-  const [createModal, setCreateModal] = useState(false);
   const [stockModal, setStockModal] = useState(null); // { item, model }
   const [newStockVal, setNewStockVal] = useState("");
 
@@ -314,7 +313,7 @@ export default function ProductsPage({ shopId = 727720655 }) {
           <button
             type="button"
             className={s.btnAddProduct}
-            onClick={() => setCreateModal(true)}
+            onClick={onCreateProduct}
           >
             <Plus size={16} /> + Thêm 1 sản phẩm mới
           </button>

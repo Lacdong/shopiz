@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   ArrowDownToLine,
@@ -19,7 +19,6 @@ import {
   Megaphone,
   Menu,
   Package,
-  Plus,
   Search,
   Settings,
   ShieldCheck,
@@ -40,6 +39,7 @@ import SellerSidebar, { findActiveItem } from "./SellerSidebar";
 import SellerComingSoon from "./SellerComingSoon";
 import AllOrdersPage from "./orders/AllOrdersPage";
 import ProductsPage from "./products/ProductsPage";
+import AddProductPage from "./products/AddProductPage";
 import ReturnsPage from "./returns/ReturnsPage";
 import s from "./SellerCenter.module.css";
 
@@ -102,7 +102,6 @@ export default function SellerCenter() {
       .map((p, i) => ({ ...p, stock: i < 3 ? 0 : 32 + i * 9, active: true })),
   );
   const [notice, setNotice] = useState("");
-  const [dialog, setDialog] = useState(false);
   const [campaigns, setCampaigns] = useState([]);
   const [activeVouchers, setActiveVouchers] = useState([]);
   const urlShopId = params.get("shop_id");
@@ -135,7 +134,6 @@ export default function SellerCenter() {
   });
   const [savedName, setSavedName] = useState(shopName);
   const [liveAnalytics, setLiveAnalytics] = useState(null);
-  const modal = useRef(null);
 
   useEffect(() => {
     if (urlShopId && urlShopId !== shopId) {
@@ -259,34 +257,6 @@ export default function SellerCenter() {
       })
       .catch(() => {});
   }, [shopId, period]);
-
-  // Modal accessibility
-  useEffect(() => {
-    if (!dialog) return;
-    const before = document.activeElement;
-    modal.current?.querySelector("input")?.focus();
-    function keyboard(e) {
-      if (e.key === "Escape") setDialog(false);
-      if (e.key === "Tab") {
-        const nodes = modal.current?.querySelectorAll(
-          "button, input, [tabindex='0']",
-        );
-        if (!nodes?.length) return;
-        if (e.shiftKey && document.activeElement === nodes[0]) {
-          e.preventDefault();
-          nodes.at(-1).focus();
-        } else if (!e.shiftKey && document.activeElement === nodes.at(-1)) {
-          e.preventDefault();
-          nodes[0].focus();
-        }
-      }
-    }
-    document.addEventListener("keydown", keyboard);
-    return () => {
-      document.removeEventListener("keydown", keyboard);
-      before?.focus();
-    };
-  }, [dialog]);
 
   function exportOrders() {
     const csv =
@@ -537,6 +507,7 @@ export default function SellerCenter() {
     activeItem.id === "orders_all" || rawTab === "orders" || rawTab === "overview";
   const isProductsTab =
     activeItem.id === "products_all" || rawTab === "products";
+  const isCreatingProduct = isProductsTab && params.get("product_mode") === "create";
   const isReturnsTab =
     activeItem.id === "returns" || activeItem.id === "shop_disputes" || rawTab === "returns";
   const isMarketingTab =
@@ -561,12 +532,25 @@ export default function SellerCenter() {
     isShopSettingsTab;
 
   const activeShopName = resolveShopName(urlShopId || shopId) || savedName;
+  const openProductWorkflow = () => {
+    const next = new URLSearchParams(params);
+    next.set("tab", "products_all");
+    next.set("product_mode", "create");
+    setParams(next);
+  };
+  const closeProductWorkflow = (status) => {
+    const next = new URLSearchParams(params);
+    next.delete("product_mode");
+    next.set("tab", "products_all");
+    if (status) next.set("prod_status", status === "UNLIST" ? "unlisted" : "active");
+    setParams(next, { replace: true });
+  };
 
   return (
     <div className={s.seller}>
       <SellerHeader
         shopName={activeShopName}
-        breadcrumb={activeItem.label}
+        breadcrumb={isCreatingProduct ? "Sản phẩm > Thêm 1 sản phẩm mới" : activeItem.label}
         shopId={shopId}
         onToggleMobileMenu={() => setMobile((m) => !m)}
       />
@@ -586,10 +570,16 @@ export default function SellerCenter() {
               featureName={activeItem.label}
               groupName={activeGroup.title}
             />
+          ) : isCreatingProduct ? (
+            <AddProductPage
+              shopId={Number(shopId) || 727720655}
+              onCancel={() => closeProductWorkflow()}
+              onSaved={(status) => closeProductWorkflow(status)}
+            />
           ) : isOrdersTab ? (
             <AllOrdersPage shopId={Number(shopId) || 727720655} />
           ) : isProductsTab ? (
-            <ProductsPage shopId={Number(shopId) || 727720655} />
+            <ProductsPage shopId={Number(shopId) || 727720655} onCreateProduct={openProductWorkflow} />
           ) : isReturnsTab ? (
             <ReturnsPage shopId={Number(shopId) || 727720655} />
           ) : isMarketingTab ? (
@@ -868,88 +858,6 @@ export default function SellerCenter() {
         </div>
       )}
 
-      {dialog && (
-        <div
-          className={s.modalBackdrop}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setDialog(false);
-          }}
-        >
-          <div
-            className={s.modal}
-            ref={modal}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="product-dialog-title"
-          >
-            <div className={s.cardHead}>
-              <h2 id="product-dialog-title">Thêm sản phẩm mẫu</h2>
-              <button
-                className={s.iconButton}
-                aria-label="Close"
-                onClick={() => setDialog(false)}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <form
-              className={s.shopForm}
-              onSubmit={(e) => {
-                e.preventDefault();
-                const data = new FormData(e.currentTarget);
-                setItems([
-                  {
-                    id: `new-${Date.now()}`,
-                    title: data.get("name").trim(),
-                    price: Number(data.get("price")) / 25000,
-                    stock: Number(data.get("stock")),
-                    active: true,
-                  },
-                  ...items,
-                ]);
-                setDialog(false);
-                setNotice("Đã thêm sản phẩm mẫu thành công.");
-              }}
-            >
-              <label>
-                Tên sản phẩm
-                <input
-                  name="name"
-                  required
-                  pattern=".*\S.*"
-                  maxLength={120}
-                  placeholder="Nhập tên sản phẩm"
-                />
-              </label>
-              <label>
-                Giá bán (₫)
-                <input
-                  name="price"
-                  type="number"
-                  min="1000"
-                  step="1000"
-                  required
-                  placeholder="250000"
-                />
-              </label>
-              <label>
-                Số lượng kho
-                <input
-                  name="stock"
-                  type="number"
-                  min="0"
-                  step="1"
-                  required
-                  defaultValue="10"
-                />
-              </label>
-              <button type="submit" className={s.primary}>
-                <Plus size={16} /> Thêm sản phẩm
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

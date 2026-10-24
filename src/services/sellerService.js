@@ -54,6 +54,10 @@ export const sellerService = {
     return data;
   },
 
+  async getProductCreationConfig(shopId) {
+    return api.get(`/simulator/product-creation/config?shop_id=${encodeURIComponent(shopId)}`);
+  },
+
   async deleteProduct(itemId, shopId) {
     const data = await api.post("/simulator/product/delete", {
       item_id: itemId,
