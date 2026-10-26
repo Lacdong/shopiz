@@ -12,6 +12,14 @@ export const chatService = {
   },
 
   /**
+   * Fetches shop conversation threads
+   */
+  async getShopConversations(shopId) {
+    const data = await api.get(`/simulator/chat/conversations?shop_id=${shopId}`);
+    return data.conversations || [];
+  },
+
+  /**
    * Sends a message from the buyer or shop
    */
   async sendMessage({
@@ -36,15 +44,62 @@ export const chatService = {
   /**
    * Marks unread messages as read
    */
-  async markRead(shopId, buyerUserId = 1001) {
+  async markRead(shopId, buyerUserId = 1001, readerType = "SELLER") {
     try {
       await api.post("/simulator/chat/mark_read", {
         shop_id: shopId,
         buyer_user_id: buyerUserId,
+        reader_type: readerType,
       });
     } catch {
       // Non-critical background sync
     }
+  },
+
+  /**
+   * Fetches 30-day chat performance metrics for the active shop
+   */
+  async getChatPerformance(shopId) {
+    const data = await api.get(`/simulator/chat/performance?shop_id=${shopId}`);
+    return data;
+  },
+
+  /**
+   * Fetches auto-reply configuration
+   */
+  async getAutoReplySettings(shopId) {
+    const data = await api.get(`/simulator/chat/auto_reply?shop_id=${shopId}`);
+    return data;
+  },
+
+  /**
+   * Updates auto-reply configuration
+   */
+  async updateAutoReplySettings(shopId, settings) {
+    const data = await api.post("/simulator/chat/auto_reply", {
+      shop_id: shopId,
+      ...settings,
+    });
+    return data;
+  },
+
+  /**
+   * Fetches quick-reply configuration and groups
+   */
+  async getQuickReplySettings(shopId) {
+    const data = await api.get(`/simulator/chat/quick_reply?shop_id=${shopId}`);
+    return data;
+  },
+
+  /**
+   * Updates quick-reply configuration and groups
+   */
+  async updateQuickReplySettings(shopId, settings) {
+    const data = await api.post("/simulator/chat/quick_reply", {
+      shop_id: shopId,
+      ...settings,
+    });
+    return data;
   },
 };
 

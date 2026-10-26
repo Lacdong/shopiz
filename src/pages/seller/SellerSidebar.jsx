@@ -22,6 +22,7 @@ export const SIDEBAR_GROUPS = [
       { id: "products_all", label: "Tất Cả Sản Phẩm", aliases: ["products"] },
       { id: "products_new", label: "Thêm Sản Phẩm" },
       { id: "products_standards", label: "Sản phẩm tiêu chuẩn trên Shopee" },
+      { id: "products_ai", label: "Công cụ Tối ưu AI" },
     ],
   },
   {
@@ -45,7 +46,11 @@ export const SIDEBAR_GROUPS = [
     id: "customer_service",
     title: "Chăm sóc khách hàng",
     items: [
-      { id: "chat", label: "Quản lý Chat" },
+      {
+        id: "chat",
+        label: "Quản lý Chat",
+        aliases: ["chat_management", "chat_auto_reply", "chat_quick_reply"],
+      },
       { id: "reviews", label: "Quản lý Đánh Giá" },
     ],
   },

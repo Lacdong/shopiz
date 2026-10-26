@@ -13,6 +13,7 @@ npm run check:integration
 npm run check:shop-select
 npm run check:seller
 npm run check:seller-vouchers
+npm run check:chat-management
 npm run check:shipping-chat
 npm run check:checkout
 npm run check:purchases
@@ -25,7 +26,7 @@ npm run check:purchases
 - `src/services/authService.js`: live login, registration, password recovery, and buyer profile synchronization.
 - `src/services/addressService.js`: buyer shipping address book CRUD, multi-address selection in checkout, and default address management with PostgreSQL sync.
 - `src/services/catalogService.js`: live category tree, product search, multi-tier variation attributes, dynamic shipping calculation (`POST /simulator/logistics/calculate_fee`), shop storefront profiles (`GET /simulator/shop/detail`), and product extra metrics, visit tracking, and buyer-like operations (`/simulator/product/extra_info`, `/view`, `/like`). Seller metric requests are batched at no more than 50 IDs.
-- `src/services/chatService.js`: interactive live messaging with shop sellers, simulating responsive merchant replies, message history, and product/order context pinning.
+- `src/services/chatService.js`: live messaging with shop sellers, buyer conversation history, Seller Center Chat Management metrics (`getChatPerformance`), Auto-Reply settings & persistence (`getAutoReplySettings`, `updateAutoReplySettings`), Quick Reply groups with 13 authentic templates (`getQuickReplySettings`, `updateQuickReplySettings`), and right-side persistent Webchat widget integration.
 - `src/services/checkoutService.js`: dynamic carrier channels (`SPX Express`, `SPX Instant`, `SPX Economy`), basket voucher eligibility validation, and atomic multi-shop batch checkout.
 - `src/services/orderService.js`: live purchases synchronization, buyer delivery confirmation (escrow release), cancellation, 5-star product reviews, and return/refund claims.
 - `src/services/sellerService.js`: multi-shop listing (`GET /simulator/shops`), live orders retrieval, order shipment arrangement (`POST /simulator/order/ship`), printable Air Waybill generation/PDF download, inventory stock management, and Seller Center live business metrics.

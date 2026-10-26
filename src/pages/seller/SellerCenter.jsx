@@ -43,6 +43,10 @@ import AddProductPage from "./products/AddProductPage";
 import ReturnsPage from "./returns/ReturnsPage";
 import ReviewsPage from "./reviews/ReviewsPage";
 import VouchersPage from "./vouchers/VouchersPage";
+import ChatManagementPage from "./chat/ChatManagementPage";
+import AutoReplySettingsPage from "./chat/AutoReplySettingsPage";
+import QuickReplySettingsPage from "./chat/QuickReplySettingsPage";
+import SellerChatWidget from "./chat/SellerChatWidget";
 import s from "./SellerCenter.module.css";
 
 const money = (n) =>
@@ -522,6 +526,14 @@ export default function SellerCenter() {
     activeItem.id === "marketing_vouchers" ||
     rawTab === "vouchers" ||
     rawTab === "marketing_vouchers";
+  const isChatAutoReplyTab = rawTab === "chat_auto_reply";
+  const isChatQuickReplyTab = rawTab === "chat_quick_reply";
+  const isChatTab =
+    !isChatAutoReplyTab &&
+    !isChatQuickReplyTab &&
+    (activeItem.id === "chat" ||
+      rawTab === "chat" ||
+      rawTab === "chat_management");
   const isMarketingTab =
     activeItem.id === "marketing" || rawTab === "marketing";
   const isAnalyticsTab =
@@ -540,6 +552,9 @@ export default function SellerCenter() {
     isReturnsTab ||
     isReviewsTab ||
     isVouchersTab ||
+    isChatTab ||
+    isChatAutoReplyTab ||
+    isChatQuickReplyTab ||
     isMarketingTab ||
     isAnalyticsTab ||
     isFinanceTab ||
@@ -606,6 +621,33 @@ export default function SellerCenter() {
             <ReviewsPage shopId={Number(shopId) || 727720655} />
           ) : isVouchersTab ? (
             <VouchersPage shopId={Number(shopId) || 727720655} />
+          ) : isChatTab ? (
+            <ChatManagementPage
+              shopId={Number(shopId) || 727720655}
+              onNavigateTab={(tab) => {
+                const next = new URLSearchParams(params);
+                next.set("tab", tab);
+                setParams(next);
+              }}
+            />
+          ) : isChatAutoReplyTab ? (
+            <AutoReplySettingsPage
+              shopId={Number(shopId) || 727720655}
+              onNavigateTab={(tab) => {
+                const next = new URLSearchParams(params);
+                next.set("tab", tab);
+                setParams(next);
+              }}
+            />
+          ) : isChatQuickReplyTab ? (
+            <QuickReplySettingsPage
+              shopId={Number(shopId) || 727720655}
+              onNavigateTab={(tab) => {
+                const next = new URLSearchParams(params);
+                next.set("tab", tab);
+                setParams(next);
+              }}
+            />
           ) : isMarketingTab ? (
             <>
               <div className={s.marketingHero}>
@@ -882,6 +924,11 @@ export default function SellerCenter() {
         </div>
       )}
 
+      {/* Floating Seller Webchat Widget */}
+      <SellerChatWidget
+        shopId={Number(shopId) || 727720655}
+        shopName={activeShopName}
+      />
     </div>
   );
 }
