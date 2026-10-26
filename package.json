@@ -15,6 +15,7 @@
     "check:create-product": "node scripts/verify-create-product.mjs",
     "check:returns-page": "node scripts/verify-returns-page.mjs",
     "check:reviews": "node scripts/verify-reviews-page.mjs",
+    "check:seller-auth": "node scripts/verify-seller-auth-flow.mjs",
     "check:seller-vouchers": "node scripts/verify-vouchers-page.mjs",
     "check:seller-pagination": "node scripts/verify-seller-pagination.mjs",
     "check:auth": "node scripts/verify-auth.mjs",

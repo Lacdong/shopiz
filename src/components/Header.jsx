@@ -97,10 +97,17 @@ function AccountMenu({ onNavigate }) {
 }
 export function UtilityNav() {
   const { user } = useAuth();
+  const isSeller = user?.role === "seller";
+
   return (
     <div className={s.utility}>
       <div>
-        <Link to="/seller">Seller Center</Link>
+        <Link
+          to={isSeller ? "/seller" : "/login"}
+          state={isSeller ? undefined : { returnTo: "/seller", notice: user ? "seller_required" : undefined }}
+        >
+          Seller Center
+        </Link>
         <i />
         <Link to="/download">Download App</Link>
         <i />
@@ -251,6 +258,7 @@ export default function Header({ variant = "marketplace" }) {
         </div>
         {open && (
           <nav className={s.mobileNav}>
+            {user && <AccountMenu onNavigate={() => setOpen(false)} />}
             {[
               ["Seller Center", "seller"],
               ["Download App", "download"],
@@ -263,12 +271,29 @@ export default function Header({ variant = "marketplace" }) {
               .filter(
                 ([, path]) => !user || !["login", "register"].includes(path),
               )
-              .map(([label, path]) => (
-                <Link onClick={() => setOpen(false)} key={path} to={`/${path}`}>
-                  {label}
-                </Link>
-              ))}
-            {user && <AccountMenu onNavigate={() => setOpen(false)} />}
+              .map(([label, path]) => {
+                const isSellerPath = path === "seller";
+                const toPath = isSellerPath
+                  ? user?.role === "seller"
+                    ? "/seller"
+                    : "/login"
+                  : `/${path}`;
+                const stateData =
+                  isSellerPath && user?.role !== "seller"
+                    ? { returnTo: "/seller", notice: user ? "seller_required" : undefined }
+                    : undefined;
+
+                return (
+                  <Link
+                    onClick={() => setOpen(false)}
+                    key={path}
+                    to={toPath}
+                    state={stateData}
+                  >
+                    {label}
+                  </Link>
+                );
+              })}
           </nav>
         )}
       </div>

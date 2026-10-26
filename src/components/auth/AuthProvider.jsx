@@ -12,6 +12,9 @@ const profileKey = "shopiz-user-profile";
 
 function readUser() {
   try {
+    const stored =
+      localStorage.getItem(profileKey) || sessionStorage.getItem(profileKey);
+    if (stored) return JSON.parse(stored);
     const id =
       localStorage.getItem(storageKey) || sessionStorage.getItem(storageKey);
     if (!id) return null;
@@ -19,8 +22,6 @@ function readUser() {
     if (user) return toPublicUser(user);
     if (id === "1001" || id === "user-001") return toPublicUser(mockUsers[0]);
     if (id === "1002" || id === "user-002") return toPublicUser(mockUsers[1]);
-    const stored = localStorage.getItem(profileKey);
-    if (stored) return JSON.parse(stored);
     return null;
   } catch {
     return null;
@@ -46,6 +47,9 @@ export function AuthProvider({ children }) {
               email: profile.email || prev.email,
               phone: profile.phone || prev.phone,
               avatar: profile.avatar_url || prev.avatar,
+              role: profile.role || prev.role || "buyer",
+              shopId: profile.shop_id || prev.shopId || null,
+              shopName: profile.shop_name || prev.shopName || null,
             };
           });
         }
@@ -71,15 +75,30 @@ export function AuthProvider({ children }) {
           email: u.email,
           phone: u.phone,
           avatar: u.avatar_url || "",
+          role: u.role || "buyer",
+          shopId: u.shop_id || null,
+          shopName: u.shop_name || null,
         };
 
         try {
           localStorage.removeItem(storageKey);
           sessionStorage.removeItem(storageKey);
-          (remember ? localStorage : sessionStorage).setItem(storageKey, clientId);
-          localStorage.setItem(profileKey, JSON.stringify(loggedInUser));
+          localStorage.removeItem(profileKey);
+          sessionStorage.removeItem(profileKey);
+
+          const storage = remember ? localStorage : sessionStorage;
+          storage.setItem(storageKey, clientId);
+          storage.setItem(profileKey, JSON.stringify(loggedInUser));
+
           if (data.token) {
-            (remember ? localStorage : sessionStorage).setItem("shopiz-auth-token", data.token);
+            storage.setItem("shopiz-auth-token", data.token);
+          }
+
+          if (u.role === "seller" && u.shop_id) {
+            localStorage.setItem("shopiz-active-seller-shop-id", String(u.shop_id));
+            if (u.shop_name) {
+              localStorage.setItem("shopiz-active-seller-shop-name", u.shop_name);
+            }
           }
         } catch {
           // In-memory fallback
@@ -94,16 +113,22 @@ export function AuthProvider({ children }) {
     // 2. Fallback to mock accounts (for hermetic offline test runs)
     const account = authenticateMockUser(identity, password);
     if (!account) return null;
+    const fallbackUser = {
+      ...account,
+      role: "buyer",
+      shopId: null,
+      shopName: null,
+    };
     try {
       localStorage.removeItem(storageKey);
       sessionStorage.removeItem(storageKey);
       (remember ? localStorage : sessionStorage).setItem(storageKey, account.id);
-      localStorage.setItem(profileKey, JSON.stringify(account));
+      localStorage.setItem(profileKey, JSON.stringify(fallbackUser));
     } catch {
       /* Storage can be disabled; the demo session still works in memory. */
     }
-    setUser(account);
-    return account;
+    setUser(fallbackUser);
+    return fallbackUser;
   }
 
   function logout() {
@@ -111,6 +136,7 @@ export function AuthProvider({ children }) {
       localStorage.removeItem(storageKey);
       sessionStorage.removeItem(storageKey);
       localStorage.removeItem(profileKey);
+      sessionStorage.removeItem(profileKey);
       localStorage.removeItem("shopiz-auth-token");
       sessionStorage.removeItem("shopiz-auth-token");
     } catch {

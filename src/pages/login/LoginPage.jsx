@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { QrCode, Check } from "lucide-react";
 import {
   PasswordField,
@@ -11,6 +11,7 @@ import s from "./LoginPage.module.css";
 import { useAuth } from "../../components/auth/AuthProvider";
 export default function LoginPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, login } = useAuth();
   const [authError, setAuthError] = useState("");
   const [identity, setIdentity] = useState(location.state?.identity || "");
@@ -19,6 +20,7 @@ export default function LoginPage() {
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState(false);
+
   async function submit(e) {
     e.preventDefault();
     const next = {};
@@ -33,13 +35,30 @@ export default function LoginPage() {
     setErrors(next);
     setMessage("");
     setAuthError("");
+
     if (!Object.keys(next).length) {
-      const ok = await login(identity, password, remember);
-      if (!ok) {
+      const loggedUser = await login(identity, password, remember);
+      if (!loggedUser) {
         setAuthError("Incorrect phone number, email, username or password.");
         return;
       }
       setPassword("");
+
+      const returnTo = location.state?.returnTo;
+
+      // Role-based navigation:
+      if (loggedUser.role === "seller") {
+        const dest = returnTo && returnTo.startsWith("/seller") ? returnTo : "/seller";
+        navigate(dest, { replace: true });
+        return;
+      }
+
+      // If buyer attempted to access Seller Center, redirect to marketplace homepage
+      if (returnTo === "/seller" || (returnTo && returnTo.startsWith("/seller"))) {
+        navigate("/", { replace: true });
+        return;
+      }
+
       setSuccess(true);
     }
   }
@@ -82,6 +101,22 @@ export default function LoginPage() {
         <p className={f.message} role="status">
           {message}
         </p>
+      )}
+      {location.state?.notice === "seller_required" && (
+        <div style={{
+          background: "#fff5f0",
+          border: "1px solid #ffd8cc",
+          borderRadius: 8,
+          padding: "10px 14px",
+          marginBottom: 16,
+          fontSize: 13,
+          color: "#d03e20",
+          display: "flex",
+          alignItems: "center",
+          gap: 8
+        }}>
+          <span>Vui lòng đăng nhập với tài khoản Người bán để truy cập Kênh Người Bán (Seller Center).</span>
+        </div>
       )}
       <form noValidate onSubmit={submit}>
         {authError && (
@@ -131,6 +166,25 @@ export default function LoginPage() {
         <p className={f.hint}>
           Demo login only. Your password is never saved or sent.
         </p>
+        <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px dashed #eee", fontSize: 12, color: "#666" }}>
+          <p style={{ fontWeight: 600, marginBottom: 8, color: "#444" }}>Tài khoản demo:</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => { setIdentity("demo"); setPassword("Shopiz@123"); }}
+              style={{ padding: "5px 10px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 4, cursor: "pointer", fontSize: 12 }}
+            >
+              👤 Người mua: <strong>demo</strong> / Shopiz@123
+            </button>
+            <button
+              type="button"
+              onClick={() => { setIdentity("seller"); setPassword("Shopiz@123"); }}
+              style={{ padding: "5px 10px", background: "#fef0ed", border: "1px solid #f9ccbf", color: "#ee4d2d", borderRadius: 4, cursor: "pointer", fontSize: 12 }}
+            >
+              🏪 Người bán: <strong>seller</strong> / Shopiz@123
+            </button>
+          </div>
+        </div>
       </form>
       <SocialButtons
         onSelect={(provider) =>

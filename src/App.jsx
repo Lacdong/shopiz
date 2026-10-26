@@ -21,6 +21,7 @@ import ProfilePage from "./pages/account/ProfilePage";
 import AddressesPage from "./pages/account/AddressesPage";
 import SellerCenter from "./pages/seller/SellerCenter";
 import ShopSelectPage from "./pages/seller/ShopSelectPage";
+import SellerRouteGuard from "./components/auth/SellerRouteGuard";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 function ScrollManager() {
   const { pathname, search, hash } = useLocation();
@@ -38,9 +39,30 @@ export default function App() {
     <ErrorBoundary>
       <ScrollManager />
       <Routes>
-        <Route path="seller/select-shop" element={<ShopSelectPage />} />
-        <Route path="seller/select" element={<ShopSelectPage />} />
-        <Route path="seller" element={<SellerCenter />} />
+        <Route
+          path="seller/select-shop"
+          element={
+            <SellerRouteGuard>
+              <ShopSelectPage />
+            </SellerRouteGuard>
+          }
+        />
+        <Route
+          path="seller/select"
+          element={
+            <SellerRouteGuard>
+              <ShopSelectPage />
+            </SellerRouteGuard>
+          }
+        />
+        <Route
+          path="seller"
+          element={
+            <SellerRouteGuard>
+              <SellerCenter />
+            </SellerRouteGuard>
+          }
+        />
         <Route element={<AuthLayout />}>
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />

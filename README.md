@@ -149,3 +149,57 @@ Responsive layouts target 1440, 1280, 1024, 768 and 375 pixels. Recommendations 
 - **Marketing Center**: Displays active store vouchers and campaign discounts directly from the database.
 - `npm run check:shop-select` verifies responsive layouts, store listing, card selection, navigation, and header switcher.
 - `npm run check:seller` verifies responsive layouts, order actions, CSV download, product actions, marketing, shop editing and navigation. `npm run check:extra-info` verifies metric batching/rendering, one visit increment per detail visit, guest login return, and persisted likes. Set `SHOPIZ_URL` to the local preview URL when needed.
+
+## Authentication & Role-Based Navigation
+
+- **Single Source of Truth**: All buyer and seller credentials reside in the backend PostgreSQL database (`prisma/seed.ts`).
+- **Seed Accounts**:
+  - **Buyer**: `demo@shopiz.com` / `Shopiz@123` (Username: `demo`, Phone: `0901234567`, Role: `buyer`).
+  - **Buyer (Secondary)**: `alex@shopiz.com` / `Shopiz@123` (Username: `alex`, Role: `buyer`).
+  - **Seller (SmartOmni)**: `seller@shopiz.com` / `Shopiz@123` (Username: `seller`, Role: `seller`, Shop ID: `727720655`, Shop Name: `SmartOmni Official Flagship`).
+  - **Seller (Hanoi)**: `hanoiseller@shopiz.com` / `Shopiz@123` (Username: `hanoiseller`, Role: `seller`, Shop ID: `839910244`, Shop Name: `Hanoi Streetwear Co.`).
+- **Navigation Flow**:
+  - Clicking **Seller Center** in the header or mobile drawer routes unauthenticated users or buyers to `/login` with `state: { returnTo: "/seller" }`.
+  - Logging in as a **Buyer** redirects to `/` (Marketplace Homepage to browse products).
+  - Attempting to access `/seller` as a Buyer displays a clear warning notice: *"Vui lòng đăng nhập với tài khoản Người bán để truy cập Kênh Người Bán (Seller Center)."*
+  - Logging in as a **Seller** redirects directly to `/seller` (Seller Center) and automatically binds the active merchant shop context (`shopiz-active-seller-shop-id` & `shopiz-active-seller-shop-name`).
+  - `npm run check:seller-auth` validates this complete end-to-end authentication and redirection lifecycle.
+
+## Vercel Frontend & Render Backend Deployment Guide
+
+Shopiz (`frontend`) is deployed on **Vercel**, while the Shopee Simulator (`backend`) is deployed on **Render**. Follow these steps to connect them:
+
+### 1. Set Frontend Environment Variable on Vercel
+1. Go to your **Vercel Dashboard** $\rightarrow$ select the **Shopiz** project.
+2. Navigate to **Settings** $\rightarrow$ **Environment Variables**.
+3. Add a new variable:
+   - **Key**: `VITE_API_BASE_URL`
+   - **Value**: `https://<your-render-backend>.onrender.com/api/v2` (e.g. `https://shopee-simulator.onrender.com/api/v2`).
+   - **Target**: Production, Preview, and Development.
+4. Click **Save** and trigger a **Redeploy** on Vercel so Vite bakes the production backend API URL into the client bundle.
+
+### 2. Single-Page Application (SPA) Routing on Vercel
+- The repository includes [`vercel.json`](file:///Users/nguyetminh/Dev/shopee-docs/shopee-markdown/shopiz/vercel.json) at the root of `shopiz/` configured with:
+  ```json
+  {
+    "rewrites": [
+      {
+        "source": "/(.*)",
+        "destination": "/index.html"
+      }
+    ]
+  }
+  ```
+- This ensures direct visits to client-side routes (e.g. `/seller`, `/login`, `/cart`, `/product/1`) are served `index.html` without 404 errors.
+
+### 3. Backend CORS Configuration on Render
+- Ensure your Render backend service allows requests from your Vercel domain. In `src/app.ts`, CORS is configured to accept configured origins or all origins in simulator mode:
+  ```typescript
+  app.use(cors({ origin: true, credentials: true }));
+  ```
+- If you have an active database on Render (PostgreSQL), ensure migrations/seeds have executed:
+  ```sh
+  npm run prisma:deploy
+  npm run prisma:seed
+  ```
+
