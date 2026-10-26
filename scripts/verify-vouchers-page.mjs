@@ -99,9 +99,8 @@ try {
   const hoanXuRadio = page.locator("input[type='radio'][disabled]");
   assert.equal(await hoanXuRadio.isDisabled(), true, "Hoàn Xu must be disabled");
 
-  // Verify Smart Voucher switch toggle
-  const smartVoucherInput = page.locator("input[type='checkbox']").first();
-  await smartVoucherInput.waitFor();
+  // Verify Smart Voucher section is completely removed
+  assert.equal(await page.getByText("Mã giảm giá thông minh").count(), 0, "Mã giảm giá thông minh must be removed");
 
   // Fill in form fields
   const uniqueCodeSuffix = "T" + String(Date.now()).slice(-4);
@@ -116,8 +115,50 @@ try {
   await page.getByRole("heading", { name: "Danh sách mã giảm giá", exact: true }).waitFor();
   await page.getByText("Automation Voucher Shop Wide").first().waitFor();
 
-  // 6. Verify Product Voucher Workflow & Modal
-  console.log("8. Verifying Product Voucher selection modal...");
+  // 6. Verify Follower Voucher Creation Workflow (usecase 9)
+  console.log("8. Verifying Follower Voucher creation workflow...");
+  await page.getByRole("button", { name: "Tạo Ưu đãi Follower" }).click();
+
+  // Verify form cards and Follower-specific requirements
+  await page.getByRole("heading", { name: "Thông tin cơ bản", exact: true }).waitFor();
+  await page.getByRole("heading", { name: "Thiết lập mã giảm giá", exact: true }).waitFor();
+  await page.getByRole("heading", { name: "Hiển thị mã giảm giá và các sản phẩm áp dụng", exact: true }).waitFor();
+
+  await page.getByText("Tên chương trình Ưu Đãi Follower sẽ không được hiển thị cho Người mua.").waitFor();
+  await page.getByText("Mã giảm giá sẽ được tự động gửi đi").waitFor();
+  await page.getByText("Thời hạn nhận Voucher").waitFor();
+  await page.getByText("7 ngày kể từ lúc Voucher được lưu vào Kho Voucher").waitFor();
+  await page.getByText("Những mã Voucher hấp dẫn sẽ thu hút thêm nhiều khách và tăng lượng theo dõi cho Shop bạn.").waitFor();
+
+  // Check no "Thêm sản phẩm" button for follower vouchers
+  assert.equal(await page.getByRole("button", { name: "Thêm sản phẩm" }).count(), 0, "Follower voucher must not have product selector");
+
+  // Fill follower voucher details
+  const followerName = "Follower " + String(Date.now()).slice(-4);
+  await page.getByPlaceholder("Nhập vào").first().fill(followerName);
+
+  // Submit follower voucher
+  await page.getByRole("button", { name: "Xác nhận", exact: true }).click();
+
+  // Verify returned to list and follower voucher is listed with "Người theo dõi mới"
+  await page.getByRole("heading", { name: "Danh sách mã giảm giá", exact: true }).waitFor();
+  await page.getByText(followerName).first().waitFor();
+  await page.getByText("Người theo dõi mới").first().waitFor();
+
+  // Verify Follower Voucher Detail Modal
+  console.log("9. Verifying Follower Voucher detail modal...");
+  const followerRow = page.locator("tr", { hasText: followerName });
+  await followerRow.getByRole("button", { name: "Chi tiết" }).click();
+  await page.getByRole("heading", { name: "Chi tiết mã giảm giá" }).waitFor();
+  await page.getByText("Voucher Ưu Đãi Follower").first().waitFor();
+  await page.getByText("Người theo dõi mới (Followers)").waitFor();
+  await page.getByText("Tự động gửi khi theo dõi Shop").waitFor();
+  await page.getByText("7 ngày kể từ lúc Voucher được lưu vào Kho Voucher").waitFor();
+  await page.getByRole("button", { name: "Đóng" }).last().click();
+  await page.getByRole("heading", { name: "Chi tiết mã giảm giá" }).waitFor({ state: "detached" });
+
+  // 7. Verify Product Voucher Workflow & Modal
+  console.log("10. Verifying Product Voucher selection modal...");
   await page.getByRole("button", { name: "Tạo Voucher sản phẩm" }).click();
 
   await page.getByRole("button", { name: "Thêm sản phẩm" }).click();

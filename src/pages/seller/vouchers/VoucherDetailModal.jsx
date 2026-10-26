@@ -29,7 +29,7 @@ const USECASE_NAMES = {
   5: "Voucher riêng tư",
   6: "Voucher Shopee Live",
   7: "Voucher Shopee Video",
-  9: "Ưu đãi Follower",
+  9: "Voucher Ưu Đãi Follower",
 };
 
 export default function VoucherDetailModal({ isOpen, voucher, onClose }) {
@@ -55,6 +55,8 @@ export default function VoucherDetailModal({ isOpen, voucher, onClose }) {
       ? "Khách hàng mới (chưa từng mua tại Shop)"
       : voucher.usecase === 4
       ? `Khách hàng mua lại (${voucher.target_voucher === 3 ? "Đã có 2+ đơn hàng" : "Đã có 1 đơn hàng"})`
+      : voucher.usecase === 9
+      ? "Người theo dõi mới (Followers)"
       : "Tất cả Người mua";
 
   const channelLabel =
@@ -64,6 +66,8 @@ export default function VoucherDetailModal({ isOpen, voucher, onClose }) {
       ? "Shopee Live"
       : voucher.usecase === 7
       ? "Shopee Video"
+      : voucher.usecase === 9
+      ? "Tự động gửi khi theo dõi Shop"
       : voucher.display_channel_list && voucher.display_channel_list.length === 0
       ? "Chia sẻ thông qua mã Voucher"
       : "Hiển thị nhiều nơi";
@@ -110,17 +114,26 @@ export default function VoucherDetailModal({ isOpen, voucher, onClose }) {
                 <span className={styles.value}>{targetLabel}</span>
               </div>
               <div className={styles.field}>
-                <span className={styles.label}>Thời gian sử dụng:</span>
+                <span className={styles.label}>{voucher.usecase === 9 ? "Thời hạn nhận Voucher:" : "Thời gian sử dụng:"}</span>
                 <span className={styles.value}>
                   {formatTimestamp(voucher.start_time)} – {formatTimestamp(voucher.end_time)}
                 </span>
               </div>
-              <div className={styles.field}>
-                <span className={styles.label}>Lưu mã sớm:</span>
-                <span className={styles.value}>
-                  {voucher.display_timing ? "Cho phép lưu trước khi sử dụng" : "Không áp dụng"}
-                </span>
-              </div>
+              {voucher.usecase === 9 ? (
+                <div className={styles.field}>
+                  <span className={styles.label}>Ngày Hết hạn:</span>
+                  <span className={styles.value}>
+                    7 ngày kể từ lúc Voucher được lưu vào Kho Voucher
+                  </span>
+                </div>
+              ) : (
+                <div className={styles.field}>
+                  <span className={styles.label}>Lưu mã sớm:</span>
+                  <span className={styles.value}>
+                    {voucher.display_timing ? "Cho phép lưu trước khi sử dụng" : "Không áp dụng"}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 

@@ -98,11 +98,10 @@ const USECASE_DETAILS = {
     section: "audience",
   },
   9: {
-    name: "Ưu đãi Follower",
+    name: "Voucher Ưu Đãi Follower",
     desc: "Khuyến khích người mua theo dõi Shop bằng cách tặng Voucher cho người theo dõi mới",
     icon: HeartHandshake,
     section: "audience",
-    disabled: true,
   },
 };
 
@@ -149,7 +148,6 @@ export default function VouchersPage({ shopId = 727720655 }) {
 
   // Benefit settings
   const [formRewardType, setFormRewardType] = useState(1); // 1: discount, 3: coins (disabled)
-  const [formSmartVoucher, setFormSmartVoucher] = useState(false);
   const [formDiscountType, setFormDiscountType] = useState("amount"); // 'amount' | 'percent'
   const [formDiscountAmount, setFormDiscountAmount] = useState(10000);
   const [formDiscountPercent, setFormDiscountPercent] = useState(10);
@@ -235,14 +233,13 @@ export default function VouchersPage({ shopId = 727720655 }) {
     setFormDisplayTiming(false);
 
     setFormRewardType(1);
-    setFormSmartVoucher(false);
     setFormDiscountType("amount");
     setFormDiscountAmount(10000);
     setFormDiscountPercent(10);
     setFormHasMaxPrice(false);
     setFormMaxPrice(50000);
     setFormMinBasketPrice(50000);
-    setFormUsageQuantity(100);
+    setFormUsageQuantity(usecase === 9 ? 50 : 100);
     setFormMaxPerBuyer(1);
 
     // Channel & Audience defaults based on usecase
@@ -320,14 +317,18 @@ export default function VouchersPage({ shopId = 727720655 }) {
 
     // Validate name
     if (!formVoucherName.trim()) {
-      setFormError("Vui lòng nhập tên chương trình giảm giá.");
+      setFormError(formUsecase === 9 ? "Vui lòng nhập tên chương trình Ưu Đãi Follower." : "Vui lòng nhập tên chương trình giảm giá.");
+      return;
+    }
+    if (formUsecase === 9 && formVoucherName.trim().length > 20) {
+      setFormError("Tên chương trình Ưu Đãi Follower không được vượt quá 20 ký tự.");
       return;
     }
 
-    // Validate code for non-Live/Video
+    // Validate code for non-Live/Video/Follower
     const prefix = voucherConfig.prefix || "SMAR";
     let fullCode = "";
-    if (formUsecase !== 6 && formUsecase !== 7) {
+    if (formUsecase !== 6 && formUsecase !== 7 && formUsecase !== 9) {
       if (!formCodeSuffix.trim()) {
         setFormError("Vui lòng nhập mã voucher (tối đa 5 ký tự chữ cái và số).");
         return;
@@ -404,6 +405,8 @@ export default function VouchersPage({ shopId = 727720655 }) {
           ? [4]
           : formUsecase === 7
           ? [3]
+          : formUsecase === 9
+          ? [1]
           : formDisplayChannel === "private"
           ? []
           : [1],
@@ -667,26 +670,26 @@ export default function VouchersPage({ shopId = 727720655 }) {
                       </div>
                     </div>
 
-                    <div className={`${styles.voucherCard} ${styles.voucherCardDisabled}`}>
+                    <div className={styles.voucherCard}>
                       <div className={styles.cardTop}>
-                        <div className={styles.cardIcon} style={{ background: "#f0f0f0", color: "#999" }}>
+                        <div className={styles.cardIcon}>
                           <HeartHandshake size={22} />
                         </div>
                         <div className={styles.cardInfo}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <h4 className={styles.cardTitle}>Ưu đãi Follower</h4>
-                            <span style={{ fontSize: "10px", background: "#f0f0f0", color: "#888", padding: "1px 5px", borderRadius: 3 }}>
-                              Sắp ra mắt
-                            </span>
-                          </div>
+                          <h4 className={styles.cardTitle}>Ưu đãi Follower</h4>
                           <p className={styles.cardDesc}>
                             Khuyến khích người mua theo dõi Shop bằng cách tặng Voucher cho người theo dõi mới
                           </p>
                         </div>
                       </div>
                       <div className={styles.cardBottom}>
-                        <button type="button" className={styles.disabledBtn} disabled>
-                          Chưa hỗ trợ
+                        <button
+                          type="button"
+                          className={styles.createBtn}
+                          aria-label="Tạo Ưu đãi Follower"
+                          onClick={() => handleOpenCreate(9)}
+                        >
+                          Tạo
                         </button>
                       </div>
                     </div>
@@ -869,6 +872,8 @@ export default function VouchersPage({ shopId = 727720655 }) {
                               ? "Người mua mới"
                               : v.usecase === 4
                               ? `Khách mua lại (${v.target_voucher === 3 ? "2+ đơn" : "1 đơn"})`
+                              : v.usecase === 9
+                              ? "Người theo dõi mới"
                               : "Tất cả Người mua";
 
                           return (
@@ -1026,15 +1031,19 @@ export default function VouchersPage({ shopId = 727720655 }) {
                   <input
                     type="text"
                     className={styles.formInput}
-                    maxLength={100}
-                    placeholder="Nhập tên chương trình..."
+                    maxLength={formUsecase === 9 ? 20 : 100}
+                    placeholder={formUsecase === 9 ? "Nhập vào" : "Nhập tên chương trình..."}
                     value={formVoucherName}
                     onChange={(e) => setFormVoucherName(e.target.value)}
                   />
-                  <span className={styles.charCounter}>{formVoucherName.length}/100</span>
+                  <span className={styles.charCounter}>
+                    {formVoucherName.length}/{formUsecase === 9 ? 20 : 100}
+                  </span>
                 </div>
                 <span className={styles.helperText}>
-                  Tên Voucher sẽ không được hiển thị cho Người mua
+                  {formUsecase === 9
+                    ? "Tên chương trình Ưu Đãi Follower sẽ không được hiển thị cho Người mua."
+                    : "Tên Voucher sẽ không được hiển thị cho Người mua"}
                 </span>
               </div>
             </div>
@@ -1045,7 +1054,11 @@ export default function VouchersPage({ shopId = 727720655 }) {
                 <span className={styles.requiredStar}>*</span> Mã voucher
               </div>
               <div className={styles.formControl}>
-                {formUsecase === 6 || formUsecase === 7 ? (
+                {formUsecase === 9 ? (
+                  <span style={{ fontSize: 13, color: "#666", paddingTop: 8 }}>
+                    Mã giảm giá sẽ được tự động gửi đi
+                  </span>
+                ) : formUsecase === 6 || formUsecase === 7 ? (
                   <div className={styles.orangeNotice} style={{ marginTop: 0 }}>
                     Mã voucher sẽ được hệ thống tạo tự động khi lưu chương trình theo tiêu chuẩn Shopee Live & Video.
                   </div>
@@ -1075,7 +1088,7 @@ export default function VouchersPage({ shopId = 727720655 }) {
             {/* Thời gian sử dụng */}
             <div className={styles.formRow}>
               <div className={styles.formLabel}>
-                <span className={styles.requiredStar}>*</span> Thời gian sử dụng mã
+                <span className={styles.requiredStar}>*</span> {formUsecase === 9 ? "Thời hạn nhận Voucher" : "Thời gian sử dụng mã"}
               </div>
               <div className={styles.formControl}>
                 <div className={styles.dateTimeRow}>
@@ -1093,17 +1106,30 @@ export default function VouchersPage({ shopId = 727720655 }) {
                     onChange={(e) => setFormEndTime(e.target.value)}
                   />
                 </div>
-                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#555", marginTop: 6, cursor: "pointer" }}>
-                  <input
-                    type="checkbox"
-                    checked={formDisplayTiming}
-                    onChange={(e) => setFormDisplayTiming(e.target.checked)}
-                    style={{ accentColor: "#ee4d2d" }}
-                  />
-                  Cho phép lưu mã trước Thời gian sử dụng
-                </label>
+                {formUsecase !== 9 && (
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#555", marginTop: 6, cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={formDisplayTiming}
+                      onChange={(e) => setFormDisplayTiming(e.target.checked)}
+                      style={{ accentColor: "#ee4d2d" }}
+                    />
+                    Cho phép lưu mã trước Thời gian sử dụng
+                  </label>
+                )}
               </div>
             </div>
+
+            {formUsecase === 9 && (
+              <div className={styles.formRow}>
+                <div className={styles.formLabel}>Ngày Hết hạn</div>
+                <div className={styles.formControl}>
+                  <span style={{ fontSize: 13, color: "#333", fontWeight: 500, paddingTop: 8 }}>
+                    7 ngày kể từ lúc Voucher được lưu vào Kho Voucher
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* Targeting conditions for New / Returning Buyer */}
             {formUsecase === 3 && (
@@ -1195,21 +1221,6 @@ export default function VouchersPage({ shopId = 727720655 }) {
               </div>
             </div>
 
-            {/* Smart voucher row */}
-            <div className={styles.smartVoucherRow}>
-              <span className={styles.smartVoucherLabel}>
-                Mã giảm giá thông minh <Info size={14} style={{ color: "#999", cursor: "help" }} title="Tự động tối ưu ngân sách theo gợi ý của hệ thống" />
-              </span>
-              <label className={styles.switchToggle}>
-                <input
-                  type="checkbox"
-                  checked={formSmartVoucher}
-                  onChange={(e) => setFormSmartVoucher(e.target.checked)}
-                />
-                <span className={styles.switchSlider} />
-              </label>
-            </div>
-
             {/* Discount type & amount */}
             <div className={styles.formRow}>
               <div className={styles.formLabel}>
@@ -1235,6 +1246,7 @@ export default function VouchersPage({ shopId = 727720655 }) {
                         className={styles.currencyInput}
                         min={1000}
                         step={1000}
+                        placeholder={formUsecase === 9 ? "Nhập vào" : ""}
                         value={formDiscountAmount}
                         onChange={(e) => setFormDiscountAmount(Number(e.target.value))}
                       />
@@ -1247,6 +1259,7 @@ export default function VouchersPage({ shopId = 727720655 }) {
                         style={{ width: 80 }}
                         min={1}
                         max={99}
+                        placeholder={formUsecase === 9 ? "Nhập vào" : ""}
                         value={formDiscountPercent}
                         onChange={(e) => setFormDiscountPercent(Number(e.target.value))}
                       />
@@ -1254,6 +1267,12 @@ export default function VouchersPage({ shopId = 727720655 }) {
                     </div>
                   )}
                 </div>
+
+                {formUsecase === 9 && (
+                  <span className={styles.helperText} style={{ marginTop: 6, display: "block" }}>
+                    Những mã Voucher hấp dẫn sẽ thu hút thêm nhiều khách và tăng lượng theo dõi cho Shop bạn.
+                  </span>
+                )}
 
                 {formDiscountType === "percent" && (
                   <div style={{ marginTop: 8 }}>
@@ -1308,6 +1327,7 @@ export default function VouchersPage({ shopId = 727720655 }) {
                     className={styles.currencyInput}
                     min={0}
                     step={1000}
+                    placeholder={formUsecase === 9 ? "Nhập vào" : ""}
                     value={formMinBasketPrice}
                     onChange={(e) => setFormMinBasketPrice(Number(e.target.value))}
                   />
@@ -1326,27 +1346,32 @@ export default function VouchersPage({ shopId = 727720655 }) {
                   className={styles.formInput}
                   style={{ width: 180 }}
                   min={1}
+                  placeholder={formUsecase === 9 ? "Nhập vào" : ""}
                   value={formUsageQuantity}
                   onChange={(e) => setFormUsageQuantity(Number(e.target.value))}
                 />
-                <span className={styles.helperText}>Tổng số Mã giảm giá có thể sử dụng</span>
+                <span className={styles.helperText}>
+                  {formUsecase === 9 ? "Tổng số lượt sử dụng mã tối đa" : "Tổng số Mã giảm giá có thể sử dụng"}
+                </span>
               </div>
             </div>
 
             {/* Max per buyer */}
-            <div className={styles.formRow}>
-              <div className={styles.formLabel}>Lượt sử dụng tối đa/Người mua</div>
-              <div className={styles.formControl}>
-                <input
-                  type="number"
-                  className={styles.formInput}
-                  style={{ width: 180 }}
-                  min={1}
-                  value={formMaxPerBuyer}
-                  onChange={(e) => setFormMaxPerBuyer(Number(e.target.value))}
-                />
+            {formUsecase !== 9 && (
+              <div className={styles.formRow}>
+                <div className={styles.formLabel}>Lượt sử dụng tối đa/Người mua</div>
+                <div className={styles.formControl}>
+                  <input
+                    type="number"
+                    className={styles.formInput}
+                    style={{ width: 180 }}
+                    min={1}
+                    value={formMaxPerBuyer}
+                    onChange={(e) => setFormMaxPerBuyer(Number(e.target.value))}
+                  />
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Card 3: Hiển thị mã giảm giá và các sản phẩm áp dụng */}
@@ -1354,46 +1379,53 @@ export default function VouchersPage({ shopId = 727720655 }) {
             <h3 className={styles.formCardTitle}>Hiển thị mã giảm giá và các sản phẩm áp dụng</h3>
 
             {/* Thiết lập hiển thị */}
-            <div className={styles.formRow}>
-              <div className={styles.formLabel}>Thiết lập hiển thị</div>
-              <div className={styles.formControl}>
-                {formUsecase === 5 ? (
-                  <div className={styles.radioGroup}>
-                    <label className={styles.radioLabel}>
-                      <input type="radio" checked readOnly />
-                      Chia sẻ thông qua mã Voucher (Riêng tư)
-                    </label>
-                  </div>
-                ) : (
-                  <div className={styles.radioGroup}>
-                    <label className={styles.radioLabel}>
-                      <input
-                        type="radio"
-                        name="displayChannel"
-                        checked={formDisplayChannel === "all"}
-                        onChange={() => setFormDisplayChannel("all")}
-                      />
-                      Hiển thị nhiều nơi <Info size={13} style={{ color: "#999" }} title="Hiển thị trên trang chủ Shop, chi tiết sản phẩm, giỏ hàng" />
-                    </label>
-                    <label className={styles.radioLabel}>
-                      <input
-                        type="radio"
-                        name="displayChannel"
-                        checked={formDisplayChannel === "private"}
-                        onChange={() => setFormDisplayChannel("private")}
-                      />
-                      Chia sẻ thông qua mã Voucher <Info size={13} style={{ color: "#999" }} title="Chỉ những người nhận được mã voucher mới có thể áp dụng" />
-                    </label>
-                  </div>
-                )}
+            {formUsecase !== 9 && (
+              <div className={styles.formRow}>
+                <div className={styles.formLabel}>Thiết lập hiển thị</div>
+                <div className={styles.formControl}>
+                  {formUsecase === 5 ? (
+                    <div className={styles.radioGroup}>
+                      <label className={styles.radioLabel}>
+                        <input type="radio" checked readOnly />
+                        Chia sẻ thông qua mã Voucher (Riêng tư)
+                      </label>
+                    </div>
+                  ) : (
+                    <div className={styles.radioGroup}>
+                      <label className={styles.radioLabel}>
+                        <input
+                          type="radio"
+                          name="displayChannel"
+                          checked={formDisplayChannel === "all"}
+                          onChange={() => setFormDisplayChannel("all")}
+                        />
+                        Hiển thị nhiều nơi <Info size={13} style={{ color: "#999" }} title="Hiển thị trên trang chủ Shop, chi tiết sản phẩm, giỏ hàng" />
+                      </label>
+                      <label className={styles.radioLabel}>
+                        <input
+                          type="radio"
+                          name="displayChannel"
+                          checked={formDisplayChannel === "private"}
+                          onChange={() => setFormDisplayChannel("private")}
+                        />
+                        Chia sẻ thông qua mã Voucher <Info size={13} style={{ color: "#999" }} title="Chỉ những người nhận được mã voucher mới có thể áp dụng" />
+                      </label>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Sản phẩm được áp dụng */}
             <div className={styles.formRow}>
               <div className={styles.formLabel}>Sản phẩm được áp dụng</div>
               <div className={styles.formControl}>
-                {formUsecase !== 2 ? (
+                {formUsecase === 9 ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, paddingTop: 4 }}>
+                    <strong style={{ fontSize: 13, color: "#222" }}>Tất cả sản phẩm</strong>
+                    <Info size={14} style={{ color: "#999", cursor: "help" }} title="Áp dụng cho toàn bộ sản phẩm đang hoạt động của Shop" />
+                  </div>
+                ) : formUsecase !== 2 ? (
                   <>
                     <strong style={{ fontSize: 13, color: "#222" }}>Tất cả sản phẩm</strong>
                     <div className={styles.orangeNotice}>
