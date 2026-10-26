@@ -18,6 +18,7 @@
     "check:seller-auth": "node scripts/verify-seller-auth-flow.mjs",
     "check:seller-vouchers": "node scripts/verify-vouchers-page.mjs",
     "check:chat-management": "node scripts/verify-chat-management.mjs",
+    "check:test-control": "node scripts/verify-test-control.mjs",
     "check:seller-pagination": "node scripts/verify-seller-pagination.mjs",
     "check:auth": "node scripts/verify-auth.mjs",
     "check:product": "node scripts/verify-product.mjs",

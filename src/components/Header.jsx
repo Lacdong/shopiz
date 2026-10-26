@@ -109,6 +109,10 @@ export function UtilityNav() {
           Seller Center
         </Link>
         <i />
+        <Link to="/test-control" style={{ color: "#7b2cbf", fontWeight: 700 }}>
+          Test Control
+        </Link>
+        <i />
         <Link to="/download">Download App</Link>
         <i />
         <span>Follow Us</span>

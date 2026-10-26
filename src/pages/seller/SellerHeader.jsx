@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Bell, CircleHelp, Store, ArrowLeftRight, ShoppingBag, Menu } from "lucide-react";
+import { Bell, CircleHelp, Store, ArrowLeftRight, ShoppingBag, Menu, Sliders } from "lucide-react";
 import s from "./SellerHeader.module.css";
 
 export default function SellerHeader({
@@ -43,6 +43,17 @@ export default function SellerHeader({
       </div>
 
       <div className={s.right}>
+        <Link
+          to="/test-control"
+          className={s.switchShopBtn}
+          style={{ background: "#f3e8ff", color: "#7b2cbf", borderColor: "#d8b4fe" }}
+          title="Bảng điều khiển Admin & Test Simulator"
+          aria-label="Test Control"
+        >
+          <Sliders size={14} />
+          <span>Test Control</span>
+        </Link>
+
         <Link
           to="/seller/select-shop"
           className={s.switchShopBtn}

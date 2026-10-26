@@ -23,6 +23,7 @@ import SellerCenter from "./pages/seller/SellerCenter";
 import ShopSelectPage from "./pages/seller/ShopSelectPage";
 import SellerRouteGuard from "./components/auth/SellerRouteGuard";
 import ErrorBoundary from "./components/common/ErrorBoundary";
+import TestControlPage from "./pages/admin/TestControlPage";
 function ScrollManager() {
   const { pathname, search, hash } = useLocation();
   useEffect(() => {
@@ -63,6 +64,8 @@ export default function App() {
             </SellerRouteGuard>
           }
         />
+        <Route path="test-control" element={<TestControlPage />} />
+        <Route path="admin" element={<TestControlPage />} />
         <Route element={<AuthLayout />}>
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />

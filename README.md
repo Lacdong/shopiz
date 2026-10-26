@@ -14,6 +14,7 @@ npm run check:shop-select
 npm run check:seller
 npm run check:seller-vouchers
 npm run check:chat-management
+npm run check:test-control
 npm run check:shipping-chat
 npm run check:checkout
 npm run check:purchases
@@ -31,6 +32,7 @@ npm run check:purchases
 - `src/services/orderService.js`: live purchases synchronization, buyer delivery confirmation (escrow release), cancellation, 5-star product reviews, and return/refund claims.
 - `src/services/sellerService.js`: multi-shop listing (`GET /simulator/shops`), live orders retrieval, order shipment arrangement (`POST /simulator/order/ship`), printable Air Waybill generation/PDF download, inventory stock management, and Seller Center live business metrics.
 - `src/services/mediaService.js`: cloud photo/video upload directly to Google Drive (with local storage fallback).
+- `src/services/adminService.js`: comprehensive testbed API client powering the **Test Control (Admin Console)** at `/test-control` and `/admin`—supporting Shopee Platform dispute & return arbitration (`reviewReturn`, `warehouseInbound`, `arbitrateDispute`), outbound webhook dispatch & live audit logs (`setWebhookUrl`, `triggerWebhook`, `getWebhookLogs`), simulator fault injection (`getFaultConfig`, `updateFaultConfig`, `resetFaultConfig`), order lifecycle fast-forward (`advanceOrderPaid`, `advanceOrderCarrierPickup`, `advanceOrderDelivered`, `expireOverdueOrders`), and multi-store OAuth 2.0 token monitoring & renewal (`getShops`, `getShopOverview`, `toggleVacation`, `refreshToken`).
 
 ## Implementation
 

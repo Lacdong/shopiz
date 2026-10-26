@@ -1,0 +1,298 @@
+.card {
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.cardHead {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.cardDesc {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 4px 0 0;
+}
+
+.filterTabs {
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px 0;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+  overflow-x: auto;
+}
+
+.filterBtn {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.filterBtn:hover {
+  color: #7b2cbf;
+}
+
+.filterBtn.activeFilter {
+  color: #7b2cbf;
+  border-bottom-color: #7b2cbf;
+  font-weight: 700;
+}
+
+/* Table */
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.table th {
+  background: #f9fafb;
+  color: #4b5563;
+  font-weight: 600;
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #1f2937;
+  vertical-align: middle;
+}
+
+.table tr:hover {
+  background: #fdfcff;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.bold {
+  font-weight: 700;
+}
+
+/* Status Badges */
+.badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.badgeJudging {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badgeProcessing {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.badgeDispute {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.badgeAccepted {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badgeClosed {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.badgeRequested {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+/* Actions */
+.actionsCell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.btnSecondary {
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btnSecondary:hover {
+  background: #e5e7eb;
+}
+
+.btnPrimary {
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #7b2cbf;
+  color: #ffffff;
+  border: 1px solid #7b2cbf;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btnPrimary:hover {
+  background: #5a189a;
+}
+
+.btnDispute {
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #dc2626;
+  color: #ffffff;
+  border: 1px solid #dc2626;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btnDispute:hover {
+  background: #b91c1c;
+}
+
+.btnSuccess {
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #059669;
+  color: #ffffff;
+  border: 1px solid #059669;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btnSuccess:hover {
+  background: #047857;
+}
+
+/* Case Details Modal specifics */
+.detailSection {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.sectionHeader {
+  font-size: 12px;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.proofGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.proofThumb {
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid #d1d5db;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.proofThumb:hover {
+  transform: scale(1.05);
+}
+
+.proofVideo {
+  width: 140px;
+  height: 90px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: #000;
+}
+
+.formGroup {
+  margin-bottom: 14px;
+}
+
+.formLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.formInput, .formTextarea, .formSelect {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+}
+
+.formInput:focus, .formTextarea:focus, .formSelect:focus {
+  border-color: #7b2cbf;
+  box-shadow: 0 0 0 1px #7b2cbf;
+}
+
+.emptyState {
+  padding: 48px 16px;
+  text-align: center;
+  color: #9ca3af;
+}
