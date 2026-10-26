@@ -86,7 +86,11 @@ export default function QuickReplySettingsPage({ shopId = 727720655, onNavigateT
   // Toggle group expand / collapse
   const handleToggleExpand = (groupId) => {
     setGroups((prev) =>
-      prev.map((g) => (g.id === groupId ? { ...g, expanded: !g.expanded } : g))
+      prev.map((g) => {
+        if (g.id !== groupId) return g;
+        const currentExpanded = g.expanded !== false;
+        return { ...g, expanded: !currentExpanded };
+      })
     );
   };
 

@@ -6,6 +6,7 @@ const page = await browser.newPage();
 const base = process.env.SHOPIZ_URL || "http://127.0.0.1:5173";
 const errors = [];
 page.on("pageerror", (error) => errors.push(error.message));
+page.on("dialog", (dialog) => dialog.accept());
 
 try {
   console.log("1. Navigating to Seller Center Chat Management (?tab=chat)...");
@@ -70,6 +71,7 @@ try {
   await textarea.fill("Cảm ơn bạn đã nhắn tin cho shop SmartOmni. Chúng tôi sẽ phản hồi ngay!");
   await page.getByRole("button", { name: "Lưu", exact: true }).click();
   await page.getByText("Cảm ơn bạn đã nhắn tin cho shop SmartOmni. Chúng tôi sẽ phản hồi ngay!").waitFor();
+  await standardSwitchLabel.click(); // toggle back to false (clean state)
 
   // 6. Test Navigation to "Tin nhắn nhanh"
   console.log("7. Navigating to 'Tin nhắn nhanh' (?tab=chat_quick_reply)...");
@@ -87,6 +89,7 @@ try {
   await page.getByRole("heading", { name: "Hiển thị dấu tin nhắn nhanh tự động" }).waitFor();
   const visSwitchLabel = page.locator("label[title='Bật/Tắt gợi ý tin nhắn nhanh']");
   await visSwitchLabel.click(); // toggle
+  await visSwitchLabel.click(); // toggle back to true (clean state)
 
   // Card 2: Pre-seeded messages in "Nhóm Tin nhắn chung"
   console.log("9. Verifying 13 pre-seeded messages...");
@@ -119,6 +122,12 @@ try {
   // Verify newly created group
   await page.getByText(newGroupName, { exact: true }).waitFor();
   await page.getByText(/Tin nhắn nhanh cá nhân \(\d+\/25\)/).waitFor();
+
+  // Clean up: delete test group so it does not pollute seller dashboard
+  const deleteBtn = page.getByRole("button", { name: `Xóa nhóm ${newGroupName}` });
+  await deleteBtn.click();
+  await page.getByText(newGroupName).waitFor({ state: "detached" });
+  await page.getByText("Tin nhắn nhanh cá nhân (1/25)").waitFor();
 
   // 11. Test Right-Side Floating Seller Webchat Widget
   console.log("11. Testing Right-Side Floating Seller Webchat Widget...");

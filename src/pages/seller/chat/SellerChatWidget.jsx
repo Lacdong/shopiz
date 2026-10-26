@@ -21,7 +21,7 @@ export default function SellerChatWidget({ shopId = 727720655, shopName = "Smart
   const [inputMessage, setInputMessage] = useState("");
   const [quickMessages, setQuickMessages] = useState([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
-  const messagesEndRef = useRef(null);
+  const messagesScrollRef = useRef(null);
 
   // Poll / fetch shop conversations
   const loadConversations = () => {
@@ -78,9 +78,11 @@ export default function SellerChatWidget({ shopId = 727720655, shopName = "Smart
       });
   }, [shopId, selectedBuyerId, isOpen]);
 
-  // Auto-scroll to bottom of messages
+  // Auto-scroll to bottom of messages container
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesScrollRef.current) {
+      messagesScrollRef.current.scrollTop = messagesScrollRef.current.scrollHeight;
+    }
   }, [messages]);
 
   const totalUnread = conversations.reduce(
@@ -254,7 +256,7 @@ export default function SellerChatWidget({ shopId = 727720655, shopName = "Smart
                   </div>
 
                   {/* Messages Scroll Area */}
-                  <div className={s.messagesScroll}>
+                  <div className={s.messagesScroll} ref={messagesScrollRef}>
                     {messages.length > 0 ? (
                       messages.map((m, idx) => {
                         const isSeller = m.sender_type === "SELLER";
@@ -276,7 +278,6 @@ export default function SellerChatWidget({ shopId = 727720655, shopName = "Smart
                         <span>Bắt đầu cuộc trò chuyện với người mua</span>
                       </div>
                     )}
-                    <div ref={messagesEndRef} />
                   </div>
 
                   {/* Quick Message Shortcuts Bar */}
