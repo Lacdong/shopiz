@@ -112,6 +112,57 @@ export const sellerService = {
     });
     return data;
   },
+
+  async getVoucherConfig(shopId) {
+    const query = new URLSearchParams({ shop_id: String(shopId) });
+    return api.get(`/simulator/voucher/config?${query.toString()}`);
+  },
+
+  async getVouchers(shopId, { status = "all", searchType = "voucher_name", keyword = "", pageNo = 1, pageSize = 20 } = {}) {
+    const query = new URLSearchParams({
+      shop_id: String(shopId),
+      status,
+      search_type: searchType,
+      page_no: String(pageNo),
+      page_size: String(pageSize),
+    });
+    if (keyword) query.set("keyword", keyword.trim());
+    return api.get(`/simulator/voucher/list?${query.toString()}`);
+  },
+
+  async getVoucherDetail(voucherId, shopId) {
+    const query = new URLSearchParams({
+      voucher_id: String(voucherId),
+      shop_id: String(shopId),
+    });
+    return api.get(`/simulator/voucher/detail?${query.toString()}`);
+  },
+
+  async createVoucher(payload) {
+    return api.post("/simulator/voucher/create", payload);
+  },
+
+  async updateVoucher(payload) {
+    return api.post("/simulator/voucher/update", payload);
+  },
+
+  async endVoucher(voucherId) {
+    return api.post("/simulator/voucher/end", { voucher_id: voucherId });
+  },
+
+  async deleteVoucher(voucherId) {
+    return api.post("/simulator/voucher/delete", { voucher_id: voucherId });
+  },
+
+  async getVoucherOrders(shopId, voucherCode, { pageNo = 1, pageSize = 20 } = {}) {
+    const query = new URLSearchParams({
+      shop_id: String(shopId),
+      voucher_code: String(voucherCode),
+      page_no: String(pageNo),
+      page_size: String(pageSize),
+    });
+    return api.get(`/simulator/voucher/orders?${query.toString()}`);
+  },
 };
 
 export default sellerService;

@@ -36,7 +36,7 @@ export const SIDEBAR_GROUPS = [
       { id: "marketing_live", label: "Live & Video" },
       { id: "marketing_discounts", label: "Khuyến Mãi của Shop" },
       { id: "marketing_flash_sale", label: "Flash Sale Của Shop" },
-      { id: "marketing_vouchers", label: "Mã Giảm Giá Của Shop" },
+      { id: "marketing_vouchers", label: "Mã Giảm Giá Của Shop", aliases: ["vouchers", "shop_vouchers"] },
       { id: "marketing_campaigns", label: "Chương Trình Shopee" },
       { id: "marketing_global", label: "Bán Hàng Toàn Cầu" },
     ],

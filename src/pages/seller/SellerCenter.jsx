@@ -42,6 +42,7 @@ import ProductsPage from "./products/ProductsPage";
 import AddProductPage from "./products/AddProductPage";
 import ReturnsPage from "./returns/ReturnsPage";
 import ReviewsPage from "./reviews/ReviewsPage";
+import VouchersPage from "./vouchers/VouchersPage";
 import s from "./SellerCenter.module.css";
 
 const money = (n) =>
@@ -517,6 +518,10 @@ export default function SellerCenter() {
   const isReturnsTab =
     activeItem.id === "returns" || activeItem.id === "shop_disputes" || rawTab === "returns";
   const isReviewsTab = activeItem.id === "reviews";
+  const isVouchersTab =
+    activeItem.id === "marketing_vouchers" ||
+    rawTab === "vouchers" ||
+    rawTab === "marketing_vouchers";
   const isMarketingTab =
     activeItem.id === "marketing" || rawTab === "marketing";
   const isAnalyticsTab =
@@ -534,6 +539,7 @@ export default function SellerCenter() {
     isCreateProductTab ||
     isReturnsTab ||
     isReviewsTab ||
+    isVouchersTab ||
     isMarketingTab ||
     isAnalyticsTab ||
     isFinanceTab ||
@@ -542,10 +548,11 @@ export default function SellerCenter() {
 
   const activeShopName = resolveShopName(urlShopId || shopId) || savedName;
   const openProductWorkflow = (product) => {
+    const isEdit = Boolean(product && product.item_id);
     const next = new URLSearchParams(params);
     next.set("tab", "products_all");
-    next.set("product_mode", product ? "edit" : "create");
-    if (product) next.set("item_id", String(product.item_id));
+    next.set("product_mode", isEdit ? "edit" : "create");
+    if (isEdit) next.set("item_id", String(product.item_id));
     else next.delete("item_id");
     setParams(next);
   };
@@ -597,6 +604,8 @@ export default function SellerCenter() {
             <ReturnsPage shopId={Number(shopId) || 727720655} />
           ) : isReviewsTab ? (
             <ReviewsPage shopId={Number(shopId) || 727720655} />
+          ) : isVouchersTab ? (
+            <VouchersPage shopId={Number(shopId) || 727720655} />
           ) : isMarketingTab ? (
             <>
               <div className={s.marketingHero}>
