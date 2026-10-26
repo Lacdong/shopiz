@@ -12,6 +12,7 @@ npm run preview
 npm run check:integration
 npm run check:shop-select
 npm run check:seller
+npm run check:seller-vouchers
 npm run check:shipping-chat
 npm run check:checkout
 npm run check:purchases
@@ -143,6 +144,8 @@ Responsive layouts target 1440, 1280, 1024, 768 and 375 pixels. Recommendations 
 - **Review Management (`?tab=reviews`)**: The `Quản lý Đánh Giá` sidebar item opens a shop-scoped dashboard with the backend shop rating, rolling 30-day and prior-period review metrics, unanswered 1–2 star reviews, and reviews since the selected shop’s previous visit. The UI includes status and multi-star filters, keyword/date search, pagination, product and variation details, copyable order IDs, and inline seller replies. The unsupported review-reward card is intentionally omitted.
 - Review data uses the simulator Layer B APIs: `GET /api/v2/simulator/reviews/summary`, `GET /api/v2/simulator/reviews`, and `POST /api/v2/simulator/review/reply`. The summary’s review rate uses completed-order cohorts; positive-review rate counts 4–5 stars. Missing denominators/baselines display as unavailable (`—`). Replies include the active `shop_id` and are ownership-checked by the backend.
 - `npm run check:reviews` verifies the Seller Center review dashboard, filters, empty-search state and reset flow.
+- **Shop Voucher Management (`?tab=marketing_vouchers` / `?tab=vouchers`)**: The `Mã Giảm Giá Của Shop` sidebar menu opens the comprehensive vouchers management interface. State A (Landing page) presents 3 grouped card sections (`Cải thiện tỷ lệ chuyển đổi`, `Kênh hiển thị Voucher`, `Khách hàng mục tiêu`) supporting all 7 Shopee usecases, with an interactive `Thu gọn` / `Mở rộng` toggle. State B (List view) provides status sub-tabs (`Tất cả`, `Đang diễn ra`, `Sắp diễn ra`, `Đã kết thúc`), search by voucher name or code, usage metrics with tooltip, and actions (`Chi tiết`, `Đơn hàng`, `Sao chép`, `Kết thúc`, `Xóa`). State C (Creation & edit workflow) configures codes with shop prefixes (`SMAR`, `HANO`, `SAIG`), validates dates/spend, visibly greys out unsupported Shopee Coins (`Hoàn Xu`), and provides `ProductSelectModal` for item-level selection.
+- `npm run check:seller-vouchers` verifies the complete Seller Center vouchers landing page, status filtering, details and orders modal inspection, voucher creation workflow, and product selector modal.
 - **Marketing Center**: Displays active store vouchers and campaign discounts directly from the database.
 - `npm run check:shop-select` verifies responsive layouts, store listing, card selection, navigation, and header switcher.
 - `npm run check:seller` verifies responsive layouts, order actions, CSV download, product actions, marketing, shop editing and navigation. `npm run check:extra-info` verifies metric batching/rendering, one visit increment per detail visit, guest login return, and persisted likes. Set `SHOPIZ_URL` to the local preview URL when needed.
