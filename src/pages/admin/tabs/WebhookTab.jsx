@@ -68,7 +68,8 @@ const EVENT_TEMPLATES = {
 };
 
 export default function WebhookTab({ showToast }) {
-  const [webhookUrl, setWebhookUrl] = useState("http://127.0.0.1:8080/api/v2/simulator/webhook/sink");
+  const apiHost = (import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8080").replace(/\/+$/, "");
+  const [webhookUrl, setWebhookUrl] = useState(`${apiHost}/api/v2/simulator/webhook/sink`);
   const [logs, setLogs] = useState([]);
   const [totalLogs, setTotalLogs] = useState(0);
   const [loadingLogs, setLoadingLogs] = useState(false);
@@ -130,9 +131,9 @@ export default function WebhookTab({ showToast }) {
   };
 
   const handleUseMockSink = () => {
-    const defaultSink = `${window.location.protocol}//${window.location.hostname}:8080/api/v2/simulator/webhook/sink`;
+    const defaultSink = `${apiHost}/api/v2/simulator/webhook/sink`;
     setWebhookUrl(defaultSink);
-    showToast("Đã điền địa chỉ Mock Sink mặc định (Port 8080)");
+    showToast("Đã điền địa chỉ Mock Sink mặc định");
   };
 
   const handleDispatch = async () => {
