@@ -197,7 +197,7 @@ export function QuickAccess() {
   );
 }
 export function CategoryItem({ name, index }) {
-  const Icon = icons[index];
+  const Icon = icons[index % icons.length] || icons[0];
   return (
     <Link className={s.category} to={`/category/${encodeURIComponent(name)}`}>
       <span>

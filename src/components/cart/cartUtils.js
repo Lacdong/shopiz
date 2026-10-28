@@ -9,32 +9,24 @@ export function normalizeCart(input) {
   const result = [];
   for (const item of input) {
     if (!item || typeof item !== "object") continue;
-    const product = products.find((p) => p.id === item.productId);
+    const product = products.find((p) => String(p.id) === String(item.productId));
     if (!product) continue;
     const details = getProductDetails(product);
-    if (
-      !details.variants.includes(item.variant) ||
-      !(
-        (details.sizes.length && details.sizes.includes(item.size)) ||
-        (!details.sizes.length && item.size === "")
-      )
-    )
-      continue;
     const quantity = Math.floor(Number(item.quantity));
     if (!Number.isFinite(quantity) || quantity < 1) continue;
     const remaining =
-      product.stock -
+      (product.stock || 50) -
       result
-        .filter((line) => line.productId === product.id)
+        .filter((line) => String(line.productId) === String(product.id))
         .reduce((sum, line) => sum + line.quantity, 0);
     if (remaining <= 0) continue;
     const existing = result.find((line) => lineId(line) === lineId(item));
     if (existing) existing.quantity += Math.min(quantity, remaining);
     else
       result.push({
-        productId: product.id,
-        variant: item.variant,
-        size: item.size,
+        productId: String(product.id),
+        variant: item.variant || (details.variants?.[0] || "Standard"),
+        size: item.size || "",
         quantity: Math.min(quantity, remaining),
         selected: item.selected !== false,
       });
@@ -49,11 +41,12 @@ export function addCartItem(items, item) {
       added: 0,
       error: "Please choose a valid product option and quantity.",
     };
-  const product = products.find((p) => p.id === clean.productId);
+  const product = products.find((p) => String(p.id) === String(clean.productId));
+  const stock = product?.stock || 50;
   const inCart = items
-    .filter((line) => line.productId === clean.productId)
+    .filter((line) => String(line.productId) === String(clean.productId))
     .reduce((sum, line) => sum + line.quantity, 0);
-  const added = Math.min(clean.quantity, Math.max(0, product.stock - inCart));
+  const added = Math.min(clean.quantity, Math.max(0, stock - inCart));
   if (!added)
     return {
       items,

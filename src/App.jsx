@@ -20,6 +20,10 @@ import PurchasesPage from "./pages/purchases/PurchasesPage";
 import ProfilePage from "./pages/account/ProfilePage";
 import AddressesPage from "./pages/account/AddressesPage";
 import SellerCenter from "./pages/seller/SellerCenter";
+import ShopSelectPage from "./pages/seller/ShopSelectPage";
+import SellerRouteGuard from "./components/auth/SellerRouteGuard";
+import ErrorBoundary from "./components/common/ErrorBoundary";
+import TestControlPage from "./pages/admin/TestControlPage";
 function ScrollManager() {
   const { pathname, search, hash } = useLocation();
   useEffect(() => {
@@ -33,10 +37,35 @@ function ScrollManager() {
 }
 export default function App() {
   return (
-    <>
+    <ErrorBoundary>
       <ScrollManager />
       <Routes>
-        <Route path="seller" element={<SellerCenter />} />
+        <Route
+          path="seller/select-shop"
+          element={
+            <SellerRouteGuard>
+              <ShopSelectPage />
+            </SellerRouteGuard>
+          }
+        />
+        <Route
+          path="seller/select"
+          element={
+            <SellerRouteGuard>
+              <ShopSelectPage />
+            </SellerRouteGuard>
+          }
+        />
+        <Route
+          path="seller"
+          element={
+            <SellerRouteGuard>
+              <SellerCenter />
+            </SellerRouteGuard>
+          }
+        />
+        <Route path="test-control" element={<TestControlPage />} />
+        <Route path="admin" element={<TestControlPage />} />
         <Route element={<AuthLayout />}>
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
@@ -75,6 +104,6 @@ export default function App() {
           ))}
         </Route>
       </Routes>
-    </>
+    </ErrorBoundary>
   );
 }

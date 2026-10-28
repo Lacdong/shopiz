@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Trophy } from "lucide-react";
 import { products, topSearches } from "../../data/catalog";
+import { useCatalog } from "../../components/catalog/CatalogProvider";
 
 import { ProductCard, TrustBar } from "../../components/Commerce";
 import {
@@ -12,11 +13,12 @@ import shared from "../../components/collection/Collection.module.css";
 import page from "./TopProductsPage.module.css";
 const s = { ...shared, ...page };
 export default function TopProductsPage() {
+  const { products: allProducts } = useCatalog();
   const [params, setParams] = useSearchParams();
   const query = params.get("q") || "";
   const [sort, setSort] = useState("sold");
   const topic = topSearches.find((t) => t.query === query);
-  const ranked = products
+  const ranked = allProducts
     .filter(
       (p) =>
         !query ||

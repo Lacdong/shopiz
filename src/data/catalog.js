@@ -150,7 +150,7 @@ const entries = [
     "Home & Living",
   ],
 ];
-export const products = entries.map(
+export const mockProducts = entries.map(
   ([title, photo, price, original, category], index) => ({
     id: String(index + 1),
     title,
@@ -167,6 +167,7 @@ export const products = entries.map(
     mall: index % 3 === 0,
   }),
 );
+export const products = [...mockProducts];
 // Illustrative search trends for the marketplace simulator.
 export const topSearches = [
   {
@@ -205,10 +206,19 @@ export const topSearches = [
   image: products.find((p) => p.id === item.productId).image,
 }));
 
-export const money = (value) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
-    value,
-  );
+export const money = (value) => {
+  const num = Number(value) || 0;
+  if (num >= 1000) {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(num);
+  }
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(num);
+};
 export const banners = [
   {
     eyebrow: "THE EVERYDAY EDIT",

@@ -9,13 +9,14 @@ import {
 } from "lucide-react";
 import s from "./ProductPage.module.css";
 export function Stars({ rating }) {
+  const numRating = Number(rating) || 5;
   return (
-    <span className={s.stars} aria-label={`${rating} out of 5 stars`}>
+    <span className={s.stars} aria-label={`${numRating} out of 5 stars`}>
       {Array.from({ length: 5 }, (_, i) => (
         <Star
           key={i}
           size={13}
-          fill={i < Math.round(rating) ? "currentColor" : "none"}
+          fill={i < Math.round(numRating) ? "currentColor" : "none"}
         />
       ))}
     </span>
@@ -25,13 +26,19 @@ export default function ProductReviews({ product, reviews }) {
   const [filter, setFilter] = useState("All");
   const [page, setPage] = useState(1);
   const [helpful, setHelpful] = useState([]);
-  const filtered = reviews.filter(
+  const safeReviews = Array.isArray(reviews) ? reviews : [];
+  const prodRating = product?.rating || "5.0";
+  const prodImg =
+    product?.image ||
+    "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=500&q=85";
+
+  const filtered = safeReviews.filter(
     (r) =>
       filter === "All" ||
       (filter === "With photos" ? r.hasPhoto : r.rating === Number(filter[0])),
   );
   const visible = filtered.slice((page - 1) * 3, page * 3);
-  const pages = Math.ceil(filtered.length / 3);
+  const pages = Math.ceil(filtered.length / 3) || 1;
   function select(value) {
     setFilter(value);
     setPage(1);
@@ -42,11 +49,11 @@ export default function ProductReviews({ product, reviews }) {
       <div className={s.reviewSummary}>
         <div>
           <strong>
-            {product.rating}
+            {prodRating}
             <small> out of 5</small>
           </strong>
-          <Stars rating={Number(product.rating)} />
-          <span>{reviews.length} sample reviews</span>
+          <Stars rating={Number(prodRating)} />
+          <span>{safeReviews.length} sample reviews</span>
         </div>
         <div
           className={s.reviewFilters}
@@ -70,7 +77,7 @@ export default function ProductReviews({ product, reviews }) {
             >
               {value} (
               {
-                reviews.filter(
+                safeReviews.filter(
                   (r) =>
                     value === "All" ||
                     (value === "With photos"
@@ -103,7 +110,7 @@ export default function ProductReviews({ product, reviews }) {
                 {review.hasPhoto && (
                   <img
                     className={s.reviewPhoto}
-                    src={product.image}
+                    src={prodImg}
                     alt={`Sample product photo for ${review.variant}`}
                     loading="lazy"
                   />

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { HelpCircle, Info, Ticket, Truck, X } from "lucide-react";
 import { mockVouchers, findVoucher, voucherStatus } from "../../data/vouchers";
+import checkoutService from "../../services/checkoutService";
 import { money } from "../../data/catalog";
 import { useCart } from "../../components/cart/CartProvider";
 import s from "./VoucherDialog.module.css";
@@ -36,22 +37,48 @@ export default function VoucherDialog({ onClose, shippingFee = 0 }) {
     dialog.current.close();
     onClose();
   }
-  function enterCode(e) {
+  async function enterCode(e) {
     e.preventDefault();
-    const voucher = findVoucher(code);
-    const check = voucherStatus(voucher, {
+    const cleanCode = code.trim().toUpperCase();
+    const voucher = findVoucher(cleanCode);
+    if (voucher) {
+      const check = voucherStatus(voucher, {
+        subtotal,
+        selectedCount,
+        shippingFee,
+      });
+      setMessage("");
+      if (!check.eligible) {
+        setError(check.reason);
+        return;
+      }
+      setDraft(voucher.code);
+      setError("");
+      setMessage(`${voucher.code} selected. Confirm to apply it to your cart.`);
+      return;
+    }
+
+    try {
+      const res = await checkoutService.validateVoucher({
+        voucherCode: cleanCode,
+        shopId: 727720655,
+        basketAmount: subtotal >= 1000 ? subtotal : subtotal * 25000,
+      });
+      if (res?.valid) {
+        setDraft(cleanCode);
+        setError("");
+        setMessage(`${cleanCode} validated successfully by Shopee!`);
+        return;
+      }
+    } catch {}
+
+    const check = voucherStatus(null, {
       subtotal,
       selectedCount,
       shippingFee,
     });
     setMessage("");
-    if (!check.eligible) {
-      setError(check.reason);
-      return;
-    }
-    setDraft(voucher.code);
-    setError("");
-    setMessage(`${voucher.code} selected. Confirm to apply it to your cart.`);
+    setError(check.reason);
   }
   function confirm() {
     const result = applyVoucher(draft, { shippingFee });

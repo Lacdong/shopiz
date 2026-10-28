@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ShoppingCart,
   ShieldCheck,
@@ -22,10 +22,19 @@ import ProductGallery from "./ProductGallery";
 import ProductReviews, { Stars } from "./ProductReviews";
 import { getProductDetails } from "../../data/productDetails";
 import { useCart } from "../../components/cart/CartProvider";
+import { useAuth } from "../../components/auth/AuthProvider";
+import catalogService, { mapBackendProduct } from "../../services/catalogService";
+import ChatDialog from "../../components/chat/ChatDialog";
 import s from "./ProductPage.module.css";
 
 function ProductDetail({ product: p }) {
   const { addItem } = useCart();
+  const { user, buyerId } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [likeState, setLikeState] = useState({ liked: false, likes: 0 });
+  const itemId = p.itemId || p.id;
+  const backendItem = Boolean(p.itemId);
   const [cartNotice, setCartNotice] = useState(null);
   useEffect(() => {
     if (!cartNotice) return;
@@ -35,35 +44,171 @@ function ProductDetail({ product: p }) {
     );
     return () => clearTimeout(timer);
   }, [cartNotice]);
+
+  const catTitle =
+    typeof p.category === "string"
+      ? p.category
+      : p.category?.category_name || "General";
+
+  const isMockItem = Number(p.id) >= 1 && Number(p.id) <= 18 && p.price < 1000;
   const details = getProductDetails(p);
-  const [variant, setVariant] = useState(details.variants[0]);
+  const [variant, setVariant] = useState(details.variants[0] || "Standard");
   const [size, setSize] = useState(details.sizes[0] || "");
   const [quantity, setQuantity] = useState("1");
   const [destination, setDestination] = useState("Ho Chi Minh City");
-  const [delivery, setDelivery] = useState("standard");
+  const [delivery, setDelivery] = useState(isMockItem ? "standard" : "30001");
+  const [shippingChannels, setShippingChannels] = useState([]);
+  const [shippingLoading, setShippingLoading] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const [message, setMessage] = useState("");
-  const [mode, setMode] = useState("buy");
   const preview = useRef(null);
+
+  useEffect(() => {
+    if (!backendItem || !user || !buyerId) return;
+    let active = true;
+    catalogService.getProductLike(itemId, buyerId).then((data) => {
+      if (active) setLikeState({ liked: Boolean(data.liked), likes: Number(data.likes || 0) });
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [backendItem, itemId, buyerId, user]);
+
+  async function toggleLike() {
+    if (!user || !buyerId) {
+      navigate("/login", { state: { returnTo: `${location.pathname}${location.search}${location.hash}` } });
+      return;
+    }
+    if (!backendItem) {
+      setMessage("Favorites are available for simulator products after sign-in.");
+      return;
+    }
+    try {
+      const data = await catalogService.toggleProductLike(itemId, buyerId);
+      setLikeState({ liked: Boolean(data.liked), likes: Number(data.likes || 0) });
+    } catch {
+      setMessage("Could not update favorites. Please try again.");
+    }
+  }
+
+  // Model-specific pricing and stock if multi-variant
+  const selectedModel =
+    Array.isArray(p.models) && p.models.length > 0
+      ? p.models.find((m) => {
+          const name = (m.model_name || "").toLowerCase();
+          const v = (variant || "").toLowerCase();
+          const sz = (size || "").toLowerCase();
+          if (sz) {
+            return name.includes(v) && name.includes(sz);
+          }
+          return name.includes(v);
+        }) || p.models[0]
+      : null;
+
+  const currentPrice = selectedModel?.current_price ?? p.price ?? 0;
+  const currentOriginal =
+    selectedModel?.original_price ?? p.original ?? currentPrice;
+  const currentStock = selectedModel?.seller_stock ?? details.stock ?? 50;
+
   const count = Math.max(
     1,
-    Math.min(details.stock, Math.floor(Number(quantity) || 1)),
+    Math.min(currentStock, Math.floor(Number(quantity) || 1)),
   );
-  const shipping = delivery === "express" ? 2.9 : 0;
+
+  // Dynamic shipping calculation for backend simulator products
+  useEffect(() => {
+    if (isMockItem) return;
+
+    let active = true;
+    setShippingLoading(true);
+
+    const items = [
+      {
+        item_id: p.itemId || p.id,
+        item_price: currentPrice,
+        quantity: count,
+      },
+    ];
+
+    catalogService
+      .calculateShippingFee({
+        shopId: p.shopId || p.seller?.id || 727720655,
+        recipientCity: destination,
+        items,
+      })
+      .then((res) => {
+        if (!active) return;
+        const channels = res?.channels || [];
+        setShippingChannels(channels);
+        const currentChannel = channels.find(
+          (c) => String(c.channel_id || c.channelId) === String(delivery),
+        );
+        if (!currentChannel || !currentChannel.enabled) {
+          const firstEnabled = channels.find((c) => c.enabled);
+          if (firstEnabled) {
+            setDelivery(String(firstEnabled.channel_id || firstEnabled.channelId));
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not calculate dynamic shipping fee:", err);
+      })
+      .finally(() => {
+        if (active) setShippingLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [isMockItem, p.shopId, p.seller?.id, p.itemId, p.id, destination, count, currentPrice]);
+
+  const activeChannel =
+    shippingChannels.find(
+      (c) => String(c.channel_id || c.channelId) === String(delivery),
+    ) || shippingChannels[0];
+
+  const shippingFee = isMockItem
+    ? delivery === "express"
+      ? 2.9
+      : 0
+    : activeChannel
+      ? Number(
+          activeChannel.buyer_paid_shipping_fee ??
+            activeChannel.buyerPaidShippingFee ??
+            0,
+        )
+      : 0;
+
+  const estimatedDays = isMockItem
+    ? `${delivery === "express" ? "1–2" : "3–5"} business days`
+    : activeChannel
+      ? activeChannel.estimated_delivery_days ||
+        activeChannel.estimatedDeliveryDays ||
+        "1–3 business days"
+      : "1–3 business days";
+
   const related = products
-    .filter((x) => x.id !== p.id)
+    .filter((x) => String(x.id) !== String(p.id))
     .sort(
       (a, b) =>
-        Number(b.category === p.category) - Number(a.category === p.category),
+        Number((a.category || "") === catTitle) -
+        Number((b.category || "") === catTitle),
     )
     .slice(0, 6);
-  function showPreview(next) {
+  function showPreview() {
     setQuantity(String(count));
-    setMode(next);
     preview.current.showModal();
   }
   function addToCart() {
     setQuantity(String(count));
-    const result = addItem({ productId: p.id, variant, size, quantity: count });
+    const result = addItem({
+      productId: p.id,
+      modelId: selectedModel?.model_id,
+      variant,
+      size,
+      quantity: count,
+      price: currentPrice,
+      shippingFee,
+      carrierName: activeChannel?.channel_name || activeChannel?.channelName || "SPX Express",
+    });
     setCartNotice({
       id: Date.now(),
       error: !result.added,
@@ -88,17 +233,20 @@ function ProductDetail({ product: p }) {
       <nav className={s.breadcrumb} aria-label="Breadcrumb">
         <Link to="/">Home</Link>
         <ChevronRight size={12} />
-        <Link to={`/category/${encodeURIComponent(p.category)}`}>
-          {p.category}
+        <Link to={`/category/${encodeURIComponent(catTitle)}`}>
+          {catTitle}
         </Link>
         <ChevronRight size={12} />
-        <span>{p.title}</span>
+        <span>{p.title || "Product"}</span>
       </nav>
       <section className={s.overview}>
         <ProductGallery
           product={p}
           gallery={details.gallery}
           onMessage={setMessage}
+          liked={likeState.liked}
+          likeCount={likeState.likes}
+          onToggleLike={toggleLike}
         />
         <div className={s.purchase}>
           <h1>
@@ -107,21 +255,21 @@ function ProductDetail({ product: p }) {
           </h1>
           <div className={s.metrics}>
             <a href="#product-reviews">
-              <strong>{p.rating}</strong>
-              <Stars rating={Number(p.rating)} />
+              <strong>{p.rating || "5.0"}</strong>
+              <Stars rating={Number(p.rating) || 5.0} />
             </a>
             <a href="#product-reviews">
-              <strong>{details.reviews.length}</strong>Ratings
+              <strong>{(details.reviews || []).length}</strong>Ratings
             </a>
             <span>
-              <strong>{p.sold.toLocaleString()}</strong>Sold
+              <strong>{(p.sold ?? 0).toLocaleString()}</strong>Sold
             </span>
           </div>
           <div className={s.pricePanel}>
             <div>
-              <del>{money(p.original)}</del>
-              <strong>{money(p.price)}</strong>
-              <span>{p.discount}% OFF</span>
+              <del>{money(currentOriginal)}</del>
+              <strong>{money(currentPrice)}</strong>
+              {p.discount ? <span>{p.discount}% OFF</span> : null}
             </div>
             <p>
               <ShieldCheck size={14} />
@@ -144,7 +292,7 @@ function ProductDetail({ product: p }) {
               <dd>
                 <span className={s.deliveryLine}>
                   <Truck size={17} />
-                  Ships from {p.location}
+                  Ships from {p.location || "Ho Chi Minh City"}
                 </span>
                 <label className={s.deliveryLabel}>
                   Deliver to{" "}
@@ -164,14 +312,44 @@ function ProductDetail({ product: p }) {
                     aria-label="Shipping method"
                     value={delivery}
                     onChange={(e) => setDelivery(e.target.value)}
+                    disabled={shippingLoading && !shippingChannels.length}
                   >
-                    <option value="standard">Standard · Free</option>
-                    <option value="express">Express · {money(2.9)}</option>
+                    {isMockItem ? (
+                      <>
+                        <option value="standard">Standard · Free</option>
+                        <option value="express">Express · {money(2.9)}</option>
+                      </>
+                    ) : shippingChannels.length > 0 ? (
+                      shippingChannels.map((c) => {
+                        const cid = String(c.channel_id || c.channelId);
+                        const cname = c.channel_name || c.channelName;
+                        const fee = Number(
+                          c.buyer_paid_shipping_fee ?? c.buyerPaidShippingFee ?? 0,
+                        );
+                        const feeStr = fee === 0 ? "Free" : money(fee);
+                        const isDis = !c.enabled;
+                        const disReason = c.disabled_reason || c.disabledReason;
+                        return (
+                          <option key={cid} value={cid} disabled={isDis}>
+                            {cname} · {feeStr} {isDis && disReason ? `(${disReason})` : ""}
+                          </option>
+                        );
+                      })
+                    ) : (
+                      <>
+                        <option value="30001">SPX Express · Free</option>
+                        <option value="30002">SPX Instant · {money(25000)}</option>
+                        <option value="30003">SPX Economy · Free</option>
+                      </>
+                    )}
                   </select>
                 </label>
                 <small>
-                  Estimated delivery: {delivery === "express" ? "1–2" : "3–5"}{" "}
-                  business days
+                  {shippingLoading ? (
+                    "Calculating shipping fee..."
+                  ) : (
+                    <>Estimated delivery: {estimatedDays}</>
+                  )}
                 </small>
               </dd>
             </div>
@@ -236,7 +414,7 @@ function ProductDetail({ product: p }) {
                   <input
                     type="number"
                     min="1"
-                    max={details.stock}
+                    max={currentStock}
                     step="1"
                     aria-label="Quantity"
                     value={quantity}
@@ -245,13 +423,13 @@ function ProductDetail({ product: p }) {
                   />
                   <button
                     aria-label="Increase quantity"
-                    disabled={count >= details.stock}
+                    disabled={count >= currentStock}
                     onClick={() => setQuantity(String(count + 1))}
                   >
                     <Plus size={13} />
                   </button>
                 </div>
-                <span>{details.stock} pieces available</span>
+                <span>{currentStock} pieces available</span>
               </dd>
             </div>
           </dl>
@@ -260,7 +438,7 @@ function ProductDetail({ product: p }) {
               <ShoppingCart size={19} />
               Add to Cart
             </button>
-            <button className={s.buyNow} onClick={() => showPreview("buy")}>
+            <button className={s.buyNow} onClick={showPreview}>
               Buy Now
             </button>
           </div>
@@ -291,14 +469,14 @@ function ProductDetail({ product: p }) {
             <Store size={28} strokeWidth={1.3} />
           </span>
           <div>
-            <h2>{details.seller.name}</h2>
+            <h2>{details.seller?.name || p.shopName || "Official Store"}</h2>
             <p>Online recently</p>
             <div>
-              <button onClick={() => showPreview("chat")}>
+              <button onClick={() => setChatOpen(true)}>
                 <MessageCircle size={13} />
                 Chat Now
               </button>
-              <Link to={`/shop/${details.seller.id}`}>
+              <Link to={`/shop/${details.seller?.id || p.shopId || "shop-001"}`}>
                 <Store size={13} />
                 View Shop
               </Link>
@@ -307,12 +485,12 @@ function ProductDetail({ product: p }) {
         </div>
         <dl className={s.sellerStats}>
           {[
-            ["Ratings", details.seller.rating],
-            ["Products", details.seller.products],
-            ["Response rate", details.seller.responseRate],
-            ["Response time", details.seller.responseTime],
-            ["Joined", details.seller.joined],
-            ["Followers", details.seller.followers],
+            ["Ratings", details.seller?.rating || "4.9"],
+            ["Products", details.seller?.products || 24],
+            ["Response rate", details.seller?.responseRate || details.seller?.response_rate || "98%"],
+            ["Response time", details.seller?.responseTime || "Within a few hours"],
+            ["Joined", details.seller?.joined || "2 years ago"],
+            ["Followers", details.seller?.followers || "15.4k"],
           ].map(([label, value]) => (
             <div key={label}>
               <dt>{label}</dt>
@@ -325,19 +503,19 @@ function ProductDetail({ product: p }) {
         <h2 className={s.sectionTitle}>PRODUCT SPECIFICATIONS</h2>
         <dl className={s.specs}>
           {[
-            ["Category", p.category],
-            ["Brand", details.brand],
-            ["SKU", details.sku],
-            ["Material", details.material],
+            ["Category", catTitle],
+            ["Brand", details.brand || "Shopiz Select"],
+            ["SKU", details.sku || "SZ-0001"],
+            ["Material", details.material || "High Quality Material"],
             ["Condition", "New"],
-            ["Stock", `${details.stock} pieces`],
-            ["Ships from", p.location],
+            ["Stock", `${currentStock} pieces`],
+            ["Ships from", p.location || "Ho Chi Minh City"],
           ].map(([label, value]) => (
             <div key={label}>
               <dt>{label}</dt>
               <dd>
                 {label === "Category" ? (
-                  <Link to={`/category/${encodeURIComponent(p.category)}`}>
+                  <Link to={`/category/${encodeURIComponent(value)}`}>
                     {value}
                     <ChevronRight size={11} />
                   </Link>
@@ -358,15 +536,15 @@ function ProductDetail({ product: p }) {
           </p>
           <h4>A little more in the details</h4>
           <ul>
-            {details.highlights.map((text) => (
+            {(details.highlights || []).map((text) => (
               <li key={text}>{text}</li>
             ))}
           </ul>
           <h4>What’s included</h4>
           <p>
-            1 × {p.title.split(" · ")[0]}. Select your preferred{" "}
-            {details.option.toLowerCase()}
-            {details.sizes.length ? " and size" : ""} before reviewing your
+            1 × {(p.title || "").split(" · ")[0]}. Select your preferred{" "}
+            {(details.option || "style").toLowerCase()}
+            {details.sizes?.length ? " and size" : ""} before reviewing your
             order.
           </p>
           <p className={s.demoNote}>
@@ -376,7 +554,7 @@ function ProductDetail({ product: p }) {
           </p>
         </div>
       </section>
-      <ProductReviews product={p} reviews={details.reviews} />
+      <ProductReviews product={p} reviews={details.reviews || []} />
       <ProductGrid
         items={related}
         title="MORE FROM THIS COLLECTION"
@@ -384,7 +562,7 @@ function ProductDetail({ product: p }) {
         loadMore={false}
       />
       <ProductGrid
-        items={products.filter((x) => x.id !== p.id).slice(-6)}
+        items={products.filter((x) => String(x.id) !== String(p.id)).slice(-6)}
         title="YOU MAY ALSO LIKE"
         loadMore={false}
       />
@@ -403,56 +581,113 @@ function ProductDetail({ product: p }) {
         >
           <X size={20} />
         </button>
-        <h2 id="preview-heading">
-          {mode === "chat" ? "Chat with the shop" : "Review your selection"}
-        </h2>
-        {mode === "chat" ? (
-          <>
-            <p>{details.seller.name}</p>
-            <p className={s.demoNote}>
-              Seller messaging is not connected in this simulator.
+        <h2 id="preview-heading">Review your selection</h2>
+        <div className={s.orderItem}>
+          <img src={p.image} alt={p.title} />
+          <div>
+            <h3>{p.title}</h3>
+            <p>
+              {variant}
+              {size ? ` · ${size}` : ""} · Quantity: {count}
             </p>
-          </>
-        ) : (
-          <>
-            <div className={s.orderItem}>
-              <img src={p.image} alt={p.title} />
-              <div>
-                <h3>{p.title}</h3>
-                <p>
-                  {variant}
-                  {size ? ` · ${size}` : ""} · Quantity: {count}
-                </p>
-                <strong>{money(p.price * count)}</strong>
-              </div>
-            </div>
-            <dl className={s.orderTotals}>
-              <div>
-                <dt>Delivery to</dt>
-                <dd>{destination}</dd>
-              </div>
-              <div>
-                <dt>Shipping</dt>
-                <dd>{money(shipping)}</dd>
-              </div>
-              <div>
-                <dt>Total</dt>
-                <dd>{money(p.price * count + shipping)}</dd>
-              </div>
-            </dl>
-            <p className={s.demoNote}>
-              <PackageCheck size={16} />
-              This is a selection preview. Checkout is not available.
-            </p>
-          </>
-        )}
+            <strong>{money(currentPrice * count)}</strong>
+          </div>
+        </div>
+        <dl className={s.orderTotals}>
+          <div>
+            <dt>Delivery to</dt>
+            <dd>{destination}</dd>
+          </div>
+          <div>
+            <dt>Carrier</dt>
+            <dd>{activeChannel?.channel_name || activeChannel?.channelName || "SPX Express"}</dd>
+          </div>
+          <div>
+            <dt>Shipping</dt>
+            <dd>{money(shippingFee)}</dd>
+          </div>
+          <div>
+            <dt>Total</dt>
+            <dd>{money(currentPrice * count + shippingFee)}</dd>
+          </div>
+        </dl>
+        <p className={s.demoNote}>
+          <PackageCheck size={16} />
+          This is a selection preview. Checkout is not available.
+        </p>
       </dialog>
+      <ChatDialog
+        isOpen={chatOpen}
+        onClose={() => setChatOpen(false)}
+        shop={details.seller || { id: p.shopId, name: p.shopName }}
+        productContext={{
+          id: p.id,
+          title: p.title,
+          image: p.image,
+          price: currentPrice,
+        }}
+      />
     </div>
   );
 }
 export default function ProductPage() {
   const { id } = useParams();
-  const product = products.find((p) => p.id === id);
+  const lastVisited = useRef(null);
+  const localProduct = products.find((p) => String(p.id) === String(id));
+  const [product, setProduct] = useState(localProduct || null);
+  const [loading, setLoading] = useState(!localProduct);
+
+  useEffect(() => {
+    let isMounted = true;
+    const found = products.find((p) => String(p.id) === String(id));
+    if (found) {
+      setProduct(found);
+    } else {
+      setLoading(true);
+    }
+
+    catalogService
+      .getProductDetail(id)
+      .then((detail) => {
+        if (isMounted && detail) {
+          const mapped = mapBackendProduct(detail);
+          setProduct(mapped);
+          if (lastVisited.current !== String(id)) {
+            lastVisited.current = String(id);
+            catalogService.recordProductView(id).catch(() => {});
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not fetch remote product detail:", err);
+        if (isMounted && !found) {
+          setProduct(null);
+        }
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          minHeight: "400px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        Loading product details...
+      </div>
+    );
+  }
+
   return product ? (
     <ProductDetail key={product.id} product={product} />
   ) : (

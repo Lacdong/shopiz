@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Star } from "lucide-react";
+import React, { useRef, useState } from "react";
+import { Star, Upload, Image as ImageIcon } from "lucide-react";
 import CheckoutDialog from "../checkout/CheckoutDialog";
 import d from "../checkout/CheckoutPage.module.css";
 import s from "./PurchasesPage.module.css";
@@ -7,7 +7,11 @@ export default function OrderActionDialog({ type, order, onClose, onSubmit }) {
   const [rating, setRating] = useState(order.review?.rating || 0);
   const [comment, setComment] = useState(order.review?.comment || "");
   const [reason, setReason] = useState("");
+  const [description, setDescription] = useState("");
+  const [proofFiles, setProofFiles] = useState([]);
   const [error, setError] = useState("");
+  const fileInputRef = useRef(null);
+
   function submit(e) {
     e.preventDefault();
     if (type === "review" && !rating) {
@@ -18,12 +22,23 @@ export default function OrderActionDialog({ type, order, onClose, onSubmit }) {
       setError("Select a cancellation reason.");
       return;
     }
-    onSubmit(type === "review" ? { rating, comment: comment.trim() } : reason);
+    if (type === "return" && !reason) {
+      setError("Please select a return reason.");
+      return;
+    }
+    if (type === "review") {
+      onSubmit({ rating, comment: comment.trim() });
+    } else if (type === "cancel") {
+      onSubmit(reason);
+    } else if (type === "return") {
+      onSubmit({ reason, description: description.trim(), files: proofFiles });
+    }
   }
   const titles = {
     review: order.review ? "Edit Review" : "Review Order",
     cancel: "Cancel Order",
     cancellation: "Cancellation Details",
+    return: "Request Return / Refund",
   };
   return (
     <CheckoutDialog title={titles[type]} onClose={onClose}>
@@ -98,6 +113,76 @@ export default function OrderActionDialog({ type, order, onClose, onSubmit }) {
                 ))}
               </select>
             </>
+          ) : type === "return" ? (
+            <>
+              <p className={s.demoNote}>
+                Submit a return & refund request to Shopee for review. Refund amount is automatically computed based on order total.
+              </p>
+              <label className={s.formLabel} htmlFor="return-reason">
+                Reason for return / refund
+              </label>
+              <select
+                id="return-reason"
+                value={reason}
+                onChange={(e) => {
+                  setReason(e.target.value);
+                  setError("");
+                }}
+              >
+                <option value="">Select a reason</option>
+                {[
+                  "DAMAGED",
+                  "DEFECTIVE",
+                  "MISSING_ITEMS",
+                  "WRONG_ITEM",
+                  "COUNTERFEIT",
+                  "CHANGE_OF_MIND",
+                ].map((value) => (
+                  <option key={value} value={value}>{value.replace(/_/g, " ")}</option>
+                ))}
+              </select>
+              <label className={s.formLabel} htmlFor="return-description" style={{ marginTop: "1rem" }}>
+                Description (optional)
+              </label>
+              <textarea
+                id="return-description"
+                rows={3}
+                placeholder="Explain the issue with the delivered package..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+              <div style={{ marginTop: "1rem" }}>
+                <label className={s.formLabel}>Upload Photo Evidence</label>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  ref={fileInputRef}
+                  style={{ display: "none" }}
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    setProofFiles(files);
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    padding: "0.5rem 0.8rem",
+                    border: "1px dashed var(--color-border, #ccc)",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    background: "none",
+                  }}
+                >
+                  <Upload size={16} />
+                  {proofFiles.length ? `${proofFiles.length} file(s) selected` : "Select photos from device"}
+                </button>
+              </div>
+            </>
           ) : (
             <>
               <p className={s.cancellationBadge}>Cancelled</p>
@@ -148,7 +233,11 @@ export default function OrderActionDialog({ type, order, onClose, onSubmit }) {
           </button>
           {type !== "cancellation" && (
             <button type="submit" className={d.primary}>
-              {type === "review" ? "Submit Review" : "Confirm Cancellation"}
+              {type === "review"
+                ? "Submit Review"
+                : type === "return"
+                  ? "Submit Return Request"
+                  : "Confirm Cancellation"}
             </button>
           )}
         </footer>

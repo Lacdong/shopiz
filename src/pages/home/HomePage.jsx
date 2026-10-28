@@ -11,8 +11,10 @@ import {
   ProductGrid,
   TrustBar,
 } from "../../components/Commerce";
+import { useCatalog } from "../../components/catalog/CatalogProvider";
 import s from "./HomePage.module.css";
 export default function HomePage() {
+  const { products: liveProducts } = useCatalog();
   return (
     <>
       <div className={s.top}>
@@ -20,10 +22,10 @@ export default function HomePage() {
         <QuickAccess />
       </div>
       <CategoryGrid />
-      <FlashDeals />
+      <FlashDeals items={liveProducts.slice(0, 6)} />
       <MallStrip />
       <TopSearches />
-      <ProductGrid />
+      <ProductGrid items={liveProducts} />
       <TrustBar />
     </>
   );

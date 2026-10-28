@@ -123,7 +123,8 @@ export function Countdown() {
     </div>
   );
 }
-export function FlashDeals() {
+export function FlashDeals({ items }) {
+  const displayItems = items && items.length ? items : products.slice(0, 6);
   return (
     <section className={s.flash} id="flash-deals">
       <div className={s.sectionHeader}>
@@ -138,7 +139,7 @@ export function FlashDeals() {
         </Link>
       </div>
       <div className={s.flashGrid}>
-        {products.slice(0, 6).map((p) => (
+        {displayItems.slice(0, 6).map((p) => (
           <ProductCard key={p.id} product={p} flash />
         ))}
       </div>

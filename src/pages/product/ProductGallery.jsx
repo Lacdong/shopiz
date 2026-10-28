@@ -8,13 +8,21 @@ import {
   ZoomIn,
 } from "lucide-react";
 import s from "./ProductPage.module.css";
-export default function ProductGallery({ product, gallery, onMessage }) {
+export default function ProductGallery({ product, gallery, onMessage, liked = false, likeCount = 0, onToggleLike }) {
   const [active, setActive] = useState(0);
-  const [liked, setLiked] = useState(false);
   const dialog = useRef(null);
-  const current = gallery[active];
+  const safeGallery =
+    Array.isArray(gallery) && gallery.length > 0
+      ? gallery
+      : [{ label: "Overview", scale: 1, position: "center" }];
+  const current = safeGallery[active] || safeGallery[0];
+  const prodImg =
+    product?.image ||
+    "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=500&q=85";
+  const prodTitle = product?.title || "Product";
+
   function change(delta) {
-    setActive((index) => (index + delta + gallery.length) % gallery.length);
+    setActive((index) => (index + delta + safeGallery.length) % safeGallery.length);
   }
   async function share() {
     try {
@@ -34,8 +42,8 @@ export default function ProductGallery({ product, gallery, onMessage }) {
         aria-label="Enlarge product image"
       >
         <img
-          src={product.image}
-          alt={`${product.title} — ${current.label}`}
+          src={prodImg}
+          alt={`${prodTitle} — ${current.label}`}
           style={{
             transform: `scale(${current.scale})`,
             objectPosition: current.position,
@@ -53,7 +61,7 @@ export default function ProductGallery({ product, gallery, onMessage }) {
         >
           <ChevronLeft size={18} />
         </button>
-        {gallery.map((item, index) => (
+        {safeGallery.map((item, index) => (
           <button
             key={item.label}
             className={active === index ? s.activeThumb : ""}
@@ -62,7 +70,7 @@ export default function ProductGallery({ product, gallery, onMessage }) {
             onClick={() => setActive(index)}
           >
             <img
-              src={product.image}
+              src={prodImg}
               alt={item.label}
               style={{
                 transform: `scale(${item.scale})`,
@@ -85,9 +93,9 @@ export default function ProductGallery({ product, gallery, onMessage }) {
           Share
         </button>
         <span />
-        <button aria-pressed={liked} onClick={() => setLiked(!liked)}>
+        <button aria-pressed={liked} onClick={onToggleLike}>
           <Heart size={17} fill={liked ? "currentColor" : "none"} />
-          {liked ? "Saved to favorites" : "Save to favorites"}
+          {liked ? "Saved to favorites" : "Save to favorites"}{likeCount ? ` · ${likeCount}` : ""}
         </button>
       </div>
       <dialog
@@ -107,8 +115,8 @@ export default function ProductGallery({ product, gallery, onMessage }) {
         </button>
         <div className={s.expandedImage}>
           <img
-            src={product.image}
-            alt={`${product.title} — ${current.label}`}
+            src={prodImg}
+            alt={`${prodTitle} — ${current.label}`}
             style={{
               transform: `scale(${current.scale})`,
               objectPosition: current.position,
@@ -123,7 +131,7 @@ export default function ProductGallery({ product, gallery, onMessage }) {
             <ChevronLeft size={20} />
           </button>
           <span>
-            {current.label} · {active + 1} / {gallery.length}
+            {current.label} · {active + 1} / {safeGallery.length}
           </span>
           <button aria-label="Next enlarged image" onClick={() => change(1)}>
             <ChevronRight size={20} />

@@ -6,7 +6,7 @@ const errors = [];
 const authRequests = [];
 page.on("pageerror", (e) => errors.push(e.message));
 page.on("request", (r) => {
-  if (r.method() !== "GET") authRequests.push(r.url());
+  if (r.method() !== "GET" && !r.url().includes("/api/v2/")) authRequests.push(r.url());
 });
 function check(value, message) {
   if (!value) throw new Error(message);

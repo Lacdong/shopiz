@@ -12,6 +12,7 @@ import {
   Zap,
 } from "lucide-react";
 import { products } from "../../data/catalog";
+import { useCatalog } from "../../components/catalog/CatalogProvider";
 import { mockShops as brands } from "../../data/shops";
 import { BannerCarousel, CategoryGrid } from "../../components/Discovery";
 import { ProductGrid, TrustBar } from "../../components/Commerce";
@@ -23,11 +24,12 @@ import shared from "../../components/collection/Collection.module.css";
 import page from "./MallPage.module.css";
 const s = { ...shared, ...page };
 export default function MallPage() {
+  const { products: allProducts } = useCatalog();
   const [params, setParams] = useSearchParams();
   const brand = brands.find((b) => b.id === params.get("brand"));
   const [category, setCategory] = useState("All");
   const [sort, setSort] = useState("featured");
-  let items = products
+  let items = allProducts
     .filter(
       (p) =>
         (!brand || brand.products.includes(p.id)) &&
