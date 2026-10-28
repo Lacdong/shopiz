@@ -18,7 +18,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { products, mockProducts } from "../../data/catalog";
+import { products } from "../../data/catalog";
 import { findShop, mockShops } from "../../data/shops";
 import { mockVouchers } from "../../data/vouchers";
 import { money } from "../../data/catalog";
@@ -76,13 +76,7 @@ function Storefront({ shop }) {
   const catalog =
     Array.isArray(shop.catalogProducts) && shop.catalogProducts.length > 0
       ? shop.catalogProducts
-      : mockProducts.filter((product) =>
-          Array.isArray(shop.products)
-            ? shop.products.some(
-                (p) => String(p?.id || p?.item_id || p) === String(product.id),
-              )
-            : false,
-        );
+      : [];
   const categories = [
     ...new Set(catalog.map((product) => product.category).filter(Boolean)),
   ];

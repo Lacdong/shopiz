@@ -32,30 +32,23 @@ export function CatalogProvider({ children }) {
       }
 
       if (liveItems.length) {
-        // Backend products take priority at the top of the catalog
-        const mergedProducts = [
-          ...liveItems,
-          ...initialProducts.filter((m) => !liveItems.some((b) => b.id === m.id)),
-        ];
-
-        setProducts(mergedProducts);
-
+        setProducts(liveItems);
         // Keep in-memory catalog.js array synchronized for synchronous lookups
-        initialProducts.splice(0, initialProducts.length, ...mergedProducts);
+        initialProducts.splice(0, initialProducts.length, ...liveItems);
       }
 
       if (catRes.status === "fulfilled" && catRes.value?.length) {
         const serverCatNames = catRes.value.map((c) => c.category_name);
         const itemCatNames = liveItems.map((p) => p.category);
-        const mergedCategories = [
-          ...new Set([...serverCatNames, ...itemCatNames, ...initialCategories]),
+        const uniqueCategories = [
+          ...new Set([...serverCatNames, ...itemCatNames].filter(Boolean)),
         ];
 
-        setCategories(mergedCategories);
+        setCategories(uniqueCategories);
         initialCategories.splice(
           0,
           initialCategories.length,
-          ...mergedCategories,
+          ...uniqueCategories,
         );
       }
     } catch {

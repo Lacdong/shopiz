@@ -10,21 +10,21 @@ export function normalizeCart(input) {
   for (const item of input) {
     if (!item || typeof item !== "object") continue;
     const product = products.find((p) => String(p.id) === String(item.productId));
-    if (!product) continue;
-    const details = getProductDetails(product);
+    const details = product ? getProductDetails(product) : { variants: ["Standard"], sizes: [] };
     const quantity = Math.floor(Number(item.quantity));
     if (!Number.isFinite(quantity) || quantity < 1) continue;
+    const maxStock = product ? (product.stock || 50) : 50;
     const remaining =
-      (product.stock || 50) -
+      maxStock -
       result
-        .filter((line) => String(line.productId) === String(product.id))
+        .filter((line) => String(line.productId) === String(item.productId))
         .reduce((sum, line) => sum + line.quantity, 0);
     if (remaining <= 0) continue;
     const existing = result.find((line) => lineId(line) === lineId(item));
     if (existing) existing.quantity += Math.min(quantity, remaining);
     else
       result.push({
-        productId: String(product.id),
+        productId: String(item.productId),
         variant: item.variant || (details.variants?.[0] || "Standard"),
         size: item.size || "",
         quantity: Math.min(quantity, remaining),

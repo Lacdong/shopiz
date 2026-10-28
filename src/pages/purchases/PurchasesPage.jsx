@@ -17,7 +17,6 @@ import { products, money } from "../../data/catalog";
 import { getProductDetails } from "../../data/productDetails";
 import {
   readOrders,
-  sampleOrders,
   orderTabs,
   orderStatus,
   statusLabel,
@@ -133,11 +132,6 @@ export default function PurchasesPage() {
   const all = [
     ...backendOrders,
     ...orders.filter((o) => !backendOrders.some((b) => b.id === o.id)),
-    ...sampleOrders.filter(
-      (sample) =>
-        !orders.some((order) => order.id === sample.id) &&
-        !backendOrders.some((b) => b.id === sample.id),
-    ),
   ];
 
   async function handleConfirmDelivery(order) {

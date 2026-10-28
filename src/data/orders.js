@@ -92,9 +92,7 @@ export function updateOrderAction(id, action, value) {
     ].includes(value)
   )
     return { success: false, error: "Select a cancellation reason." };
-  const order =
-    readOrders().find((order) => order.id === id) ||
-    sampleOrders.find((order) => order.id === id);
+  const order = readOrders().find((order) => order.id === id);
   if (!order)
     return {
       success: false,
@@ -119,34 +117,5 @@ export function updateOrderAction(id, action, value) {
   const saved = saveMockOrder(next);
   return { success: true, saved, order: next };
 }
-function sample(id, productId, status, quantity = 1) {
-  const product = products.find((product) => product.id === productId);
-  const subtotal = Math.round(product.price * quantity * 100) / 100;
-  return {
-    id,
-    createdAt: "2026-10-12T09:00:00+07:00",
-    status,
-    isSample: true,
-    items: [
-      {
-        productId,
-        title: product.title,
-        variant: productId === "4" ? "Classic" : "Original",
-        size: productId === "4" ? "EU 42" : "",
-        quantity,
-        price: product.price,
-      },
-    ],
-    subtotal,
-    shippingFee: 0,
-    discount: 0,
-    total: subtotal,
-    payment: "cod",
-    shipping: [],
-  };
-}
-export const sampleOrders = [
-  sample("SAMPLE-1004", "4", "completed"),
-  sample("SAMPLE-1003", "3", "cancelled"),
-  sample("SAMPLE-1002", "6", "completed", 2),
-];
+// Hard-coded sample orders removed — all orders are fetched from Shopee Simulator backend
+export const sampleOrders = [];

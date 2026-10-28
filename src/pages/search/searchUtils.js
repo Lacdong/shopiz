@@ -18,13 +18,42 @@ export const searchCatalog = new Proxy([], {
   },
 });
 
-export const searchCategories = [
-  ...new Set(products.map((p) => p.category)),
-];
-export const searchLocations = [
-  ...new Set(products.map((p) => p.location)),
-];
-export const searchBrands = [...new Set(products.map((p) => getProductDetails(p)?.brand || "Official Store"))];
+export function getSearchCategories() {
+  return [...new Set(products.map((p) => p.category).filter(Boolean))];
+}
+export function getSearchLocations() {
+  return [...new Set(products.map((p) => p.location).filter(Boolean))];
+}
+export function getSearchBrands() {
+  return [...new Set(products.map((p) => getProductDetails(p)?.brand || "Official Store").filter(Boolean))];
+}
+
+export const searchCategories = new Proxy([], {
+  get(target, prop) {
+    const list = getSearchCategories();
+    if (prop === "length") return list.length;
+    if (typeof list[prop] === "function") return list[prop].bind(list);
+    return list[prop];
+  },
+});
+
+export const searchLocations = new Proxy([], {
+  get(target, prop) {
+    const list = getSearchLocations();
+    if (prop === "length") return list.length;
+    if (typeof list[prop] === "function") return list[prop].bind(list);
+    return list[prop];
+  },
+});
+
+export const searchBrands = new Proxy([], {
+  get(target, prop) {
+    const list = getSearchBrands();
+    if (prop === "length") return list.length;
+    if (typeof list[prop] === "function") return list[prop].bind(list);
+    return list[prop];
+  },
+});
 const normalize = (value) =>
   String(value)
     .normalize("NFD")

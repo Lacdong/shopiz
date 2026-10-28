@@ -30,7 +30,6 @@ import {
   Wallet,
   X,
 } from "lucide-react";
-import { products } from "../../data/catalog";
 import api from "../../services/api";
 import sellerService from "../../services/sellerService";
 import catalogService from "../../services/catalogService";
@@ -55,23 +54,6 @@ const money = (n) =>
     currency: "VND",
     maximumFractionDigits: 0,
   }).format(n);
-
-const initialOrders = Array.from({ length: 8 }, (_, i) => ({
-  id: `SPZ2610200${48 - i}`,
-  buyer: ["minh.anh_98", "ngoclinh.store", "hoangnam.vn", "thao.nguyen"][i % 4],
-  product: products[i % 4],
-  quantity: (i % 3) + 1,
-  status: [
-    "pending",
-    "pending",
-    "shipping",
-    "completed",
-    "pending",
-    "shipping",
-    "completed",
-    "cancelled",
-  ][i],
-}));
 
 const statuses = {
   pending: "To Confirm",
@@ -101,12 +83,8 @@ export default function SellerCenter() {
   const [period, setPeriod] = useState("today");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
-  const [orders, setOrders] = useState(initialOrders);
-  const [items, setItems] = useState(
-    products
-      .slice(0, 8)
-      .map((p, i) => ({ ...p, stock: i < 3 ? 0 : 32 + i * 9, active: true })),
-  );
+  const [orders, setOrders] = useState([]);
+  const [items, setItems] = useState([]);
   const [notice, setNotice] = useState("");
   const [campaigns, setCampaigns] = useState([]);
   const [activeVouchers, setActiveVouchers] = useState([]);
@@ -114,7 +92,6 @@ export default function SellerCenter() {
 
   const resolveShopName = (id) => {
     const idStr = String(id || "");
-    if (idStr === "sonora") return "SONORA Official Store";
     if (idStr === "839910244") return "Hanoi Streetwear Co.";
     if (idStr === "910283751") return "Saigon Modern Living";
     if (idStr === "727720655") return "SmartOmni Official Flagship";
@@ -128,14 +105,14 @@ export default function SellerCenter() {
     return (
       urlShopId ||
       localStorage.getItem("shopiz-active-seller-shop-id") ||
-      "sonora"
+      "727720655"
     );
   });
   const [shopName, setShopName] = useState(() => {
     return resolveShopName(
       urlShopId ||
         localStorage.getItem("shopiz-active-seller-shop-id") ||
-        "sonora",
+        "727720655",
     );
   });
   const [savedName, setSavedName] = useState(shopName);
@@ -152,20 +129,6 @@ export default function SellerCenter() {
   }, [urlShopId, shopId]);
 
   useEffect(() => {
-    if (shopId === "sonora") {
-      setLiveAnalytics(null);
-      setSavedName("SONORA Official Store");
-      setShopName("SONORA Official Store");
-      setOrders(initialOrders);
-      setItems(
-        products
-          .slice(0, 8)
-          .map((p, i) => ({ ...p, stock: i < 3 ? 0 : 32 + i * 9, active: true })),
-      );
-      setActiveVouchers([]);
-      return;
-    }
-
     const numericShopId = Number(shopId) || 727720655;
 
     // Fetch real backend analytics

@@ -32,7 +32,8 @@ import {
   Ellipsis,
   Flower2,
 } from "lucide-react";
-import { banners, categories, image } from "../data/catalog";
+import { banners, image } from "../data/catalog";
+import { useCatalog } from "./catalog/CatalogProvider";
 import s from "./Discovery.module.css";
 const quickItems = [
   ["Flash Deals", Zap, "/collection/flash-deals"],
@@ -208,6 +209,8 @@ export function CategoryItem({ name, index }) {
   );
 }
 export function CategoryGrid() {
+  const { categories: liveCategories } = useCatalog();
+  const displayCategories = liveCategories && liveCategories.length ? liveCategories : [];
   return (
     <section className={s.categorySection} id="categories">
       <div className={s.sectionTitle}>
@@ -215,7 +218,7 @@ export function CategoryGrid() {
         <span>Find your kind of everything</span>
       </div>
       <div className={s.categories}>
-        {categories.map((name, index) => (
+        {displayCategories.map((name, index) => (
           <CategoryItem key={name} name={name} index={index} />
         ))}
       </div>

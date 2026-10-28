@@ -23,6 +23,7 @@ import ProductReviews, { Stars } from "./ProductReviews";
 import { getProductDetails } from "../../data/productDetails";
 import { useCart } from "../../components/cart/CartProvider";
 import { useAuth } from "../../components/auth/AuthProvider";
+import { useCatalog } from "../../components/catalog/CatalogProvider";
 import catalogService, { mapBackendProduct } from "../../services/catalogService";
 import ChatDialog from "../../components/chat/ChatDialog";
 import s from "./ProductPage.module.css";
@@ -30,6 +31,7 @@ import s from "./ProductPage.module.css";
 function ProductDetail({ product: p }) {
   const { addItem } = useCart();
   const { user, buyerId } = useAuth();
+  const { products: liveCatalog } = useCatalog();
   const navigate = useNavigate();
   const location = useLocation();
   const [likeState, setLikeState] = useState({ liked: false, likes: 0 });
@@ -185,7 +187,8 @@ function ProductDetail({ product: p }) {
         "1–3 business days"
       : "1–3 business days";
 
-  const related = products
+  const catalogList = liveCatalog && liveCatalog.length ? liveCatalog : products;
+  const related = catalogList
     .filter((x) => String(x.id) !== String(p.id))
     .sort(
       (a, b) =>
@@ -632,14 +635,16 @@ function ProductDetail({ product: p }) {
 }
 export default function ProductPage() {
   const { id } = useParams();
+  const { products: liveCatalog } = useCatalog();
   const lastVisited = useRef(null);
-  const localProduct = products.find((p) => String(p.id) === String(id));
+  const catalogList = liveCatalog && liveCatalog.length ? liveCatalog : products;
+  const localProduct = catalogList.find((p) => String(p.id) === String(id));
   const [product, setProduct] = useState(localProduct || null);
   const [loading, setLoading] = useState(!localProduct);
 
   useEffect(() => {
     let isMounted = true;
-    const found = products.find((p) => String(p.id) === String(id));
+    const found = catalogList.find((p) => String(p.id) === String(id));
     if (found) {
       setProduct(found);
     } else {
